@@ -1,12 +1,15 @@
 import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
-import { fetchGroups } from '../api/worldcup';
+import { fetchGroups, fetchForm } from '../api/worldcup';
 import { GroupTable } from './GroupTable';
 import { Group } from '../api/types';
+import { FormResult } from '../api/mockData';
 
 export const Standings: React.FC = () => {
   const fetcher = useCallback(() => fetchGroups(), []);
+  const formFetcher = useCallback(() => fetchForm(), []);
   const { data: groups, loading, error } = useLiveData<Group[]>(fetcher, 120000);
+  const { data: form } = useLiveData<Record<string, FormResult[]>>(formFetcher, 120000);
 
   if (loading) {
     return (
@@ -37,7 +40,7 @@ export const Standings: React.FC = () => {
       <h2 style={{ marginBottom: 20 }}>🏆 Group Standings</h2>
       <div className="groups-grid">
         {groups.map((group) => (
-          <GroupTable key={group.letter} group={group} />
+          <GroupTable key={group.letter} group={group} form={form || {}} />
         ))}
       </div>
     </div>

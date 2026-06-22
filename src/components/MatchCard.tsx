@@ -1,6 +1,6 @@
 import React from 'react';
 import { Match } from '../api/types';
-import { getFlag } from '../utils/flags';
+import { Flag } from '../utils/flags';
 
 interface Props {
   match: Match;
@@ -48,8 +48,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
       <div className="match-card">
         <div className="team home">
           <div>
-            <div><span className="team-flag">{getFlag(match.home_team.code)}</span> {match.home_team.name}</div>
-            <div className="team-code">{match.home_team.code}</div>
+            <div><Flag code={match.home_team.code} name={match.home_team.name} /> {match.home_team.name}</div>
           </div>
         </div>
 
@@ -69,8 +68,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
 
         <div className="team away">
           <div>
-            <div>{match.away_team.name} <span className="team-flag">{getFlag(match.away_team.code)}</span></div>
-            <div className="team-code">{match.away_team.code}</div>
+            <div>{match.away_team.name} <Flag code={match.away_team.code} name={match.away_team.name} /></div>
           </div>
         </div>
       </div>

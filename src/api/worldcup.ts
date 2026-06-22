@@ -45,3 +45,7 @@ export async function fetchGroups(): Promise<Group[]> {
 export async function fetchYesterdayMatches(): Promise<Match[]> {
   return mock.fetchYesterdayMatches();
 }
+
+export async function fetchForm(): Promise<Record<string, mock.FormResult[]>> {
+  return mock.computeForm();
+}

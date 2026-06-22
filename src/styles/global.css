@@ -404,9 +404,28 @@ body {
 }
 
 .team-flag {
+  vertical-align: middle;
+}
+
+.flag-img {
+  display: inline-block;
+  width: 26px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  vertical-align: middle;
+}
+
+.flag-placeholder {
   font-size: 1.15em;
   line-height: 1;
-  vertical-align: middle;
+}
+
+.bracket-flag.flag-img {
+  width: 22px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 /* Score box — LARGE and prominent */
@@ -732,6 +751,145 @@ body {
   padding: 14px;
   opacity: .7;
   letter-spacing: .03em;
+}
+
+/* ============================================================
+   Form dots (last 5)
+   ============================================================ */
+.form-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.form-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: .58rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.form-W { background: var(--wc-green); }
+.form-D { background: var(--wc-text-muted); }
+.form-L { background: var(--wc-secondary); }
+.form-empty { color: var(--wc-text-muted); opacity: .5; }
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .standings-table {
+  min-width: 420px;
+}
+
+/* ============================================================
+   Knockout bracket
+   ============================================================ */
+.bracket-scroll {
+  overflow-x: auto;
+  padding-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bracket-grid {
+  display: flex;
+  gap: 18px;
+  min-width: min-content;
+}
+
+.bracket-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 14px;
+  min-width: 200px;
+}
+
+.bracket-round-title {
+  font-size: .9rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--wc-gold);
+  text-align: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(212,175,55,.25);
+}
+
+.bracket-match {
+  background: var(--wc-surface);
+  border: 1px solid rgba(212,175,55,.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: transform var(--wc-transition), border-color var(--wc-transition);
+}
+
+.bracket-match:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212,175,55,.5);
+}
+
+.bracket-match-time {
+  font-size: .66rem;
+  color: var(--wc-text-muted);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: .02em;
+}
+
+.bracket-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.bracket-team + .bracket-team {
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.bracket-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.bracket-name {
+  flex: 1;
+  font-size: .82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bracket-score {
+  font-weight: 800;
+  color: var(--wc-gold);
+  font-size: .9rem;
+}
+
+.bracket-venue {
+  font-size: .62rem;
+  color: var(--wc-text-muted);
+  text-align: center;
+  margin-top: 6px;
+  opacity: .8;
+}
+
+.bracket-third-place {
+  margin-top: 28px;
+  max-width: 320px;
+}
+
+@media (max-width: 640px) {
+  .bracket-column { min-width: 168px; }
+  .bracket-name { font-size: .76rem; }
 }
 
 /* ============================================================

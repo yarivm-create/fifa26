@@ -162,7 +162,7 @@ const MATCHES: Match[] = [
   { id: 40, venue: 'BC Place Vancouver', location: 'Vancouver, Canada', datetime: '2026-06-22T16:00:00Z', status: 'completed', stage_name: 'Group G - MD2', home_team: { country: 'New Zealand', name: 'New Zealand', code: 'NZL', goals: 1 }, away_team: { country: 'Egypt', name: 'Egypt', code: 'EGY', goals: 3 }, group: 'G' },
 
   // GROUP STAGE — MATCHDAY 2 (continued, future)
-  { id: 41, venue: 'Dallas Stadium', location: 'Dallas, USA', datetime: '2026-06-22T17:00:00Z', status: 'future_scheduled', stage_name: 'Group J - MD2', home_team: { country: 'Argentina', name: 'Argentina', code: 'ARG', goals: null }, away_team: { country: 'Austria', name: 'Austria', code: 'AUT', goals: null }, group: 'J' },
+  { id: 41, venue: 'Dallas Stadium', location: 'Dallas, USA', datetime: '2026-06-22T17:00:00Z', status: 'in_progress', time: '2nd Half', stage_name: 'Group J - MD2', home_team: { country: 'Argentina', name: 'Argentina', code: 'ARG', goals: 1 }, away_team: { country: 'Austria', name: 'Austria', code: 'AUT', goals: 0 }, group: 'J' },
   { id: 42, venue: 'Philadelphia Stadium', location: 'Philadelphia, USA', datetime: '2026-06-22T21:00:00Z', status: 'future_scheduled', stage_name: 'Group I - MD2', home_team: { country: 'France', name: 'France', code: 'FRA', goals: null }, away_team: { country: 'Iraq', name: 'Iraq', code: 'IRQ', goals: null }, group: 'I' },
   { id: 43, venue: 'New York/New Jersey Stadium', location: 'New Jersey, USA', datetime: '2026-06-23T00:00:00Z', status: 'future_scheduled', stage_name: 'Group I - MD2', home_team: { country: 'Norway', name: 'Norway', code: 'NOR', goals: null }, away_team: { country: 'Senegal', name: 'Senegal', code: 'SEN', goals: null }, group: 'I' },
   { id: 44, venue: 'San Francisco Bay Area Stadium', location: 'San Francisco, USA', datetime: '2026-06-23T03:00:00Z', status: 'future_scheduled', stage_name: 'Group J - MD2', home_team: { country: 'Jordan', name: 'Jordan', code: 'JOR', goals: null }, away_team: { country: 'Algeria', name: 'Algeria', code: 'ALG', goals: null }, group: 'J' },
@@ -244,8 +244,42 @@ function getIsraelDateString(date: Date): string {
   return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 }
 
+export type FormResult = 'W' | 'D' | 'L';
+
+// Builds each team's last-5 form (chronological) from completed matches.
+export function computeForm(): Record<string, FormResult[]> {
+  const completed = MATCHES
+    .filter((m) => m.status === 'completed' && m.home_team.goals !== null && m.away_team.goals !== null)
+    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+
+  const form: Record<string, FormResult[]> = {};
+  const push = (code: string, r: FormResult) => {
+    (form[code] ||= []).push(r);
+  };
+
+  for (const m of completed) {
+    const hg = m.home_team.goals!;
+    const ag = m.away_team.goals!;
+    if (hg > ag) {
+      push(m.home_team.code, 'W');
+      push(m.away_team.code, 'L');
+    } else if (hg < ag) {
+      push(m.home_team.code, 'L');
+      push(m.away_team.code, 'W');
+    } else {
+      push(m.home_team.code, 'D');
+      push(m.away_team.code, 'D');
+    }
+  }
+
+  for (const code of Object.keys(form)) {
+    form[code] = form[code].slice(-5);
+  }
+  return form;
+}
+
 export async function fetchCurrentMatches(): Promise<Match[]> {
-  return MATCHES.filter((m) => m.status === 'in_progress');
+  return MATCHES.filter((m) => m.status === 'in_progress' || m.status === 'half_time');
 }
 
 export async function fetchTodayMatches(): Promise<Match[]> {
