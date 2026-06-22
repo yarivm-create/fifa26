@@ -90,7 +90,8 @@ function codeFromName(name: string): string | null {
   return NAME_TO_CODE[key] ?? null;
 }
 
-type LiveStatus = { status: Match['status']; time?: string };
+type LivePhase = '1H' | '2H' | 'HT' | 'ET' | 'PENS' | 'LIVE';
+type LiveStatus = { status: Match['status']; phase?: LivePhase; progress?: string | null };
 
 function mapStatus(raw: string | null, progress: string | null): LiveStatus | null {
   const s = (raw || '').trim();
@@ -104,22 +105,55 @@ function mapStatus(raw: string | null, progress: string | null): LiveStatus | nu
     return null; // keep scheduled mock state
   }
   if (upper === 'HT' || upper === 'HALF TIME') {
-    return { status: 'half_time', time: 'HT' };
+    return { status: 'half_time', phase: 'HT' };
   }
   if (upper === '1H' || upper === '1ST HALF') {
-    return { status: 'in_progress', time: progress ? `${progress}'` : '1st Half' };
+    return { status: 'in_progress', phase: '1H', progress };
   }
   if (upper === '2H' || upper === '2ND HALF') {
-    return { status: 'in_progress', time: progress ? `${progress}'` : '2nd Half' };
+    return { status: 'in_progress', phase: '2H', progress };
   }
-  if (['ET', 'BT', 'P', 'EXTRA TIME', 'BREAK TIME', 'PENALTIES', 'LIVE'].includes(upper)) {
-    return { status: 'in_progress', time: s };
+  if (['ET', 'BT', 'EXTRA TIME', 'BREAK TIME'].includes(upper)) {
+    return { status: 'in_progress', phase: 'ET', progress };
   }
-  // Numeric minute (e.g. "63") => live.
+  if (['P', 'PENALTIES'].includes(upper)) {
+    return { status: 'in_progress', phase: 'PENS' };
+  }
+  if (upper === 'LIVE') {
+    return { status: 'in_progress', phase: 'LIVE', progress };
+  }
+  // Numeric minute (e.g. "63" or "90+2") => live.
   if (/^\d{1,3}\+?\d*$/.test(s)) {
-    return { status: 'in_progress', time: `${s}'` };
+    return { status: 'in_progress', progress: s, phase: 'LIVE' };
   }
   return null;
+}
+
+// Derives a live match clock (e.g. "67'") from the kickoff time, accounting for the
+// 15-minute halftime break. Prefers the API-provided minute when present.
+function computeLiveTime(mapped: LiveStatus, kickoffMs: number): string | undefined {
+  if (mapped.status === 'half_time' || mapped.phase === 'HT') return 'HT';
+  if (mapped.phase === 'PENS') return 'Pens';
+
+  const apiMin = (mapped.progress || '').trim();
+  if (apiMin && /^\d/.test(apiMin)) return `${apiMin}'`;
+
+  const elapsed = Math.floor((Date.now() - kickoffMs) / 60000);
+
+  switch (mapped.phase) {
+    case '1H':
+      return `${Math.min(Math.max(elapsed, 1), 45)}'`;
+    case '2H':
+      return `${Math.min(Math.max(elapsed - 15, 46), 90)}'`;
+    case 'ET':
+      return `${Math.min(Math.max(elapsed - 15, 91), 120)}'`;
+    case 'LIVE': {
+      const m = elapsed <= 45 ? elapsed : elapsed - 15;
+      return `${Math.min(Math.max(m, 1), 120)}'`;
+    }
+    default:
+      return undefined;
+  }
 }
 
 async function fetchEndpoint(url: string): Promise<SdbEvent[]> {
@@ -179,7 +213,7 @@ function applyOverlay(base: Match, ev: SdbEvent, swap: boolean): Match {
   return {
     ...base,
     status: mapped.status,
-    time: mapped.time,
+    time: computeLiveTime(mapped, new Date(base.datetime).getTime()),
     home_team: { ...base.home_team, goals: Number.isNaN(homeGoals as number) ? base.home_team.goals : homeGoals },
     away_team: { ...base.away_team, goals: Number.isNaN(awayGoals as number) ? base.away_team.goals : awayGoals },
   };
