@@ -1,51 +1,68 @@
 import { Match, Group } from './types';
 import * as mock from './mockData';
+import * as live from './liveData';
 
-// Skip live API for now — external APIs are unreliable/down
-// When a stable API becomes available, set FORCE_LIVE = true and configure BASE_URL
-const FORCE_LIVE = false;
-const BASE_URL = '/api';
+// Live scores are overlaid on the curated schedule from TheSportsDB (CORS-enabled, free).
+// Every call falls back to mock data if the live fetch fails.
 
-async function fetchWithFallback<T>(
-  liveUrl: string,
-  mockFn: () => Promise<T>
-): Promise<T> {
-  if (!FORCE_LIVE) {
-    return mockFn();
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(liveUrl, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) return res.json();
-  } catch {
-    // API unavailable — use mock data
-  }
-  return mockFn();
-}
-
-export async function fetchCurrentMatches(): Promise<Match[]> {
-  return fetchWithFallback(`${BASE_URL}/matches/current`, mock.fetchCurrentMatches);
-}
-
-export async function fetchTodayMatches(): Promise<Match[]> {
-  return fetchWithFallback(`${BASE_URL}/matches/today`, mock.fetchTodayMatches);
+function getIsraelDateString(date: Date): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 }
 
 export async function fetchAllMatches(): Promise<Match[]> {
-  return fetchWithFallback(`${BASE_URL}/matches`, mock.fetchAllMatches);
+  try {
+    const merged = await live.getMergedMatches();
+    return [...merged].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+  } catch {
+    return mock.fetchAllMatches();
+  }
 }
 
-export async function fetchGroups(): Promise<Group[]> {
-  return fetchWithFallback(`${BASE_URL}/teams`, mock.fetchGroups);
+export async function fetchCurrentMatches(): Promise<Match[]> {
+  try {
+    const merged = await live.getMergedMatches();
+    return merged.filter((m) => m.status === 'in_progress' || m.status === 'half_time');
+  } catch {
+    return mock.fetchCurrentMatches();
+  }
+}
+
+export async function fetchTodayMatches(): Promise<Match[]> {
+  try {
+    const merged = await live.getMergedMatches();
+    const todayISR = getIsraelDateString(new Date());
+    return merged.filter(
+      (m) => getIsraelDateString(new Date(m.datetime)) === todayISR && m.status === 'completed'
+    );
+  } catch {
+    return mock.fetchTodayMatches();
+  }
 }
 
 export async function fetchYesterdayMatches(): Promise<Match[]> {
-  return mock.fetchYesterdayMatches();
+  try {
+    const merged = await live.getMergedMatches();
+    const yesterdayISR = getIsraelDateString(new Date(Date.now() - 86400000));
+    return merged.filter(
+      (m) => getIsraelDateString(new Date(m.datetime)) === yesterdayISR && m.status === 'completed'
+    );
+  } catch {
+    return mock.fetchYesterdayMatches();
+  }
+}
+
+export async function fetchGroups(): Promise<Group[]> {
+  try {
+    return await live.getMergedGroups();
+  } catch {
+    return mock.fetchGroups();
+  }
 }
 
 export async function fetchForm(): Promise<Record<string, mock.FormResult[]>> {
-  return mock.computeForm();
+  try {
+    return await live.getMergedForm();
+  } catch {
+    return mock.computeForm();
+  }
 }
