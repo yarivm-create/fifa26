@@ -1,169 +1,58 @@
 import { Match, Group } from './types';
 import * as mock from './mockData';
 
-// TheSportsDB free, CORS-enabled API. League 4429 = FIFA World Cup.
-const API_KEY = '3';
-const LEAGUE_ID = 4429;
-const SEASON = '2026';
-const BASE = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
+// FIFA's official public API (CORS-enabled: Access-Control-Allow-Origin: *).
+// FIFA World Cup 2026: competition 17, season 285023. Returns all 104 matches
+// with live scores, status, and the exact match minute (MatchTime, e.g. "72'").
+const FIFA_COMPETITION = 17;
+const FIFA_SEASON = 285023;
+const FIFA_URL =
+  `https://api.fifa.com/api/v3/calendar/matches?idCompetition=${FIFA_COMPETITION}&idSeason=${FIFA_SEASON}&count=200&language=en`;
 
-const ENDPOINTS = [
-  `${BASE}/eventspastleague.php?id=${LEAGUE_ID}`, // recent + currently-live
-  `${BASE}/eventsnextleague.php?id=${LEAGUE_ID}`, // upcoming
-  `${BASE}/eventsseason.php?id=${LEAGUE_ID}&s=${SEASON}`, // whatever full-season data exists
-];
-
-interface SdbEvent {
-  idEvent: string;
-  strHomeTeam: string;
-  strAwayTeam: string;
-  intHomeScore: string | null;
-  intAwayScore: string | null;
-  strStatus: string | null;
-  strProgress: string | null;
+interface FifaTeam {
+  IdCountry: string | null;
+  TeamName?: { Description: string }[];
 }
 
-// Normalizes a team name to a key, then maps to the FIFA 3-letter code used throughout the app.
-const NAME_TO_CODE: Record<string, string> = {
-  algeria: 'ALG',
-  argentina: 'ARG',
-  australia: 'AUS',
-  austria: 'AUT',
-  belgium: 'BEL',
-  bosniaherzegovina: 'BIH',
-  bosniaandherzegovina: 'BIH',
-  brazil: 'BRA',
-  canada: 'CAN',
-  cotedivoire: 'CIV',
-  ivorycoast: 'CIV',
-  congodr: 'COD',
-  drcongo: 'COD',
-  democraticrepublicofcongo: 'COD',
-  colombia: 'COL',
-  caboverde: 'CPV',
-  capeverde: 'CPV',
-  croatia: 'CRO',
-  curacao: 'CUW',
-  czechrepublic: 'CZE',
-  czechia: 'CZE',
-  ecuador: 'ECU',
-  egypt: 'EGY',
-  england: 'ENG',
-  spain: 'ESP',
-  france: 'FRA',
-  germany: 'GER',
-  ghana: 'GHA',
-  haiti: 'HAI',
-  iran: 'IRN',
-  iriran: 'IRN',
-  iraq: 'IRQ',
-  jordan: 'JOR',
-  japan: 'JPN',
-  southkorea: 'KOR',
-  korearepublic: 'KOR',
-  saudiarabia: 'KSA',
-  morocco: 'MAR',
-  mexico: 'MEX',
-  netherlands: 'NED',
-  norway: 'NOR',
-  newzealand: 'NZL',
-  panama: 'PAN',
-  paraguay: 'PAR',
-  portugal: 'POR',
-  qatar: 'QAT',
-  southafrica: 'RSA',
-  scotland: 'SCO',
-  senegal: 'SEN',
-  switzerland: 'SUI',
-  sweden: 'SWE',
-  tunisia: 'TUN',
-  turkiye: 'TUR',
-  turkey: 'TUR',
-  uruguay: 'URU',
-  unitedstates: 'USA',
-  usa: 'USA',
-  uzbekistan: 'UZB',
-};
-
-function codeFromName(name: string): string | null {
-  const key = name.toLowerCase().replace(/[^a-z]/g, '');
-  return NAME_TO_CODE[key] ?? null;
+interface FifaMatch {
+  Home: FifaTeam | null;
+  Away: FifaTeam | null;
+  HomeTeamScore: number | null;
+  AwayTeamScore: number | null;
+  MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
+  MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
 }
 
-type LivePhase = '1H' | '2H' | 'HT' | 'ET' | 'PENS' | 'LIVE';
-type LiveStatus = { status: Match['status']; phase?: LivePhase; progress?: string | null };
+type LiveStatus = { status: Match['status']; time?: string };
 
-function mapStatus(raw: string | null, progress: string | null): LiveStatus | null {
-  const s = (raw || '').trim();
-  if (!s) return null;
-  const upper = s.toUpperCase();
-
-  if (['FT', 'AET', 'AP', 'PEN', 'MATCH FINISHED', 'FINISHED'].includes(upper)) {
-    return { status: 'completed' };
-  }
-  if (['NS', 'NOT STARTED', 'TBD', 'PPD', 'POSTPONED', 'CANC', 'CANCELLED'].includes(upper)) {
-    return null; // keep scheduled mock state
-  }
-  if (upper === 'HT' || upper === 'HALF TIME') {
-    return { status: 'half_time', phase: 'HT' };
-  }
-  if (upper === '1H' || upper === '1ST HALF') {
-    return { status: 'in_progress', phase: '1H', progress };
-  }
-  if (upper === '2H' || upper === '2ND HALF') {
-    return { status: 'in_progress', phase: '2H', progress };
-  }
-  if (['ET', 'BT', 'EXTRA TIME', 'BREAK TIME'].includes(upper)) {
-    return { status: 'in_progress', phase: 'ET', progress };
-  }
-  if (['P', 'PENALTIES'].includes(upper)) {
-    return { status: 'in_progress', phase: 'PENS' };
-  }
-  if (upper === 'LIVE') {
-    return { status: 'in_progress', phase: 'LIVE', progress };
-  }
-  // Numeric minute (e.g. "63" or "90+2") => live.
-  if (/^\d{1,3}\+?\d*$/.test(s)) {
-    return { status: 'in_progress', progress: s, phase: 'LIVE' };
-  }
-  return null;
-}
-
-// Derives a live match clock (e.g. "67'") from the kickoff time, accounting for the
-// 15-minute halftime break. Prefers the API-provided minute when present.
-function computeLiveTime(mapped: LiveStatus, kickoffMs: number): string | undefined {
-  if (mapped.status === 'half_time' || mapped.phase === 'HT') return 'HT';
-  if (mapped.phase === 'PENS') return 'Pens';
-
-  const apiMin = (mapped.progress || '').trim();
-  if (apiMin && /^\d/.test(apiMin)) return `${apiMin}'`;
-
-  const elapsed = Math.floor((Date.now() - kickoffMs) / 60000);
-
-  switch (mapped.phase) {
-    case '1H':
-      return `${Math.min(Math.max(elapsed, 1), 45)}'`;
-    case '2H':
-      return `${Math.min(Math.max(elapsed - 15, 46), 90)}'`;
-    case 'ET':
-      return `${Math.min(Math.max(elapsed - 15, 91), 120)}'`;
-    case 'LIVE': {
-      const m = elapsed <= 45 ? elapsed : elapsed - 15;
-      return `${Math.min(Math.max(m, 1), 120)}'`;
+// FIFA MatchStatus: 0 finished, 1 not started, 3 live. Anything else (postponed,
+// abandoned, etc.) leaves the mock scheduled state untouched.
+function mapStatus(ev: FifaMatch): LiveStatus | null {
+  switch (ev.MatchStatus) {
+    case 0:
+      return { status: 'completed' }; // no live minute for finished games
+    case 3: {
+      const mt = (ev.MatchTime || '').trim();
+      const upper = mt.toUpperCase();
+      if (upper === 'HT' || upper.includes('HALF')) {
+        return { status: 'half_time', time: 'HT' };
+      }
+      // FIFA already formats the minute (e.g. "72'"); show it verbatim.
+      return { status: 'in_progress', time: mt || undefined };
     }
     default:
-      return undefined;
+      return null; // upcoming / unknown -> keep verified mock schedule
   }
 }
 
-async function fetchEndpoint(url: string): Promise<SdbEvent[]> {
+async function fetchFifaMatches(): Promise<FifaMatch[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(FIFA_URL, { signal: controller.signal });
     if (!res.ok) return [];
     const json = await res.json();
-    return (json?.events as SdbEvent[]) || [];
+    return (json?.Results as FifaMatch[]) || [];
   } catch {
     return [];
   } finally {
@@ -171,26 +60,24 @@ async function fetchEndpoint(url: string): Promise<SdbEvent[]> {
   }
 }
 
-// Builds a lookup of live events keyed by "HOMECODE_AWAYCODE".
-async function fetchLiveMap(): Promise<Record<string, SdbEvent>> {
-  const results = await Promise.allSettled(ENDPOINTS.map(fetchEndpoint));
-  const map: Record<string, SdbEvent> = {};
-  for (const r of results) {
-    if (r.status !== 'fulfilled') continue;
-    for (const ev of r.value) {
-      const hc = codeFromName(ev.strHomeTeam);
-      const ac = codeFromName(ev.strAwayTeam);
-      if (!hc || !ac) continue;
-      map[`${hc}_${ac}`] = ev;
-    }
+// Builds a lookup of FIFA matches keyed by "HOMECODE_AWAYCODE" (skips knockout
+// fixtures whose teams are not yet known).
+async function fetchLiveMap(): Promise<Record<string, FifaMatch>> {
+  const matches = await fetchFifaMatches();
+  const map: Record<string, FifaMatch> = {};
+  for (const ev of matches) {
+    const hc = ev.Home?.IdCountry;
+    const ac = ev.Away?.IdCountry;
+    if (!hc || !ac) continue;
+    map[`${hc}_${ac}`] = ev;
   }
   return map;
 }
 
-let cache: { at: number; map: Record<string, SdbEvent> } | null = null;
+let cache: { at: number; map: Record<string, FifaMatch> } | null = null;
 const CACHE_TTL_MS = 25000;
 
-async function getLiveMap(): Promise<Record<string, SdbEvent>> {
+async function getLiveMap(): Promise<Record<string, FifaMatch>> {
   const now = Date.now();
   if (cache && now - cache.at < CACHE_TTL_MS) return cache.map;
   const map = await fetchLiveMap();
@@ -201,25 +88,25 @@ async function getLiveMap(): Promise<Record<string, SdbEvent>> {
   return cache.map;
 }
 
-function applyOverlay(base: Match, ev: SdbEvent, swap: boolean): Match {
-  const mapped = mapStatus(ev.strStatus, ev.strProgress);
+function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
+  const mapped = mapStatus(ev);
   if (!mapped) return base;
 
-  const rawHome = ev.intHomeScore !== null ? parseInt(ev.intHomeScore, 10) : null;
-  const rawAway = ev.intAwayScore !== null ? parseInt(ev.intAwayScore, 10) : null;
+  const rawHome = ev.HomeTeamScore;
+  const rawAway = ev.AwayTeamScore;
   const homeGoals = swap ? rawAway : rawHome;
   const awayGoals = swap ? rawHome : rawAway;
 
   return {
     ...base,
     status: mapped.status,
-    time: computeLiveTime(mapped, new Date(base.datetime).getTime()),
-    home_team: { ...base.home_team, goals: Number.isNaN(homeGoals as number) ? base.home_team.goals : homeGoals },
-    away_team: { ...base.away_team, goals: Number.isNaN(awayGoals as number) ? base.away_team.goals : awayGoals },
+    time: mapped.time,
+    home_team: { ...base.home_team, goals: homeGoals ?? base.home_team.goals },
+    away_team: { ...base.away_team, goals: awayGoals ?? base.away_team.goals },
   };
 }
 
-// Returns the full mock schedule with live scores/status overlaid from the API.
+// Returns the full mock schedule with live scores/status overlaid from FIFA.
 export async function getMergedMatches(): Promise<Match[]> {
   const base = await mock.fetchAllMatches();
   const liveMap = await getLiveMap();
