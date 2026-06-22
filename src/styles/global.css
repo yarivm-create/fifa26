@@ -1,5 +1,5 @@
 /* ============================================================
-   FIFA World Cup 2026™  —  Modern Dark UI
+   FIFA World Cup 2026™  —  THE COOLEST World Cup Site
    Colors: Deep Maroon #56042C · Red #E4002B · Gold #D4AF37
    ============================================================ */
 
@@ -16,12 +16,12 @@
   --wc-green: #48bb78;
   --wc-blue: #4299e1;
   --wc-live-pulse: #ff4757;
-
-  /* extra palette tokens */
   --wc-gold-soft: #c9a84c;
   --wc-glow-live: 0 0 14px 2px rgba(255, 71, 87, .55);
   --wc-card-radius: 16px;
   --wc-transition: .28s cubic-bezier(.4,0,.2,1);
+  --wc-navy: #0a1628;
+  --wc-maroon-glow: rgba(86, 4, 44, .4);
 }
 
 /* ---- Reset ---- */
@@ -33,17 +33,19 @@
   box-sizing: border-box;
 }
 
-/* ---- Body + background pattern ---- */
+/* ---- Smooth scroll ---- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---- Body + soccer ball background pattern ---- */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    /* faint hex-tiled "football" texture */
+    /* Soccer ball hexagon pattern */
     radial-gradient(circle at 20% 50%, rgba(86,4,44,.12) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(228,0,43,.07) 0%, transparent 45%),
-    repeating-conic-gradient(
-      rgba(255,255,255,.015) 0% 16.67%,
-      transparent 16.67% 33.33%
-    ) 0 0 / 60px 60px,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M40 0L73.3 20v40L40 80 6.7 60V20z' fill='none' stroke='rgba(255,255,255,0.02)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='4' fill='rgba(255,255,255,0.015)'/%3E%3C/svg%3E"),
     linear-gradient(160deg, var(--wc-darker) 0%, #111328 40%, var(--wc-dark) 100%);
   color: var(--wc-text);
   min-height: 100vh;
@@ -56,60 +58,83 @@ body {
 .app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 0 16px 16px;
 }
 
 @media (min-width: 600px) {
-  .app { padding: 24px 32px; }
+  .app { padding: 0 32px 24px; }
 }
 
 /* ============================================================
-   Header
+   Sticky Header
    ============================================================ */
 .header {
   text-align: center;
-  padding: 40px 16px 28px;
+  padding: 28px 16px 22px;
   border-bottom: 1px solid rgba(212,175,55,.15);
-  margin-bottom: 28px;
-  position: relative;
+  margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(15,15,26,.98) 0%, rgba(26,26,46,.95) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
-/* Trophy icon rendered via ::before */
+/* Trophy animation */
 .header::before {
   content: '🏆';
   display: block;
-  font-size: 2.6rem;
-  margin-bottom: 6px;
+  font-size: 2.2rem;
+  margin-bottom: 4px;
   filter: drop-shadow(0 0 12px rgba(212,175,55,.45));
-  animation: trophyFloat 4s ease-in-out infinite;
+  animation: trophyFloat 4s ease-in-out infinite, trophyShine 6s ease-in-out infinite;
 }
 
 @keyframes trophyFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-4px) rotate(-2deg); }
+  75%      { transform: translateY(-2px) rotate(2deg); }
+  50%      { transform: translateY(-6px) rotate(0deg); }
+}
+
+@keyframes trophyShine {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(212,175,55,.45)); }
+  50%      { filter: drop-shadow(0 0 24px rgba(212,175,55,.8)) brightness(1.1); }
 }
 
 .header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: -.02em;
   background: linear-gradient(135deg, var(--wc-gold) 0%, #f5d678 40%, var(--wc-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   line-height: 1.15;
 }
 
 @media (min-width: 600px) {
-  .header h1 { font-size: 2.8rem; }
+  .header h1 { font-size: 2.4rem; }
 }
 
 .header .subtitle {
   color: var(--wc-text-muted);
-  font-size: .92rem;
+  font-size: .85rem;
   font-weight: 400;
   letter-spacing: .04em;
+}
+
+/* Header clock */
+.header-clock {
+  font-size: .9rem;
+  color: var(--wc-gold);
+  font-weight: 600;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  text-shadow: 0 0 10px rgba(212,175,55,.3);
 }
 
 /* Live badge */
@@ -120,9 +145,9 @@ body {
   background: rgba(255,71,87,.12);
   border: 1px solid rgba(255,71,87,.45);
   border-radius: 999px;
-  padding: 6px 18px;
-  margin-top: 14px;
-  font-size: .82rem;
+  padding: 5px 16px;
+  margin-top: 10px;
+  font-size: .75rem;
   color: var(--wc-live-pulse);
   font-weight: 700;
   text-transform: uppercase;
@@ -145,21 +170,25 @@ body {
 }
 
 /* ============================================================
-   Navigation — pill tabs
+   Navigation — sticky pill tabs
    ============================================================ */
 .nav {
   display: flex;
   gap: 6px;
   justify-content: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   padding: 6px;
-  background: rgba(22,33,62,.55);
+  background: rgba(22,33,62,.85);
   border-radius: 999px;
   max-width: max-content;
   margin-inline: auto;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(31,52,96,.6);
+  position: sticky;
+  top: 180px;
+  z-index: 90;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
 }
 
 .nav button {
@@ -174,6 +203,7 @@ body {
   font-weight: 500;
   transition: background var(--wc-transition), color var(--wc-transition), box-shadow var(--wc-transition);
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .nav button:hover {
@@ -189,11 +219,101 @@ body {
 }
 
 /* ============================================================
-   Card — shared base
+   Israel Time Clock Section (LiveMatches)
+   ============================================================ */
+.israel-clock-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(22,33,62,.7), rgba(10,22,40,.8));
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.israel-clock-label {
+  color: var(--wc-text-muted);
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.israel-clock-time {
+  color: var(--wc-gold);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(212,175,55,.3);
+}
+
+/* ============================================================
+   Section Titles
+   ============================================================ */
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  color: var(--wc-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title.live-title {
+  color: var(--wc-live-pulse);
+  text-shadow: 0 0 12px rgba(255,71,87,.3);
+}
+
+.live-pulse-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--wc-live-pulse);
+  border-radius: 50%;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* ============================================================
+   Live Section — glowing red
+   ============================================================ */
+.live-section {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,71,87,.05), rgba(86,4,44,.1));
+  border: 1px solid rgba(255,71,87,.25);
+  box-shadow: 0 0 30px rgba(255,71,87,.08), inset 0 0 30px rgba(255,71,87,.03);
+  margin-bottom: 28px;
+  animation: liveGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes liveGlow {
+  from { box-shadow: 0 0 20px rgba(255,71,87,.06), inset 0 0 20px rgba(255,71,87,.02); }
+  to   { box-shadow: 0 0 40px rgba(255,71,87,.12), inset 0 0 40px rgba(255,71,87,.04); }
+}
+
+/* ============================================================
+   Day sections
+   ============================================================ */
+.day-section {
+  margin-bottom: 28px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(22,33,62,.3);
+  border: 1px solid rgba(31,52,96,.4);
+}
+
+.today-section {
+  border-color: rgba(212,175,55,.3);
+  background: linear-gradient(135deg, rgba(212,175,55,.04), rgba(22,33,62,.4));
+}
+
+/* ============================================================
+   Card — shared base with gradient border
    ============================================================ */
 .card {
   background: linear-gradient(170deg, rgba(22,33,62,.92) 0%, rgba(15,15,26,.96) 100%);
-  border: 1px solid rgba(31,52,96,.55);
+  border: 1px solid transparent;
   border-radius: var(--wc-card-radius);
   padding: 22px 20px;
   margin-bottom: 16px;
@@ -204,9 +324,11 @@ body {
   position: relative;
   overflow: hidden;
   animation: cardFadeIn .45s ease-out both;
+  /* Gradient border effect */
+  background-clip: padding-box;
+  border: 1px solid rgba(31,52,96,.55);
 }
 
-/* maroon accent stripe along left edge */
 .card::before {
   content: '';
   position: absolute;
@@ -222,8 +344,8 @@ body {
   transform: translateY(-4px);
   box-shadow:
     0 12px 36px rgba(0,0,0,.35),
-    0 0 0 1px rgba(212,175,55,.12);
-  border-color: rgba(212,175,55,.22);
+    0 0 0 1px rgba(212,175,55,.15);
+  border-color: rgba(212,175,55,.25);
 }
 
 .card:hover::before {
@@ -235,13 +357,15 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* stagger animation for cards inside grids */
-.matches-grid .card:nth-child(1) { animation-delay: .04s; }
-.matches-grid .card:nth-child(2) { animation-delay: .08s; }
-.matches-grid .card:nth-child(3) { animation-delay: .12s; }
-.matches-grid .card:nth-child(4) { animation-delay: .16s; }
-.matches-grid .card:nth-child(5) { animation-delay: .20s; }
-.matches-grid .card:nth-child(6) { animation-delay: .24s; }
+/* Stagger animation for cards */
+.matches-grid .card:nth-child(1) { animation-delay: .03s; }
+.matches-grid .card:nth-child(2) { animation-delay: .06s; }
+.matches-grid .card:nth-child(3) { animation-delay: .09s; }
+.matches-grid .card:nth-child(4) { animation-delay: .12s; }
+.matches-grid .card:nth-child(5) { animation-delay: .15s; }
+.matches-grid .card:nth-child(6) { animation-delay: .18s; }
+.matches-grid .card:nth-child(7) { animation-delay: .21s; }
+.matches-grid .card:nth-child(8) { animation-delay: .24s; }
 
 /* ============================================================
    Match Card
@@ -279,42 +403,44 @@ body {
   letter-spacing: .08em;
 }
 
-/* Score box — the centrepiece */
+/* Score box — LARGE and prominent */
 .match-card .score-box {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(145deg, rgba(86,4,44,.35), rgba(15,15,26,.85));
-  padding: 14px 24px;
-  border-radius: 14px;
-  min-width: 110px;
+  gap: 12px;
+  background: linear-gradient(145deg, rgba(86,4,44,.45), rgba(10,22,40,.9));
+  padding: 16px 28px;
+  border-radius: 16px;
+  min-width: 120px;
   justify-content: center;
-  border: 1px solid rgba(212,175,55,.18);
+  border: 1px solid rgba(212,175,55,.2);
   transition: box-shadow var(--wc-transition);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.3);
 }
 
-/* glow on live matches — add .live-match on the card or parent */
+/* Live match glow on score box */
 .card:has(.match-status.live) .score-box {
-  box-shadow: var(--wc-glow-live);
+  box-shadow: var(--wc-glow-live), inset 0 2px 8px rgba(255,71,87,.1);
   border-color: rgba(255,71,87,.4);
   animation: scoreGlow 2.2s ease-in-out infinite alternate;
 }
 
 @keyframes scoreGlow {
-  from { box-shadow: 0 0 10px 1px rgba(255,71,87,.35); }
-  to   { box-shadow: 0 0 22px 4px rgba(255,71,87,.55); }
+  from { box-shadow: 0 0 10px 1px rgba(255,71,87,.35), inset 0 2px 8px rgba(255,71,87,.05); }
+  to   { box-shadow: 0 0 28px 6px rgba(255,71,87,.55), inset 0 2px 12px rgba(255,71,87,.15); }
 }
 
 .match-card .score {
-  font-size: 2rem;
+  font-size: 2.4rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
 
 .match-card .score-divider {
-  color: rgba(255,255,255,.25);
-  font-size: 1.6rem;
+  color: rgba(255,255,255,.2);
+  font-size: 1.8rem;
   font-weight: 300;
 }
 
@@ -356,6 +482,89 @@ body {
 .match-card .match-meta a:hover {
   color: var(--wc-gold);
   text-decoration: underline;
+}
+
+/* ============================================================
+   Schedule — Stage headers
+   ============================================================ */
+.stage-header {
+  text-align: center;
+  padding: 18px 0;
+  margin: 30px 0 16px;
+  position: relative;
+}
+
+.stage-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,.4), transparent);
+}
+
+/* Football pitch pattern divider */
+.stage-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='rgba(212,175,55,0.3)' stroke-width='1'/%3E%3Ccircle cx='20' cy='20' r='3' fill='rgba(212,175,55,0.3)'/%3E%3Cline x1='2' y1='20' x2='38' y2='20' stroke='rgba(212,175,55,0.15)' stroke-width='0.5'/%3E%3C/svg%3E") no-repeat center;
+}
+
+.stage-header-text {
+  display: inline-block;
+  padding: 6px 20px;
+  background: var(--wc-darker);
+  border: 1px solid rgba(212,175,55,.3);
+  border-radius: 999px;
+  color: var(--wc-gold);
+  font-size: .85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  position: relative;
+  z-index: 1;
+}
+
+.schedule-date-group {
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(22,33,62,.2);
+  border: 1px solid rgba(31,52,96,.3);
+}
+
+.schedule-date-group.schedule-today {
+  border-color: rgba(212,175,55,.4);
+  background: linear-gradient(135deg, rgba(212,175,55,.06), rgba(22,33,62,.35));
+  box-shadow: 0 0 20px rgba(212,175,55,.05);
+}
+
+.schedule-date-label {
+  color: var(--wc-gold-soft);
+  font-size: .95rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.today-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--wc-gold), #e6c040);
+  color: #1a1a2e;
+  font-size: .65rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
 }
 
 /* ============================================================
@@ -413,12 +622,10 @@ body {
   transition: background var(--wc-transition);
 }
 
-/* zebra striping */
 .standings-table tbody tr:nth-child(even) td {
   background: rgba(22,33,62,.35);
 }
 
-/* qualification positions (rows 1 & 2) highlighted */
 .standings-table tbody tr:nth-child(1) td,
 .standings-table tbody tr:nth-child(2) td {
   background: rgba(72,187,120,.08);
@@ -445,7 +652,7 @@ body {
 }
 
 /* ============================================================
-   Grid layouts — mobile-first
+   Grid layouts — mobile-first, single column on mobile
    ============================================================ */
 .matches-grid {
   display: grid;
@@ -453,9 +660,9 @@ body {
   gap: 14px;
 }
 
-@media (min-width: 680px) {
+@media (min-width: 780px) {
   .matches-grid {
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
     gap: 18px;
   }
 }
@@ -513,7 +720,7 @@ body {
    ============================================================ */
 .last-updated {
   text-align: center;
-  font-size: .72rem;
+  font-size: .75rem;
   color: var(--wc-text-muted);
   margin-top: 32px;
   padding: 14px;
@@ -522,22 +729,25 @@ body {
 }
 
 /* ============================================================
-   Responsive — small screens
+   Responsive — mobile (large touch targets, bigger scores)
    ============================================================ */
 @media (max-width: 600px) {
-  .header { padding: 28px 12px 20px; }
-  .header::before { font-size: 2rem; }
-  .header h1 { font-size: 1.6rem; }
-  .header .subtitle { font-size: .82rem; }
+  .header { padding: 20px 12px 16px; }
+  .header::before { font-size: 1.8rem; }
+  .header h1 { font-size: 1.5rem; }
+  .header .subtitle { font-size: .8rem; }
+  .header-clock { font-size: .82rem; }
 
   .nav {
     border-radius: 14px;
     padding: 4px;
+    top: 140px;
   }
 
   .nav button {
-    padding: 8px 16px;
-    font-size: .82rem;
+    padding: 10px 16px;
+    font-size: .84rem;
+    min-height: 48px;
   }
 
   .match-card {
@@ -548,17 +758,33 @@ body {
 
   .match-card .team {
     justify-content: center !important;
-    font-size: .95rem;
+    font-size: 1rem;
   }
 
   .match-card .score-box {
     margin: 0 auto;
-    min-width: 90px;
-    padding: 10px 20px;
+    min-width: 100px;
+    padding: 14px 24px;
   }
 
   .match-card .score {
-    font-size: 1.6rem;
+    font-size: 2rem;
+  }
+
+  .israel-clock-section {
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+  }
+
+  .day-section {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .live-section {
+    padding: 14px;
+    border-radius: 14px;
   }
 
   .standings-table {
@@ -568,6 +794,10 @@ body {
   .standings-table th,
   .standings-table td {
     padding: 8px 10px;
+  }
+
+  .schedule-date-group {
+    padding: 12px;
   }
 }
 

@@ -1,132 +1,149 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
-import { fetchCurrentMatches, fetchTodayMatches, fetchAllMatches, fetchYesterdayMatches } from '../api/worldcup';
+import { fetchCurrentMatches, fetchAllMatches } from '../api/worldcup';
 import { MatchCard } from './MatchCard';
 import { Match } from '../api/types';
 
-// Get date in Israel timezone
+const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
+
 function getIsraelDate(date: Date): string {
-  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }); // YYYY-MM-DD
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 }
 
-function getIsraelDateLabel(date: Date): string {
-  return date.toLocaleDateString('he-IL', {
-    timeZone: 'Asia/Jerusalem',
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+function getIsraelClock(): string {
+  const now = new Date();
+  const israelDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+  const dayName = HEBREW_DAYS[israelDate.getDay()];
+  const day = israelDate.getDate();
+  const month = israelDate.getMonth() + 1;
+  const year = israelDate.getFullYear();
+  const hours = israelDate.getHours().toString().padStart(2, '0');
+  const minutes = israelDate.getMinutes().toString().padStart(2, '0');
+  return `${dayName} ${day}.${month}.${year} • ${hours}:${minutes}`;
 }
 
 export const LiveMatches: React.FC = () => {
+  const [clock, setClock] = useState(getIsraelClock);
+
+  useEffect(() => {
+    const interval = setInterval(() => setClock(getIsraelClock()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const currentFetcher = useCallback(() => fetchCurrentMatches(), []);
-  const todayFetcher = useCallback(() => fetchTodayMatches(), []);
-  const yesterdayFetcher = useCallback(() => fetchYesterdayMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
 
   const { data: liveMatches, loading: liveLoading } = useLiveData<Match[]>(currentFetcher, 15000);
-  const { data: todayMatches, loading: todayLoading } = useLiveData<Match[]>(todayFetcher, 60000);
-  const { data: yesterdayMatches } = useLiveData<Match[]>(yesterdayFetcher, 300000);
-  const { data: allMatches, lastUpdated } = useLiveData<Match[]>(allFetcher, 120000);
+  const { data: allMatches, loading: allLoading, lastUpdated } = useLiveData<Match[]>(allFetcher, 60000);
 
-  if (liveLoading && todayLoading) {
+  if (liveLoading && allLoading) {
     return (
       <div className="loading">
         <div className="spinner" />
-        <p>Loading live matches...</p>
+        <p>Loading matches...</p>
       </div>
     );
   }
 
-  const hasLive = liveMatches && liveMatches.length > 0;
-
-  // "Up Next": upcoming matches for today, tomorrow, and day after tomorrow (Israel time)
   const now = new Date();
   const todayISR = getIsraelDate(now);
+  const yesterdayISR = getIsraelDate(new Date(now.getTime() - 86400000));
   const tomorrowISR = getIsraelDate(new Date(now.getTime() + 86400000));
   const dayAfterISR = getIsraelDate(new Date(now.getTime() + 172800000));
-  const upNextDays = [todayISR, tomorrowISR, dayAfterISR];
 
-  const upcoming = allMatches
-    ?.filter((m) => {
-      if (m.status !== 'future_scheduled') return false;
-      const matchDateISR = getIsraelDate(new Date(m.datetime));
-      return upNextDays.includes(matchDateISR);
-    })
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()) || [];
-
-  // Group upcoming by Israel date
-  const upcomingByDate: Record<string, Match[]> = {};
-  for (const m of upcoming) {
-    const dateKey = getIsraelDate(new Date(m.datetime));
-    if (!upcomingByDate[dateKey]) upcomingByDate[dateKey] = [];
-    upcomingByDate[dateKey].push(m);
+  // Categorize all matches by Israel date
+  const matchesByDate: Record<string, Match[]> = {};
+  if (allMatches) {
+    for (const m of allMatches) {
+      const dateKey = getIsraelDate(new Date(m.datetime));
+      if (!matchesByDate[dateKey]) matchesByDate[dateKey] = [];
+      matchesByDate[dateKey].push(m);
+    }
   }
 
-  const dateLabels: Record<string, string> = {
-    [todayISR]: '🕐 עוד היום (Today)',
-    [tomorrowISR]: '📅 מחר (Tomorrow)',
-    [dayAfterISR]: '📅 מחרתיים (Day After)',
-  };
+  const sortMatches = (arr: Match[]) =>
+    [...arr].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+
+  const hasLive = liveMatches && liveMatches.length > 0;
+  const yesterdayMatches = matchesByDate[yesterdayISR]?.filter(m => m.status === 'completed') || [];
+  const todayMatches = sortMatches(matchesByDate[todayISR] || []);
+  const tomorrowMatches = sortMatches(matchesByDate[tomorrowISR] || []);
+  const dayAfterMatches = sortMatches(matchesByDate[dayAfterISR] || []);
 
   return (
     <div>
+      {/* Israel Time Clock */}
+      <div className="israel-clock-section">
+        <span className="israel-clock-label">🕐 שעון ישראל</span>
+        <span className="israel-clock-time">{clock}</span>
+      </div>
+
+      {/* Live Now */}
       {hasLive && (
-        <>
-          <h2 style={{ marginBottom: 16, color: '#ff4757' }}>🔴 Live Now</h2>
+        <section className="live-section">
+          <h2 className="section-title live-title">
+            <span className="live-pulse-dot" />
+            🔴 Live Now
+          </h2>
           <div className="matches-grid">
             {liveMatches!.map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
-        </>
+        </section>
       )}
 
-      {yesterdayMatches && yesterdayMatches.length > 0 && (
-        <>
-          <h2 style={{ marginTop: hasLive ? 30 : 0, marginBottom: 16 }}>📋 אתמול (Yesterday)</h2>
+      {/* Yesterday */}
+      {yesterdayMatches.length > 0 && (
+        <section className="day-section">
+          <h2 className="section-title">📋 אתמול Yesterday</h2>
           <div className="matches-grid">
-            {yesterdayMatches.map((match) => (
+            {sortMatches(yesterdayMatches).map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
-        </>
+        </section>
       )}
 
-      <h2 style={{ marginTop: 30, marginBottom: 16 }}>📅 Today's Results</h2>
-      {todayMatches && todayMatches.length > 0 ? (
-        <div className="matches-grid">
-          {todayMatches.map((match) => (
-            <MatchCard key={match.id} match={match} />
-          ))}
-        </div>
-      ) : (
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <p style={{ color: '#a0aec0' }}>No completed matches yet today.</p>
-        </div>
+      {/* Today */}
+      {todayMatches.length > 0 && (
+        <section className="day-section today-section">
+          <h2 className="section-title">📅 היום Today</h2>
+          <div className="matches-grid">
+            {todayMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {upcoming.length > 0 && (
-        <>
-          <h2 style={{ marginTop: 30, marginBottom: 16 }}>⏭️ Up Next</h2>
-          {Object.entries(upcomingByDate).map(([dateKey, matches]) => (
-            <div key={dateKey} style={{ marginBottom: 24 }}>
-              <h3 style={{ color: '#D4AF37', marginBottom: 12, fontSize: '1rem' }}>
-                {dateLabels[dateKey] || getIsraelDateLabel(new Date(matches[0].datetime))}
-              </h3>
-              <div className="matches-grid">
-                {matches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </>
+      {/* Tomorrow */}
+      {tomorrowMatches.length > 0 && (
+        <section className="day-section">
+          <h2 className="section-title">⏭️ מחר Tomorrow</h2>
+          <div className="matches-grid">
+            {tomorrowMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Day After Tomorrow */}
+      {dayAfterMatches.length > 0 && (
+        <section className="day-section">
+          <h2 className="section-title">📅 מחרתיים Day After Tomorrow</h2>
+          <div className="matches-grid">
+            {dayAfterMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        </section>
       )}
 
       {lastUpdated && (
         <div className="last-updated">
-          Last updated: {lastUpdated.toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem' })} (Israel Time) • Auto-refreshes
+          עדכון אחרון: {lastUpdated.toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem' })} (שעון ישראל) • מתעדכן אוטומטית
         </div>
       )}
     </div>

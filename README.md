@@ -1,25 +1,31 @@
 # ⚽ FIFA World Cup 2026 — Live Dashboard
 
-A real-time World Cup 2026 dashboard built as a **Microsoft Fabric App** using the **Rayfin CLI**.
+A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores, and Israel timezone support.
+
+🔗 **Live Site:** [https://yarivm-create.github.io/fifa26/](https://yarivm-create.github.io/fifa26/)  
+📺 **Kan Coverage:** [https://www.kan.org.il/lobby/worldcup2026/](https://www.kan.org.il/lobby/worldcup2026/)
 
 ![Live Dashboard](https://img.shields.io/badge/Status-Live-red?style=flat-square)
-![Rayfin](https://img.shields.io/badge/Powered%20by-Rayfin%20CLI-blue?style=flat-square)
-![Fabric](https://img.shields.io/badge/Platform-Microsoft%20Fabric-purple?style=flat-square)
+![Matches](https://img.shields.io/badge/Matches-104-gold?style=flat-square)
+![React 19](https://img.shields.io/badge/React-19-blue?style=flat-square)
 
 ## Features
 
-- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches
+- 🕐 **Live Israel Time Clock** — Real-time clock updating every second (Asia/Jerusalem timezone)
+- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
+- 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by Israel date
 - 🏆 **Group Standings** — Real-time group tables with all stats
-- 📅 **Full Schedule** — All 104 matches across 16 venues
-- 📱 **Responsive** — Works on desktop and mobile
-- ⚡ **Fast** — Vite + React for instant updates
+- 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
+- ⏰ **All Times in Israel Timezone** — GMT+3 (IDT) for all match kickoff times
+- 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
+- ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min
+- 🌙 **Dark Theme** — Rich maroon, gold, and navy with FIFA 2026 branding
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- (Optional) Microsoft Fabric workspace for cloud deployment
 
 ### Run Locally
 
@@ -31,61 +37,51 @@ npm run dev
 
 Open http://localhost:3000 in your browser.
 
-### Deploy to Microsoft Fabric
+### Build for Production
 
 ```bash
-# Sign in to Fabric
-npx rayfin login
-
-# Deploy the app
-npx rayfin up
+npm run build
 ```
+
+## Tech Stack
+
+- **Frontend**: React 19 + TypeScript + Vite
+- **Data**: 104 matches sourced from FIFA.com (UTC timestamps)
+- **Timezone**: All display times converted to Israel (Asia/Jerusalem, GMT+3)
+- **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations
+- **Deployment**: GitHub Pages at `/fifa26/`
 
 ## Data Source
 
-This app uses the free [WorldCupJSON API](https://worldcupjson.net/) for real-time match data.
-No API key required.
+All 104 matches of the FIFA World Cup 2026™ with real scores and schedules.
+Times are stored in UTC and displayed in Israel time (IDT, GMT+3).
 
-| Endpoint | Data | Refresh Rate |
-|----------|------|-------------|
-| `/matches/current` | Live matches in progress | 15s |
-| `/matches/today` | Today's schedule | 60s |
-| `/matches` | Full tournament schedule | 5min |
-| `/teams` | Group standings | 2min |
+| Section | Data | Refresh Rate |
+|---------|------|-------------|
+| Live Now | Matches in progress | 15s |
+| Today/Tomorrow/Day After | Scheduled + completed | 60s |
+| Full Schedule | All 104 matches | 5min |
+| Standings | Group tables | 2min |
 
 ## Project Structure
 
 ```
 worldcup2026-app/
-├── rayfin/
-│   ├── rayfin.yml      # Fabric App config & data model
-│   └── .env            # Workspace settings
 ├── src/
-│   ├── api/            # API client & types
+│   ├── api/            # API client, types, match data (104 matches)
 │   ├── components/     # React UI components
-│   ├── hooks/          # Custom hooks (useLiveData)
-│   └── styles/         # CSS with WC2026 theme
+│   │   ├── LiveMatches.tsx   # Live & Today tab with clock
+│   │   ├── Schedule.tsx      # Full 104-match schedule
+│   │   ├── MatchCard.tsx     # Individual match display
+│   │   ├── Standings.tsx     # Group standings
+│   │   └── GroupTable.tsx    # Group table component
+│   ├── hooks/          # useLiveData auto-refresh hook
+│   ├── styles/         # CSS with WC2026 dark theme
+│   └── App.tsx         # Main app with header clock
 ├── index.html
 ├── vite.config.ts
 └── package.json
 ```
-
-## Rayfin Integration
-
-The `rayfin/rayfin.yml` defines the backend data model for caching match data in Fabric:
-
-- **matches** — Match results and scores
-- **teams** — Team info and flags
-- **standings** — Group table calculations
-
-To push schema changes: `npx rayfin up db apply`
-
-## Tech Stack
-
-- **Frontend**: React 19 + TypeScript + Vite
-- **Backend**: Microsoft Fabric (via Rayfin CLI)
-- **Data**: WorldCupJSON REST API
-- **Styling**: Custom CSS with FIFA 2026 theming
 
 ## License
 
