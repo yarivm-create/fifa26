@@ -1,3 +1,8 @@
+/* ============================================================
+   FIFA World Cup 2026™  —  Modern Dark UI
+   Colors: Deep Maroon #56042C · Red #E4002B · Gold #D4AF37
+   ============================================================ */
+
 :root {
   --wc-primary: #56042C;
   --wc-secondary: #E4002B;
@@ -6,67 +11,123 @@
   --wc-darker: #0f0f1a;
   --wc-surface: #16213e;
   --wc-surface-light: #1f3460;
-  --wc-text: #ffffff;
-  --wc-text-muted: #a0aec0;
+  --wc-text: #f0f0f5;
+  --wc-text-muted: #8a97b0;
   --wc-green: #48bb78;
   --wc-blue: #4299e1;
   --wc-live-pulse: #ff4757;
+
+  /* extra palette tokens */
+  --wc-gold-soft: #c9a84c;
+  --wc-glow-live: 0 0 14px 2px rgba(255, 71, 87, .55);
+  --wc-card-radius: 16px;
+  --wc-transition: .28s cubic-bezier(.4,0,.2,1);
 }
 
-* {
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ---- Body + background pattern ---- */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(135deg, var(--wc-darker) 0%, var(--wc-dark) 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:
+    /* faint hex-tiled "football" texture */
+    radial-gradient(circle at 20% 50%, rgba(86,4,44,.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(228,0,43,.07) 0%, transparent 45%),
+    repeating-conic-gradient(
+      rgba(255,255,255,.015) 0% 16.67%,
+      transparent 16.67% 33.33%
+    ) 0 0 / 60px 60px,
+    linear-gradient(160deg, var(--wc-darker) 0%, #111328 40%, var(--wc-dark) 100%);
   color: var(--wc-text);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
+/* ---- App wrapper ---- */
 .app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 16px;
 }
 
-/* Header */
+@media (min-width: 600px) {
+  .app { padding: 24px 32px; }
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
 .header {
   text-align: center;
-  padding: 30px 0;
-  border-bottom: 2px solid var(--wc-surface-light);
-  margin-bottom: 30px;
+  padding: 40px 16px 28px;
+  border-bottom: 1px solid rgba(212,175,55,.15);
+  margin-bottom: 28px;
+  position: relative;
+}
+
+/* Trophy icon rendered via ::before */
+.header::before {
+  content: '🏆';
+  display: block;
+  font-size: 2.6rem;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 12px rgba(212,175,55,.45));
+  animation: trophyFloat 4s ease-in-out infinite;
+}
+
+@keyframes trophyFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--wc-gold), var(--wc-secondary));
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  background: linear-gradient(135deg, var(--wc-gold) 0%, #f5d678 40%, var(--wc-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  line-height: 1.15;
+}
+
+@media (min-width: 600px) {
+  .header h1 { font-size: 2.8rem; }
 }
 
 .header .subtitle {
   color: var(--wc-text-muted);
-  font-size: 1rem;
+  font-size: .92rem;
+  font-weight: 400;
+  letter-spacing: .04em;
 }
 
+/* Live badge */
 .header .live-indicator {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 71, 87, 0.15);
-  border: 1px solid var(--wc-live-pulse);
-  border-radius: 20px;
-  padding: 6px 16px;
-  margin-top: 12px;
-  font-size: 0.85rem;
+  background: rgba(255,71,87,.12);
+  border: 1px solid rgba(255,71,87,.45);
+  border-radius: 999px;
+  padding: 6px 18px;
+  margin-top: 14px;
+  font-size: .82rem;
   color: var(--wc-live-pulse);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  backdrop-filter: blur(6px);
 }
 
 .header .live-dot {
@@ -74,76 +135,131 @@ body {
   height: 8px;
   background: var(--wc-live-pulse);
   border-radius: 50%;
-  animation: pulse 1.5s infinite;
+  animation: pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 6px 1px rgba(255,71,87,.6);
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.3); }
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px 1px rgba(255,71,87,.6); }
+  50%      { opacity: .45; transform: scale(1.5); box-shadow: 0 0 14px 4px rgba(255,71,87,.35); }
 }
 
-/* Navigation */
+/* ============================================================
+   Navigation — pill tabs
+   ============================================================ */
 .nav {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
+  padding: 6px;
+  background: rgba(22,33,62,.55);
+  border-radius: 999px;
+  max-width: max-content;
+  margin-inline: auto;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(31,52,96,.6);
 }
 
 .nav button {
-  background: var(--wc-surface);
-  border: 1px solid var(--wc-surface-light);
+  background: transparent;
+  border: none;
   color: var(--wc-text-muted);
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 10px 22px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-family: inherit;
+  font-size: .88rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background var(--wc-transition), color var(--wc-transition), box-shadow var(--wc-transition);
+  white-space: nowrap;
 }
 
 .nav button:hover {
-  background: var(--wc-surface-light);
+  background: rgba(255,255,255,.07);
   color: var(--wc-text);
 }
 
 .nav button.active {
-  background: var(--wc-secondary);
-  border-color: var(--wc-secondary);
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--wc-secondary), #b30020);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(228,0,43,.35);
 }
 
-/* Cards */
+/* ============================================================
+   Card — shared base
+   ============================================================ */
 .card {
-  background: var(--wc-surface);
-  border: 1px solid var(--wc-surface-light);
-  border-radius: 12px;
-  padding: 20px;
+  background: linear-gradient(170deg, rgba(22,33,62,.92) 0%, rgba(15,15,26,.96) 100%);
+  border: 1px solid rgba(31,52,96,.55);
+  border-radius: var(--wc-card-radius);
+  padding: 22px 20px;
   margin-bottom: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform var(--wc-transition),
+    box-shadow var(--wc-transition),
+    border-color var(--wc-transition);
+  position: relative;
+  overflow: hidden;
+  animation: cardFadeIn .45s ease-out both;
+}
+
+/* maroon accent stripe along left edge */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 12px auto 12px 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--wc-gold), var(--wc-secondary));
+  opacity: 0;
+  transition: opacity var(--wc-transition);
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 36px rgba(0,0,0,.35),
+    0 0 0 1px rgba(212,175,55,.12);
+  border-color: rgba(212,175,55,.22);
 }
 
-/* Match Card */
+.card:hover::before {
+  opacity: 1;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* stagger animation for cards inside grids */
+.matches-grid .card:nth-child(1) { animation-delay: .04s; }
+.matches-grid .card:nth-child(2) { animation-delay: .08s; }
+.matches-grid .card:nth-child(3) { animation-delay: .12s; }
+.matches-grid .card:nth-child(4) { animation-delay: .16s; }
+.matches-grid .card:nth-child(5) { animation-delay: .20s; }
+.matches-grid .card:nth-child(6) { animation-delay: .24s; }
+
+/* ============================================================
+   Match Card
+   ============================================================ */
 .match-card {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .match-card .team {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .01em;
 }
 
 .match-card .team.home {
@@ -156,126 +272,225 @@ body {
 }
 
 .match-card .team-code {
-  font-size: 0.8rem;
+  font-size: .72rem;
   color: var(--wc-text-muted);
   font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: .08em;
 }
 
+/* Score box — the centrepiece */
 .match-card .score-box {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--wc-darker);
-  padding: 12px 20px;
-  border-radius: 8px;
-  min-width: 100px;
+  gap: 10px;
+  background: linear-gradient(145deg, rgba(86,4,44,.35), rgba(15,15,26,.85));
+  padding: 14px 24px;
+  border-radius: 14px;
+  min-width: 110px;
   justify-content: center;
+  border: 1px solid rgba(212,175,55,.18);
+  transition: box-shadow var(--wc-transition);
+}
+
+/* glow on live matches — add .live-match on the card or parent */
+.card:has(.match-status.live) .score-box {
+  box-shadow: var(--wc-glow-live);
+  border-color: rgba(255,71,87,.4);
+  animation: scoreGlow 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes scoreGlow {
+  from { box-shadow: 0 0 10px 1px rgba(255,71,87,.35); }
+  to   { box-shadow: 0 0 22px 4px rgba(255,71,87,.55); }
 }
 
 .match-card .score {
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .match-card .score-divider {
-  color: var(--wc-text-muted);
-  font-size: 1.4rem;
+  color: rgba(255,255,255,.25);
+  font-size: 1.6rem;
+  font-weight: 300;
 }
 
 .match-card .match-status {
   text-align: center;
-  margin-top: 8px;
-  font-size: 0.8rem;
+  margin-top: 10px;
+  font-size: .78rem;
   color: var(--wc-text-muted);
+  font-weight: 500;
 }
 
 .match-card .match-status.live {
   color: var(--wc-live-pulse);
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: .1em;
+  animation: liveTextPulse 2s ease-in-out infinite;
+}
+
+@keyframes liveTextPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .6; }
 }
 
 .match-card .match-meta {
   text-align: center;
-  font-size: 0.75rem;
+  font-size: .72rem;
   color: var(--wc-text-muted);
-  margin-top: 4px;
+  margin-top: 6px;
+  letter-spacing: .02em;
 }
 
-/* Group Table */
+.match-card .match-meta a {
+  color: var(--wc-text-muted);
+  text-decoration: none;
+  transition: color var(--wc-transition);
+}
+
+.match-card .match-meta a:hover {
+  color: var(--wc-gold);
+  text-decoration: underline;
+}
+
+/* ============================================================
+   Group tables
+   ============================================================ */
 .group-section {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .group-section h3 {
-  font-size: 1.1rem;
-  margin-bottom: 12px;
+  font-size: 1.05rem;
+  margin-bottom: 14px;
   color: var(--wc-gold);
+  font-weight: 700;
+  letter-spacing: .04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-section h3::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--wc-gold), var(--wc-secondary));
 }
 
 .standings-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .88rem;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(31,52,96,.5);
 }
 
 .standings-table th {
   text-align: left;
-  padding: 10px 12px;
-  background: var(--wc-darker);
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(15,15,26,.95), rgba(22,33,62,.9));
   color: var(--wc-text-muted);
-  font-weight: 600;
-  font-size: 0.75rem;
+  font-weight: 700;
+  font-size: .7rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: .08em;
+  border-bottom: 1px solid rgba(212,175,55,.15);
 }
 
 .standings-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--wc-surface-light);
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(31,52,96,.35);
+  transition: background var(--wc-transition);
+}
+
+/* zebra striping */
+.standings-table tbody tr:nth-child(even) td {
+  background: rgba(22,33,62,.35);
+}
+
+/* qualification positions (rows 1 & 2) highlighted */
+.standings-table tbody tr:nth-child(1) td,
+.standings-table tbody tr:nth-child(2) td {
+  background: rgba(72,187,120,.08);
+  border-left: none;
+}
+
+.standings-table tbody tr:nth-child(1) td:first-child,
+.standings-table tbody tr:nth-child(2) td:first-child {
+  box-shadow: inset 3px 0 0 var(--wc-green);
 }
 
 .standings-table tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255,255,255,.05);
 }
 
 .standings-table .team-name {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .standings-table .points {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--wc-gold);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Grid layouts */
+/* ============================================================
+   Grid layouts — mobile-first
+   ============================================================ */
 .matches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 680px) {
+  .matches-grid {
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 18px;
+  }
 }
 
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
-/* Loading & Error */
+@media (min-width: 820px) {
+  .groups-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+  }
+}
+
+/* ============================================================
+   Loading & Error
+   ============================================================ */
 .loading {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: var(--wc-text-muted);
+  font-weight: 500;
 }
 
 .loading .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--wc-surface-light);
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(31,52,96,.5);
   border-top-color: var(--wc-gold);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 16px;
+  animation: spin .75s linear infinite;
+  margin: 0 auto 18px;
 }
 
 @keyframes spin {
@@ -284,32 +499,102 @@ body {
 
 .error {
   text-align: center;
-  padding: 40px 20px;
+  padding: 44px 24px;
   color: var(--wc-live-pulse);
-  background: rgba(255, 71, 87, 0.1);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 71, 87, 0.3);
+  background: rgba(255,71,87,.08);
+  border-radius: var(--wc-card-radius);
+  border: 1px solid rgba(255,71,87,.25);
+  font-weight: 600;
+  backdrop-filter: blur(4px);
 }
 
-/* Last updated */
+/* ============================================================
+   Last updated footer
+   ============================================================ */
 .last-updated {
   text-align: center;
-  font-size: 0.75rem;
+  font-size: .72rem;
   color: var(--wc-text-muted);
-  margin-top: 24px;
-  padding: 12px;
+  margin-top: 32px;
+  padding: 14px;
+  opacity: .7;
+  letter-spacing: .03em;
 }
 
-.match-card .match-meta a:hover {
-  color: #D4AF37;
-  text-decoration: underline;
+/* ============================================================
+   Responsive — small screens
+   ============================================================ */
+@media (max-width: 600px) {
+  .header { padding: 28px 12px 20px; }
+  .header::before { font-size: 2rem; }
+  .header h1 { font-size: 1.6rem; }
+  .header .subtitle { font-size: .82rem; }
+
+  .nav {
+    border-radius: 14px;
+    padding: 4px;
+  }
+
+  .nav button {
+    padding: 8px 16px;
+    font-size: .82rem;
+  }
+
+  .match-card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .match-card .team {
+    justify-content: center !important;
+    font-size: .95rem;
+  }
+
+  .match-card .score-box {
+    margin: 0 auto;
+    min-width: 90px;
+    padding: 10px 20px;
+  }
+
+  .match-card .score {
+    font-size: 1.6rem;
+  }
+
+  .standings-table {
+    font-size: .8rem;
+  }
+
+  .standings-table th,
+  .standings-table td {
+    padding: 8px 10px;
+  }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .header h1 { font-size: 1.8rem; }
-  .matches-grid { grid-template-columns: 1fr; }
-  .groups-grid { grid-template-columns: 1fr; }
-  .match-card { grid-template-columns: 1fr; gap: 10px; text-align: center; }
-  .match-card .team { justify-content: center !important; }
+/* ============================================================
+   Utility: selection color
+   ============================================================ */
+::selection {
+  background: rgba(212,175,55,.3);
+  color: #fff;
+}
+
+/* ============================================================
+   Scrollbar (Webkit)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--wc-darker);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--wc-surface-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212,175,55,.4);
 }
