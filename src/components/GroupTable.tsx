@@ -1,5 +1,6 @@
 import React from 'react';
 import { Group } from '../api/types';
+import { getFlag } from '../utils/flags';
 
 interface Props {
   group: Group;
@@ -26,9 +27,11 @@ export const GroupTable: React.FC<Props> = ({ group }) => {
         </thead>
         <tbody>
           {group.teams.map((standing, idx) => (
-            <tr key={standing.team.code}>
+            <tr key={standing.team.code} className={idx < 2 ? 'qualified' : ''}>
               <td>{idx + 1}</td>
-              <td className="team-name">{standing.team.name}</td>
+              <td className="team-name">
+                <span className="team-flag">{getFlag(standing.team.code)}</span> {standing.team.name}
+              </td>
               <td>{standing.played}</td>
               <td>{standing.won}</td>
               <td>{standing.drawn}</td>

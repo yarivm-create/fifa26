@@ -403,6 +403,12 @@ body {
   letter-spacing: .08em;
 }
 
+.team-flag {
+  font-size: 1.15em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 /* Score box — LARGE and prominent */
 .match-card .score-box {
   display: flex;
