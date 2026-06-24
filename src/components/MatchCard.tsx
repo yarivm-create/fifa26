@@ -79,7 +79,8 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
       </div>
 
       <div className="match-card match-meta">
-        {match.venue} • {match.stage_name} •{' '}
+        {match.venue} • {match.stage_name}
+        <br />
         <span style={{ unicodeBidi: 'isolate', whiteSpace: 'nowrap' }}>
           {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)}{' '}
           <img
@@ -92,7 +93,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
             style={{ verticalAlign: 'middle', borderRadius: 2, display: 'inline-block' }}
           />
         </span>
-        {' • '}
+        <br />
         <a
           href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=IL&wtw-filter=ALL"
           target="_blank"
