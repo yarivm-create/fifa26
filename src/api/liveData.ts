@@ -22,6 +22,8 @@ interface FifaMatch {
   IdMatch?: string;
   Home: FifaTeam | null;
   Away: FifaTeam | null;
+  PlaceHolderA?: string | null; // knockout slot label for Home (e.g. "2A", "W73")
+  PlaceHolderB?: string | null; // knockout slot label for Away
   HomeTeamScore: number | null;
   AwayTeamScore: number | null;
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
@@ -72,33 +74,61 @@ async function fetchFifaMatches(): Promise<FifaMatch[]> {
   }
 }
 
-// Builds a lookup of FIFA matches keyed by "HOMECODE_AWAYCODE" (skips knockout
-// fixtures whose teams are not yet known).
-async function fetchLiveMap(): Promise<Record<string, FifaMatch>> {
+// A knockout slot that has been filled with a real qualified team.
+interface ResolvedTeam {
+  code: string;
+  name: string;
+}
+
+function fifaTeamName(t: FifaTeam): string {
+  return t.TeamName?.[0]?.Description || t.IdCountry || '';
+}
+
+// Codes that are still placeholders in the curated schedule (e.g. "2A", "1C",
+// "W73", "3ABCDF"). Mirrors the bracket's own placeholder detection.
+const PLACEHOLDER_CODE = /^(\d|W\d|RU\d|3[A-L]{2,})/;
+
+interface LiveMaps {
+  // FIFA matches keyed by "HOMECODE_AWAYCODE" (real country codes only).
+  map: Record<string, FifaMatch>;
+  // Knockout placeholder label (e.g. "2B", "W73") -> the real team now in it.
+  resolve: Record<string, ResolvedTeam>;
+}
+
+// Builds the live lookup plus a resolution map that links knockout placeholder
+// labels to the real teams FIFA has slotted in once a group/match is decided.
+async function fetchLiveMap(): Promise<LiveMaps> {
   const matches = await fetchFifaMatches();
   const map: Record<string, FifaMatch> = {};
+  const resolve: Record<string, ResolvedTeam> = {};
   for (const ev of matches) {
     const hc = ev.Home?.IdCountry;
     const ac = ev.Away?.IdCountry;
-    if (!hc || !ac) continue;
-    map[`${hc}_${ac}`] = ev;
+    if (hc && ac) map[`${hc}_${ac}`] = ev;
+    // Record resolved knockout slots so the bracket can show real teams.
+    if (ev.PlaceHolderA && ev.Home?.IdCountry) {
+      resolve[ev.PlaceHolderA] = { code: ev.Home.IdCountry, name: fifaTeamName(ev.Home) };
+    }
+    if (ev.PlaceHolderB && ev.Away?.IdCountry) {
+      resolve[ev.PlaceHolderB] = { code: ev.Away.IdCountry, name: fifaTeamName(ev.Away) };
+    }
   }
-  return map;
+  return { map, resolve };
 }
 
-let cache: { at: number; map: Record<string, FifaMatch> } | null = null;
+let cache: { at: number; maps: LiveMaps } | null = null;
 const CACHE_TTL_MS = 25000;
 
-async function getLiveMap(): Promise<Record<string, FifaMatch>> {
+async function getLiveMap(): Promise<LiveMaps> {
   const now = Date.now();
-  if (cache && now - cache.at < CACHE_TTL_MS) return cache.map;
-  const map = await fetchLiveMap();
+  if (cache && now - cache.at < CACHE_TTL_MS) return cache.maps;
+  const maps = await fetchLiveMap();
   // Only replace cache if we actually got data; otherwise keep prior cache.
-  if (Object.keys(map).length > 0 || !cache) {
-    await enrichLivePeriods(map);
-    cache = { at: now, map };
+  if (Object.keys(maps.map).length > 0 || !cache) {
+    await enrichLivePeriods(maps.map);
+    cache = { at: now, maps };
   }
-  return cache.map;
+  return cache.maps;
 }
 
 // The calendar feed omits Period/MatchTime for in-play games, so enrich each
@@ -149,22 +179,36 @@ function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   };
 }
 
-// Returns the full mock schedule with live scores/status overlaid from FIFA.
+// Returns the full mock schedule with live scores/status overlaid from FIFA and
+// knockout placeholder slots ("2A", "W73", …) replaced by the real qualified
+// teams as soon as FIFA fills them in.
 export async function getMergedMatches(): Promise<Match[]> {
   const base = await mock.fetchAllMatches();
-  const liveMap = await getLiveMap();
-  if (Object.keys(liveMap).length === 0) return base;
+  const { map: liveMap, resolve } = await getLiveMap();
+  if (Object.keys(liveMap).length === 0 && Object.keys(resolve).length === 0) return base;
+
+  // Swap a placeholder team for its resolved real team when FIFA knows it.
+  const resolveTeam = (t: Match['home_team']): Match['home_team'] => {
+    if (!PLACEHOLDER_CODE.test(t.code)) return t;
+    const r = resolve[t.code];
+    return r ? { ...t, code: r.code, name: r.name, country: r.name } : t;
+  };
 
   return base.map((m) => {
-    const hc = m.home_team.code;
-    const ac = m.away_team.code;
+    const home = resolveTeam(m.home_team);
+    const away = resolveTeam(m.away_team);
+    const resolved =
+      home === m.home_team && away === m.away_team ? m : { ...m, home_team: home, away_team: away };
+
+    const hc = resolved.home_team.code;
+    const ac = resolved.away_team.code;
     let ev = liveMap[`${hc}_${ac}`];
     let swap = false;
     if (!ev) {
       ev = liveMap[`${ac}_${hc}`];
       swap = true;
     }
-    return ev ? applyOverlay(m, ev, swap) : m;
+    return ev ? applyOverlay(resolved, ev, swap) : resolved;
   });
 }
 

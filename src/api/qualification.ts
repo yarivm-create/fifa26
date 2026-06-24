@@ -163,10 +163,33 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
     const rivals = baseStates.filter((r) => r.group === t.group && r.code !== t.code);
     const myMin = t.pts; // worst case: lose all remaining games
     const myMax = t.pts + 3 * (gamesLeft[t.code] || 0); // best case: win all
-    // Rivals that could still finish at or above us (tie => tiebreak unknown).
-    const couldBeAbove = rivals.filter((r) => r.pts + 3 * (gamesLeft[r.code] || 0) >= myMin).length;
-    // Rivals already certain to finish strictly above us.
-    const certainlyAbove = rivals.filter((r) => r.pts > myMax).length;
+    const myGamesLeft = gamesLeft[t.code] || 0;
+
+    // True final ranking comparator (FIFA: points, then goal difference, then
+    // goals for). Returns true when rival r ranks strictly above team t.
+    const rankAbove = (r: TeamState): boolean =>
+      r.pts !== t.pts ? r.pts > t.pts : r.gd !== t.gd ? r.gd > t.gd : r.gf > t.gf;
+
+    // Could rival r still finish at or above us? When both our and the rival's
+    // points are already final (no remaining games for either), the standings
+    // are decided, so resolve the tie by the real tiebreak instead of assuming
+    // it is unknown. Otherwise fall back to the conservative points bound.
+    const couldBeAbove = rivals.filter((r) => {
+      const rMax = r.pts + 3 * (gamesLeft[r.code] || 0);
+      if (rMax < myMin) return false; // cannot reach us on points
+      if (rMax > myMin) return true; // can exceed us on points
+      // Tie on points possible. If both teams are locked, the tiebreak is known.
+      if (myGamesLeft === 0 && (gamesLeft[r.code] || 0) === 0) return rankAbove(r);
+      return true; // tiebreak still undecided => treat as a threat
+    }).length;
+
+    // Rivals certain to finish strictly above us.
+    const certainlyAbove = rivals.filter((r) => {
+      if (r.pts > myMax) return true; // out of our reach on points
+      if (r.pts === myMax && myGamesLeft === 0 && (gamesLeft[r.code] || 0) === 0)
+        return rankAbove(r); // locked tie resolved by tiebreak
+      return false;
+    }).length;
 
     let status: QualStatus = 'Contention';
     if (couldBeAbove <= 1) {
