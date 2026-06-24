@@ -82,7 +82,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         {match.venue} • {match.stage_name} • {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)} 🇮🇱
         {' • '}
         <a
-          href={`https://www.kan.org.il/lobby/worldcup2026/`}
+          href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=IL&wtw-filter=ALL"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: '#4299e1', textDecoration: 'none' }}
