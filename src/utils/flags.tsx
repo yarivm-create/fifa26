@@ -67,6 +67,11 @@ interface FlagProps {
 }
 
 // Renders a real flag image; falls back to a trophy for knockout placeholders.
+// On image load failure the element collapses to an identically-sized neutral
+// box so a single broken flag never knocks its row out of alignment.
+const FLAG_FALLBACK =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='18'%3E%3Crect width='26' height='18' fill='%232a3a5c'/%3E%3C/svg%3E";
+
 export const Flag: React.FC<FlagProps> = ({ code, name, className }) => {
   const url = getFlagUrl(code);
   if (!url) {
@@ -81,6 +86,12 @@ export const Flag: React.FC<FlagProps> = ({ code, name, className }) => {
       height={18}
       loading="lazy"
       className={`team-flag flag-img ${className || ''}`}
+      onError={(e) => {
+        const img = e.currentTarget;
+        if (img.src.startsWith('data:')) return;
+        img.srcset = '';
+        img.src = FLAG_FALLBACK;
+      }}
     />
   );
 };

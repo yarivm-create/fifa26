@@ -71,6 +71,13 @@ export const LiveMatches: React.FC = () => {
   const tomorrowMatches = sortMatches(matchesByDate[tomorrowISR] || []);
   const dayAfterMatches = sortMatches(matchesByDate[dayAfterISR] || []);
 
+  const hasAnything =
+    hasLive ||
+    todayMatches.length > 0 ||
+    yesterdayMatches.length > 0 ||
+    tomorrowMatches.length > 0 ||
+    dayAfterMatches.length > 0;
+
   return (
     <div>
       {/* Israel Time Clock */}
@@ -140,6 +147,16 @@ export const LiveMatches: React.FC = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {!hasAnything && (
+        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+          <div style={{ fontSize: '2.4rem', marginBottom: 8 }}>🌙</div>
+          <p style={{ color: 'var(--wc-text)', fontWeight: 600 }}>אין משחקים בסביבת התאריך הזה</p>
+          <p style={{ color: 'var(--wc-text-muted)', fontSize: '0.85rem', marginTop: 6 }}>
+            No matches around today — check the Schedule tab for upcoming fixtures.
+          </p>
+        </div>
       )}
 
       {lastUpdated && (

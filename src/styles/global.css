@@ -409,8 +409,10 @@ body {
   display: inline-block;
   width: 26px;
   height: 18px;
+  box-sizing: border-box;
   object-fit: cover;
   border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.18);
   box-shadow: 0 1px 3px rgba(0,0,0,.4);
   vertical-align: middle;
 }
