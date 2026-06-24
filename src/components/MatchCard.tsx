@@ -79,7 +79,16 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
       </div>
 
       <div className="match-card match-meta">
-        {match.venue} • {match.stage_name} • {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)} 🇮🇱
+        {match.venue} • {match.stage_name} • {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)}{' '}
+        <img
+          src="https://flagcdn.com/w20/il.png"
+          srcSet="https://flagcdn.com/w40/il.png 2x"
+          alt="Israel time"
+          width={18}
+          height={12}
+          loading="lazy"
+          style={{ verticalAlign: 'middle', borderRadius: 2, display: 'inline-block' }}
+        />
         {' • '}
         <a
           href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=IL&wtw-filter=ALL"
