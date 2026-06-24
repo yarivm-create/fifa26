@@ -66,3 +66,11 @@ export async function fetchForm(): Promise<Record<string, mock.FormResult[]>> {
     return mock.computeForm();
   }
 }
+
+export async function fetchTopScorers(limit = 10): Promise<live.Scorer[]> {
+  try {
+    return await live.getTopScorers(limit);
+  } catch {
+    return [];
+  }
+}

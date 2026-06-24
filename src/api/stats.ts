@@ -1,5 +1,6 @@
 import { Match, Group } from './types';
-import { fetchAllMatches, fetchGroups } from './worldcup';
+import { fetchAllMatches, fetchGroups, fetchTopScorers } from './worldcup';
+import { Scorer } from './liveData';
 
 export interface MatchHighlight {
   match: Match;
@@ -26,6 +27,7 @@ export interface TournamentStats {
   highestScoring: MatchHighlight | null;
   topScoringTeams: TeamStat[];
   bestDefenses: TeamStat[];
+  topScorers: Scorer[];
   goalsByStage: { stage: string; goals: number; matches: number }[];
 }
 
@@ -54,7 +56,7 @@ const STAGE_ORDER = [
   'Semi-finals', 'Third Place', 'Final',
 ];
 
-export function computeStats(matches: Match[], groups: Group[]): TournamentStats {
+export function computeStats(matches: Match[], groups: Group[], topScorers: Scorer[] = []): TournamentStats {
   const played = matches.filter(isPlayed);
   const live = matches.filter(isLive);
 
@@ -129,11 +131,16 @@ export function computeStats(matches: Match[], groups: Group[]): TournamentStats
     highestScoring,
     topScoringTeams,
     bestDefenses,
+    topScorers,
     goalsByStage,
   };
 }
 
 export async function fetchStats(): Promise<TournamentStats> {
-  const [matches, groups] = await Promise.all([fetchAllMatches(), fetchGroups()]);
-  return computeStats(matches, groups);
+  const [matches, groups, topScorers] = await Promise.all([
+    fetchAllMatches(),
+    fetchGroups(),
+    fetchTopScorers(10),
+  ]);
+  return computeStats(matches, groups, topScorers);
 }

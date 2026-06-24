@@ -10,11 +10,16 @@ const FIFA_URL =
   `https://api.fifa.com/api/v3/calendar/matches?idCompetition=${FIFA_COMPETITION}&idSeason=${FIFA_SEASON}&count=200&language=en`;
 
 interface FifaTeam {
+  IdTeam?: string | null;
   IdCountry: string | null;
   TeamName?: { Description: string }[];
 }
 
 interface FifaMatch {
+  IdCompetition?: string;
+  IdSeason?: string;
+  IdStage?: string;
+  IdMatch?: string;
   Home: FifaTeam | null;
   Away: FifaTeam | null;
   HomeTeamScore: number | null;
@@ -205,4 +210,121 @@ export async function getMergedForm(): Promise<Record<string, mock.FormResult[]>
   }
   for (const code of Object.keys(form)) form[code] = form[code].slice(-5);
   return form;
+}
+
+// ============================================================
+//  Top Scorers — aggregated from FIFA per-match goal timelines.
+//  The /timelines endpoint is CORS-open and exposes each goal
+//  (Type 0 = "Goal!") with the scorer's IdPlayer + name. Finished
+//  matches never change, so their goal lists are cached permanently;
+//  only live matches are re-fetched on each call.
+// ============================================================
+
+export interface Scorer {
+  id: string;
+  name: string;
+  code: string;
+  goals: number;
+}
+
+interface FifaTimelineEvent {
+  Type: number;
+  IdPlayer: string | null;
+  IdTeam: string | null;
+  EventDescription?: { Locale: string; Description: string }[];
+}
+
+interface GoalRec {
+  id: string;
+  name: string;
+  code: string;
+}
+
+const FIFA_GOAL_EVENT_TYPE = 0;
+const finishedGoalsCache = new Map<string, GoalRec[]>();
+
+function timelineUrl(m: FifaMatch): string {
+  return `https://api.fifa.com/api/v3/timelines/${m.IdCompetition}/${m.IdSeason}/${m.IdStage}/${m.IdMatch}?language=en`;
+}
+
+// "Julian QUINONES (Mexico) scores!!" -> "Julian QUINONES"
+function parseScorerName(desc: string): string {
+  const idx = desc.indexOf(' (');
+  return (idx > 0 ? desc.slice(0, idx) : desc).trim();
+}
+
+async function fetchMatchGoals(m: FifaMatch): Promise<GoalRec[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(timelineUrl(m), { signal: controller.signal });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const events = (json?.Event as FifaTimelineEvent[]) || [];
+    const out: GoalRec[] = [];
+    for (const e of events) {
+      if (e.Type !== FIFA_GOAL_EVENT_TYPE || !e.IdPlayer) continue;
+      const desc = e.EventDescription?.[0]?.Description || '';
+      if (/own goal/i.test(desc)) continue; // own goals aren't credited to a scorer
+      const code =
+        e.IdTeam && m.Home?.IdTeam && e.IdTeam === m.Home.IdTeam
+          ? m.Home?.IdCountry || ''
+          : m.Away?.IdCountry || '';
+      out.push({ id: e.IdPlayer, name: parseScorerName(desc), code });
+    }
+    return out;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function inBatches<T>(items: T[], size: number, fn: (t: T) => Promise<void>): Promise<void> {
+  for (let i = 0; i < items.length; i += size) {
+    await Promise.all(items.slice(i, i + size).map(fn));
+  }
+}
+
+export async function getTopScorers(limit = 10): Promise<Scorer[]> {
+  const matches = await fetchFifaMatches();
+  const relevant = matches.filter(
+    (m) =>
+      (m.MatchStatus === 0 || m.MatchStatus === 3) &&
+      m.Home?.IdTeam &&
+      m.Away?.IdTeam &&
+      m.IdMatch
+  );
+
+  const needFinished = relevant.filter(
+    (m) => m.MatchStatus === 0 && !finishedGoalsCache.has(m.IdMatch!)
+  );
+  await inBatches(needFinished, 8, async (m) => {
+    finishedGoalsCache.set(m.IdMatch!, await fetchMatchGoals(m));
+  });
+
+  const liveGoals = new Map<string, GoalRec[]>();
+  const liveMatches = relevant.filter((m) => m.MatchStatus === 3);
+  await inBatches(liveMatches, 8, async (m) => {
+    liveGoals.set(m.IdMatch!, await fetchMatchGoals(m));
+  });
+
+  const byPlayer = new Map<string, Scorer>();
+  for (const m of relevant) {
+    const goals = m.MatchStatus === 0 ? finishedGoalsCache.get(m.IdMatch!) : liveGoals.get(m.IdMatch!);
+    if (!goals) continue;
+    for (const g of goals) {
+      const cur = byPlayer.get(g.id);
+      if (cur) {
+        cur.goals += 1;
+        if (!cur.code && g.code) cur.code = g.code;
+      } else {
+        byPlayer.set(g.id, { id: g.id, name: g.name, code: g.code, goals: 1 });
+      }
+    }
+  }
+
+  return [...byPlayer.values()]
+    .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }

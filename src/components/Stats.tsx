@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
 import { fetchStats, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
+import { Scorer } from '../api/liveData';
 import { Flag } from '../utils/flags';
 
 function StatTile({ value, label, accent }: { value: string; label: string; accent?: string }) {
@@ -42,6 +43,26 @@ function Leaderboard({ title, rows, suffix }: { title: string; rows: TeamStat[];
             <span className="stat-board-fill" style={{ width: `${Math.max((r.value / max) * 100, 6)}%` }} />
           </span>
           <span className="stat-board-value">{r.value}<span className="stat-board-suffix"> {suffix}</span></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScorersBoard({ scorers }: { scorers: Scorer[] }) {
+  if (scorers.length === 0) return null;
+  const max = Math.max(...scorers.map((s) => s.goals), 1);
+  return (
+    <div className="stat-board stat-board-scorers">
+      <h3 className="stat-board-title">👟 Golden Boot Race — Top Scorers</h3>
+      {scorers.map((s, i) => (
+        <div className="stat-board-row" key={s.id}>
+          <span className={`stat-board-rank${i === 0 ? ' gold' : ''}`}>{i + 1}</span>
+          <span className="stat-board-team"><Flag code={s.code} name={s.name} /> {s.name}</span>
+          <span className="stat-board-bar">
+            <span className="stat-board-fill" style={{ width: `${Math.max((s.goals / max) * 100, 8)}%` }} />
+          </span>
+          <span className="stat-board-value">{s.goals}<span className="stat-board-suffix"> ⚽</span></span>
         </div>
       ))}
     </div>
@@ -97,6 +118,8 @@ export const Stats: React.FC = () => {
         <StatTile value={String(stats.cleanSheets)} label="Clean Sheets" accent="var(--wc-blue)" />
         <StatTile value={`${stats.bttsPct.toFixed(0)}%`} label="Both Teams Scored" accent="var(--wc-green)" />
       </div>
+
+      <ScorersBoard scorers={stats.topScorers} />
 
       <div className="stat-highlights">
         <HighlightCard title="🔥 Biggest Win" highlight={stats.biggestWin} suffix="goal margin" />

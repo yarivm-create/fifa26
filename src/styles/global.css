@@ -1213,3 +1213,12 @@ body {
   font-size: .72rem;
   color: var(--wc-text-muted);
 }
+
+.stat-board-scorers {
+  margin-bottom: 20px;
+}
+
+.stat-board-rank.gold {
+  color: var(--wc-gold);
+  font-size: 1rem;
+}
