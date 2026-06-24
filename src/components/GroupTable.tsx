@@ -4,10 +4,16 @@ import { Flag } from '../utils/flags';
 import { FormResult } from '../api/mockData';
 import { QualChance } from '../api/qualification';
 
+interface TeamFollowApi {
+  isFavorite: (code: string) => boolean;
+  toggle: (code: string) => void;
+}
+
 interface Props {
   group: Group;
   form?: Record<string, FormResult[]>;
   qual?: Record<string, QualChance>;
+  teamFollow?: TeamFollowApi;
 }
 
 const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
@@ -44,7 +50,7 @@ const FormDots: React.FC<{ results?: FormResult[] }> = ({ results }) => {
   );
 };
 
-export const GroupTable: React.FC<Props> = ({ group, form, qual }) => {
+export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) => {
   return (
     <div className="card group-section">
       <h3>Group {group.letter}</h3>
@@ -66,24 +72,38 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual }) => {
             </tr>
           </thead>
           <tbody>
-            {group.teams.map((standing, idx) => (
-              <tr key={standing.team.code} className={idx < 2 ? 'qualified' : ''}>
-                <td>{idx + 1}</td>
-                <td className="team-name">
-                  <Flag code={standing.team.code} name={standing.team.name} /> {standing.team.name}
-                  <QualBadge chance={qual?.[standing.team.code]} />
-                </td>
-                <td>{standing.played}</td>
-                <td>{standing.won}</td>
-                <td>{standing.drawn}</td>
-                <td>{standing.lost}</td>
-                <td>{standing.goals_for}</td>
-                <td>{standing.goals_against}</td>
-                <td>{standing.goal_difference}</td>
-                <td className="points">{standing.points}</td>
-                <td><FormDots results={form?.[standing.team.code]} /></td>
-              </tr>
-            ))}
+            {group.teams.map((standing, idx) => {
+              const code = standing.team.code;
+              const fav = teamFollow?.isFavorite(code) ?? false;
+              return (
+                <tr key={code} className={idx < 2 ? 'qualified' : ''}>
+                  <td>{idx + 1}</td>
+                  <td className="team-name">
+                    {teamFollow && (
+                      <button
+                        className={`follow-btn team-fav-btn${fav ? ' following' : ''}`}
+                        onClick={() => teamFollow.toggle(code)}
+                        title={fav ? 'Remove from favorites' : 'Add to favorites'}
+                        aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {fav ? '★' : '☆'}
+                      </button>
+                    )}
+                    <Flag code={code} name={standing.team.name} /> {standing.team.name}
+                    <QualBadge chance={qual?.[code]} />
+                  </td>
+                  <td>{standing.played}</td>
+                  <td>{standing.won}</td>
+                  <td>{standing.drawn}</td>
+                  <td>{standing.lost}</td>
+                  <td>{standing.goals_for}</td>
+                  <td>{standing.goals_against}</td>
+                  <td>{standing.goal_difference}</td>
+                  <td className="points">{standing.points}</td>
+                  <td><FormDots results={form?.[code]} /></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

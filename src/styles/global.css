@@ -1408,3 +1408,70 @@ body {
   .follow-grid { grid-template-columns: 1fr; }
   .whistle-toast { bottom: 16px; padding: 12px 16px; }
 }
+
+/* ============================================================
+   FAVORITE TEAMS — Standings stars + team detail cards
+   ============================================================ */
+
+/* Star button inside the standings team cell */
+.team-fav-btn {
+  font-size: 1rem;
+  margin-right: 4px;
+  padding: 0 2px;
+  vertical-align: middle;
+}
+
+/* Spacing between the two Favorites sections */
+.favorites-tab .favorites-section + .favorites-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+/* Team detail card */
+.team-card .follow-card-id .flag-img,
+.team-card .follow-card-id img { width: 42px; height: 30px; }
+.team-card-qual { margin-bottom: 14px; }
+.team-card-qual .qual-badge { margin-left: 0; font-size: 0.75rem; padding: 3px 10px; }
+
+.team-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.team-stat {
+  background: var(--wc-surface-light);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+}
+.team-stat-value { display: block; font-size: 1.1rem; font-weight: 800; color: var(--wc-text); font-variant-numeric: tabular-nums; }
+.team-stat-label { display: block; font-size: 0.66rem; color: var(--wc-text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
+.team-stat-form .form-dots { justify-content: center; }
+.team-stat:first-child .team-stat-value { color: var(--wc-gold); }
+
+.team-card-section {
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.team-card-section + .team-card-section { margin-top: 10px; }
+
+.team-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.86rem;
+  padding: 3px 0;
+}
+.team-player-name { color: var(--wc-text); }
+.team-player-stats { display: inline-flex; gap: 10px; color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }
+
+.team-result { color: var(--wc-text); font-weight: 700; }
+.team-fixture-live .follow-fixture-opp { color: var(--wc-live-pulse); font-weight: 600; }
+.team-fixture-live .follow-fixture-time { color: var(--wc-live-pulse); font-weight: 700; }
+
+@media (max-width: 600px) {
+  .team-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}

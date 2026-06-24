@@ -167,7 +167,7 @@ export const Stats: React.FC = () => {
         follow={follow}
       />
 
-      <p className="follow-hint">⭐ Tap ☆ next to a player to follow them — see them in the “My Players” tab.</p>
+      <p className="follow-hint">⭐ Tap ☆ next to a player to follow them — see them in the “My Favorites” tab.</p>
 
       <div className="stat-highlights">
         <HighlightCard title="🔥 Biggest Win" highlight={stats.biggestWin} suffix="goal margin" />

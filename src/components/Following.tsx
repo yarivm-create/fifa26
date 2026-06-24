@@ -100,18 +100,7 @@ export const Following: React.FC = () => {
   const { data, loading } = useLiveData<Data>(fetcher, 60000);
 
   if (ids.size === 0) {
-    return (
-      <div>
-        <h2 style={{ marginBottom: 20 }}>⭐ Followed Players</h2>
-        <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-          <div style={{ fontSize: '2.4rem', marginBottom: 8 }}>⭐</div>
-          <p style={{ color: 'var(--wc-text)', fontWeight: 600 }}>You're not following any players yet</p>
-          <p style={{ color: 'var(--wc-text-muted)', fontSize: '0.85rem', marginTop: 6 }}>
-            Open the <strong>Stats</strong> tab and tap the ☆ next to a top scorer or assist leader to follow them.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (loading || !data) {
@@ -135,8 +124,8 @@ export const Following: React.FC = () => {
     .sort((a, b) => b.goals + b.assists - (a.goals + a.assists));
 
   return (
-    <div>
-      <h2 style={{ marginBottom: 20 }}>⭐ Followed Players</h2>
+    <section className="favorites-section">
+      <h2 style={{ marginBottom: 16 }}>👤 Followed Players</h2>
       {followed.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <p style={{ color: 'var(--wc-text-muted)' }}>
@@ -156,6 +145,6 @@ export const Following: React.FC = () => {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 };

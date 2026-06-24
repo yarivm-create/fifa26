@@ -4,14 +4,14 @@ import { Standings } from './components/Standings';
 import { Schedule } from './components/Schedule';
 import { Bracket } from './components/Bracket';
 import { Stats } from './components/Stats';
-import { Following } from './components/Following';
+import { Favorites } from './components/Favorites';
 import { Fireworks, WhistleToast } from './components/Celebrations';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
 import { Match } from './api/types';
 
-type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule' | 'following';
+type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule' | 'favorites';
 
 const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
 const HEBREW_MONTHS = [
@@ -111,10 +111,10 @@ const App: React.FC = () => {
           📅 Schedule
         </button>
         <button
-          className={activeTab === 'following' ? 'active' : ''}
-          onClick={() => setActiveTab('following')}
+          className={activeTab === 'favorites' ? 'active' : ''}
+          onClick={() => setActiveTab('favorites')}
         >
-          ⭐ My Players
+          ⭐ My Favorites
         </button>
       </nav>
 
@@ -124,7 +124,7 @@ const App: React.FC = () => {
         {activeTab === 'stats' && <Stats />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'schedule' && <Schedule />}
-        {activeTab === 'following' && <Following />}
+        {activeTab === 'favorites' && <Favorites />}
       </main>
 
       {goalKey > 0 && <Fireworks key={`goal-${goalKey}`} />}

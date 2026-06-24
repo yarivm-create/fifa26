@@ -5,6 +5,7 @@ import { GroupTable } from './GroupTable';
 import { Group } from '../api/types';
 import { FormResult } from '../api/mockData';
 import { QualChance } from '../api/qualification';
+import { useFollowedTeams } from '../hooks/useFollowedTeams';
 
 export const Standings: React.FC = () => {
   const fetcher = useCallback(() => fetchGroups(), []);
@@ -13,6 +14,7 @@ export const Standings: React.FC = () => {
   const { data: groups, loading, error } = useLiveData<Group[]>(fetcher, 120000);
   const { data: form } = useLiveData<Record<string, FormResult[]>>(formFetcher, 120000);
   const { data: qual } = useLiveData<Record<string, QualChance>>(qualFetcher, 120000);
+  const teamFollow = useFollowedTeams();
 
   if (loading) {
     return (
@@ -42,14 +44,14 @@ export const Standings: React.FC = () => {
     <div>
       <h2 style={{ marginBottom: 8 }}>🏆 Group Standings</h2>
       <p className="qual-legend">
-        Top 2 of each group + 8 best third-placed teams reach the Round of 32.
+        Top 2 of each group + 8 best third-placed teams reach the Round of 32. Tap ☆ to favorite a team.
         <span className="qual-badge qual-q">✓ Through</span>
         <span className="qual-badge qual-pct">% chance</span>
         <span className="qual-badge qual-out">✕ Out</span>
       </p>
       <div className="groups-grid">
         {groups.map((group) => (
-          <GroupTable key={group.letter} group={group} form={form || {}} qual={qual || {}} />
+          <GroupTable key={group.letter} group={group} form={form || {}} qual={qual || {}} teamFollow={teamFollow} />
         ))}
       </div>
     </div>
