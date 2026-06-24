@@ -73,12 +73,9 @@ body {
   padding: 28px 16px 22px;
   border-bottom: 1px solid rgba(212,175,55,.15);
   margin-bottom: 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: relative;
+  z-index: 1;
   background: linear-gradient(180deg, rgba(15,15,26,.98) 0%, rgba(26,26,46,.95) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Trophy animation */
@@ -179,16 +176,17 @@ body {
   margin-bottom: 24px;
   flex-wrap: wrap;
   padding: 6px;
-  background: rgba(22,33,62,.85);
+  background: rgba(22,33,62,.97);
   border-radius: 999px;
   max-width: max-content;
   margin-inline: auto;
+  margin-top: 14px;
   backdrop-filter: blur(12px);
   border: 1px solid rgba(31,52,96,.6);
   position: sticky;
-  top: 180px;
+  top: 10px;
   z-index: 90;
-  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  box-shadow: 0 6px 24px rgba(0,0,0,.45);
 }
 
 .nav button {
@@ -469,7 +467,7 @@ body {
   font-weight: 300;
 }
 
-.match-card .match-status {
+.match-status {
   text-align: center;
   margin-top: 10px;
   font-size: .78rem;
@@ -477,7 +475,17 @@ body {
   font-weight: 500;
 }
 
-.match-card .match-status.live {
+.match-status .live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #ff4757;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.match-status.live {
   color: var(--wc-live-pulse);
   font-weight: 800;
   text-transform: uppercase;
@@ -490,21 +498,29 @@ body {
   50%      { opacity: .6; }
 }
 
-.match-card .match-meta {
+.match-meta {
   text-align: center;
   font-size: .72rem;
   color: var(--wc-text-muted);
-  margin-top: 6px;
+  margin-top: 8px;
   letter-spacing: .02em;
+  line-height: 1.5;
 }
 
-.match-card .match-meta a {
-  color: var(--wc-text-muted);
+.match-meta .meta-line {
+  display: block;
+}
+
+.match-meta .meta-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #4299e1;
   text-decoration: none;
+  font-weight: 600;
   transition: color var(--wc-transition);
 }
 
-.match-card .match-meta a:hover {
+.match-meta .meta-link:hover {
   color: var(--wc-gold);
   text-decoration: underline;
 }
@@ -905,7 +921,7 @@ body {
   .nav {
     border-radius: 14px;
     padding: 4px;
-    top: 140px;
+    top: 8px;
   }
 
   .nav button {

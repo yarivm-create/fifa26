@@ -73,32 +73,32 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         </div>
       </div>
 
-      <div className={`match-card match-status ${isLive ? 'live' : ''}`}>
-        {isLive && <span className="live-dot" style={{ display: 'inline-block', width: 6, height: 6, background: '#ff4757', borderRadius: '50%', marginRight: 4 }} />}
+      <div className={`match-status ${isLive ? 'live' : ''}`}>
+        {isLive && <span className="live-dot" />}
         {label}
       </div>
 
-      <div className="match-card match-meta">
-        {match.venue} • {match.stage_name}
-        <br />
-        <span style={{ unicodeBidi: 'isolate', whiteSpace: 'nowrap' }}>
-          {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)}{' '}
-          <img
-            src="https://flagcdn.com/w20/il.png"
-            srcSet="https://flagcdn.com/w40/il.png 2x"
-            alt="Israel time"
-            width={18}
-            height={12}
-            loading="lazy"
-            style={{ verticalAlign: 'middle', borderRadius: 2, display: 'inline-block' }}
-          />
-        </span>
-        <br />
+      <div className="match-meta">
+        <div className="meta-line">{match.venue} • {match.stage_name}</div>
+        <div className="meta-line">
+          <span style={{ unicodeBidi: 'isolate', whiteSpace: 'nowrap' }}>
+            {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)}{' '}
+            <img
+              src="https://flagcdn.com/w20/il.png"
+              srcSet="https://flagcdn.com/w40/il.png 2x"
+              alt="Israel time"
+              width={18}
+              height={12}
+              loading="lazy"
+              style={{ verticalAlign: 'middle', borderRadius: 2, display: 'inline-block' }}
+            />
+          </span>
+        </div>
         <a
-          href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=IL&wtw-filter=ALL"
+          className="meta-link"
+          href="https://www.kan.org.il/lobby/worldcup2026/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#4299e1', textDecoration: 'none' }}
         >
           פרטים נוספים ←
         </a>
