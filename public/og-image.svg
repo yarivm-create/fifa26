@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a1136"/>
+      <stop offset="0.55" stop-color="#16213e"/>
+      <stop offset="1" stop-color="#56042C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F4D27A"/>
+      <stop offset="0.5" stop-color="#D4AF37"/>
+      <stop offset="1" stop-color="#C8962A"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- subtle pitch lines -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="2" fill="none">
+    <circle cx="600" cy="315" r="120"/>
+    <line x1="600" y1="40" x2="600" y2="590"/>
+    <rect x="40" y="175" width="120" height="280" rx="4"/>
+    <rect x="1040" y="175" width="120" height="280" rx="4"/>
+  </g>
+
+  <!-- trophy -->
+  <text x="600" y="150" font-size="92" text-anchor="middle" filter="url(#glow)">🏆</text>
+
+  <!-- live badge -->
+  <g transform="translate(600,196)">
+    <rect x="-92" y="0" width="184" height="40" rx="20" fill="#E4002B" fill-opacity="0.18" stroke="#ff4757" stroke-opacity="0.6"/>
+    <circle cx="-58" cy="20" r="7" fill="#ff4757"/>
+    <text x="6" y="28" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="3" text-anchor="middle" fill="#ff8a94">LIVE DASHBOARD</text>
+  </g>
+
+  <!-- title -->
+  <text x="600" y="340" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="800" text-anchor="middle" fill="url(#gold)">FIFA World Cup 2026</text>
+
+  <!-- subtitle -->
+  <text x="600" y="398" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="600" text-anchor="middle" fill="#f0f0f5">Live Scores · Standings · Bracket · Stats</text>
+
+  <!-- hosts -->
+  <text x="600" y="452" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="500" text-anchor="middle" fill="#8a97b0">🇺🇸 United States   ·   🇨🇦 Canada   ·   🇲🇽 Mexico</text>
+
+  <!-- features pill row -->
+  <g font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600" text-anchor="middle">
+    <g transform="translate(345,520)">
+      <rect x="-150" y="0" width="300" height="56" rx="28" fill="#1f3460" fill-opacity="0.7"/>
+      <text x="0" y="36" fill="#f0f0f5">⚡ Auto-updated live</text>
+    </g>
+    <g transform="translate(855,520)">
+      <rect x="-160" y="0" width="320" height="56" rx="28" fill="#1f3460" fill-opacity="0.7"/>
+      <text x="0" y="36" fill="#f0f0f5">🕒 Israel local time</text>
+    </g>
+  </g>
+</svg>
