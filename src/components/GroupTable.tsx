@@ -18,12 +18,15 @@ const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
   if (chance.status === 'Eliminated') {
     return <span className="qual-badge qual-out" title="Eliminated">✕</span>;
   }
+  // Still alive but not mathematically decided — never show a bare 0%/100%,
+  // which would read as "out"/"through". Clamp to <1% / >99%.
+  const pct = chance.pAdvance <= 0 ? '<1%' : chance.pAdvance >= 100 ? '>99%' : `${chance.pAdvance}%`;
   return (
     <span
       className="qual-badge qual-pct"
       title={`${chance.pAdvance}% chance to reach the Round of 32 · ${chance.pTop2}% to finish top 2`}
     >
-      {chance.pAdvance}%
+      {pct}
     </span>
   );
 };

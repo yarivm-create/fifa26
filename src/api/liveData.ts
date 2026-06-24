@@ -26,6 +26,7 @@ interface FifaMatch {
   AwayTeamScore: number | null;
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
   MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
+  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET half-time
 }
 
 type LiveStatus = { status: Match['status']; time?: string };
@@ -37,6 +38,12 @@ function mapStatus(ev: FifaMatch): LiveStatus | null {
     case 0:
       return { status: 'completed' }; // no live minute for finished games
     case 3: {
+      // FIFA's calendar feed leaves MatchTime empty at the interval, so the
+      // authoritative half-time signal is the Period (4 = half-time, 7 = ET
+      // half-time), fetched from the live endpoint.
+      if (ev.Period === 4 || ev.Period === 7) {
+        return { status: 'half_time', time: 'HT' };
+      }
       const mt = (ev.MatchTime || '').trim();
       const upper = mt.toUpperCase();
       if (upper === 'HT' || upper.includes('HALF')) {
@@ -88,9 +95,40 @@ async function getLiveMap(): Promise<Record<string, FifaMatch>> {
   const map = await fetchLiveMap();
   // Only replace cache if we actually got data; otherwise keep prior cache.
   if (Object.keys(map).length > 0 || !cache) {
+    await enrichLivePeriods(map);
     cache = { at: now, map };
   }
   return cache.map;
+}
+
+// The calendar feed omits Period/MatchTime for in-play games, so enrich each
+// live (MatchStatus 3) match from FIFA's live endpoint to learn whether it is
+// at half-time and the current minute. Only a handful of games are ever live,
+// and failures degrade gracefully (the match simply shows "LIVE").
+async function enrichLivePeriods(map: Record<string, FifaMatch>): Promise<void> {
+  const live = Object.values(map).filter(
+    (ev) => ev.MatchStatus === 3 && ev.IdCompetition && ev.IdSeason && ev.IdStage && ev.IdMatch
+  );
+  if (live.length === 0) return;
+  await Promise.all(
+    live.map(async (ev) => {
+      const url = `https://api.fifa.com/api/v3/live/football/${ev.IdCompetition}/${ev.IdSeason}/${ev.IdStage}/${ev.IdMatch}?language=en`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (typeof d?.Period === 'number') ev.Period = d.Period;
+        const liveTime = (d?.MatchTime || '').trim();
+        if (liveTime) ev.MatchTime = liveTime;
+      } catch {
+        /* ignore — fall back to calendar data */
+      } finally {
+        clearTimeout(timeout);
+      }
+    })
+  );
 }
 
 function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
