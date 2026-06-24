@@ -3,8 +3,9 @@ import { LiveMatches } from './components/LiveMatches';
 import { Standings } from './components/Standings';
 import { Schedule } from './components/Schedule';
 import { Bracket } from './components/Bracket';
+import { Stats } from './components/Stats';
 
-type Tab = 'live' | 'standings' | 'bracket' | 'schedule';
+type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule';
 
 const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
 const HEBREW_MONTHS = [
@@ -79,6 +80,12 @@ const App: React.FC = () => {
           🏆 Standings
         </button>
         <button
+          className={activeTab === 'stats' ? 'active' : ''}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Stats
+        </button>
+        <button
           className={activeTab === 'bracket' ? 'active' : ''}
           onClick={() => setActiveTab('bracket')}
         >
@@ -95,6 +102,7 @@ const App: React.FC = () => {
       <main>
         {activeTab === 'live' && <LiveMatches />}
         {activeTab === 'standings' && <Standings />}
+        {activeTab === 'stats' && <Stats />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'schedule' && <Schedule />}
       </main>

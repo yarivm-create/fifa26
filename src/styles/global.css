@@ -1004,3 +1004,212 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(212,175,55,.4);
 }
+
+/* ============================================================
+   Statistics Tab
+   ============================================================ */
+.stat-progress {
+  background: var(--wc-surface);
+  border: 1px solid rgba(212,175,55,.15);
+  border-radius: var(--wc-card-radius);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.stat-progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  color: var(--wc-text-muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.stat-progress-bar {
+  height: 10px;
+  background: rgba(255,255,255,.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stat-progress-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--wc-secondary), var(--wc-gold));
+  border-radius: 6px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 600px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .stat-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.stat-tile {
+  background: var(--wc-surface);
+  border: 1px solid rgba(212,175,55,.15);
+  border-radius: var(--wc-card-radius);
+  padding: 18px 12px;
+  text-align: center;
+  transition: transform var(--wc-transition), border-color var(--wc-transition);
+}
+
+.stat-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212,175,55,.45);
+}
+
+.stat-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--wc-text);
+}
+
+.stat-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--wc-text-muted);
+  margin-top: 6px;
+}
+
+.stat-highlights {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 700px) {
+  .stat-highlights { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-highlight {
+  background: linear-gradient(160deg, var(--wc-surface), var(--wc-surface-light));
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: var(--wc-card-radius);
+  padding: 16px 18px;
+}
+
+.stat-highlight-title {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--wc-gold);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.stat-highlight-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.stat-highlight-score {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--wc-gold);
+  white-space: nowrap;
+}
+
+.stat-highlight-meta {
+  font-size: .72rem;
+  color: var(--wc-text-muted);
+  margin-top: 8px;
+}
+
+.stat-boards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 700px) {
+  .stat-boards { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-board {
+  background: var(--wc-surface);
+  border: 1px solid rgba(212,175,55,.15);
+  border-radius: var(--wc-card-radius);
+  padding: 16px 18px;
+}
+
+.stat-board-title {
+  font-size: .95rem;
+  color: var(--wc-gold);
+  margin-bottom: 12px;
+}
+
+.stat-board-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: .85rem;
+}
+
+.stat-board-row + .stat-board-row {
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.stat-board-rank {
+  width: 20px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--wc-text-muted);
+  flex-shrink: 0;
+}
+
+.stat-board-team {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.stat-board-bar {
+  flex: 1.2;
+  height: 8px;
+  background: rgba(255,255,255,.06);
+  border-radius: 5px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.stat-board-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--wc-secondary), var(--wc-gold));
+  border-radius: 5px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+.stat-board-value {
+  font-weight: 800;
+  color: var(--wc-text);
+  flex-shrink: 0;
+}
+
+.stat-board-suffix {
+  font-weight: 500;
+  font-size: .72rem;
+  color: var(--wc-text-muted);
+}
