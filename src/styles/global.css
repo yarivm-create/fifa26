@@ -1224,3 +1224,187 @@ body {
   color: var(--wc-gold);
   font-size: 1rem;
 }
+
+/* ============================================================
+   GAME FEATURES — follow buttons, qualification, celebrations
+   ============================================================ */
+
+/* ---- Follow ☆/★ button (in stat boards) ---- */
+.follow-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--wc-text-muted);
+  padding: 2px 4px;
+  border-radius: 8px;
+  transition: transform .15s ease, color .2s ease;
+  flex: 0 0 auto;
+}
+.follow-btn:hover { transform: scale(1.25); color: var(--wc-gold); }
+.follow-btn.following { color: var(--wc-gold); text-shadow: 0 0 10px rgba(212, 175, 55, .6); }
+
+.follow-hint {
+  text-align: center;
+  color: var(--wc-text-muted);
+  font-size: 0.82rem;
+  margin: 10px 0 4px;
+}
+
+/* ---- Qualification legend + badges (Standings) ---- */
+.qual-legend {
+  color: var(--wc-text-muted);
+  font-size: 0.82rem;
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.qual-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.qual-q   { background: rgba(72, 187, 120, .18); color: var(--wc-green); border: 1px solid rgba(72,187,120,.45); }
+.qual-out { background: rgba(228, 0, 43, .14);  color: #ff6b81;        border: 1px solid rgba(228,0,43,.4); }
+.qual-pct { background: rgba(212, 175, 55, .15); color: var(--wc-gold); border: 1px solid rgba(212,175,55,.4); }
+
+/* ---- Followed players cards ---- */
+.follow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.follow-card { padding: 16px; }
+.follow-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.follow-card-id { display: flex; align-items: center; gap: 12px; }
+.follow-card-id .flag-img,
+.follow-card-id img { width: 38px; height: 28px; }
+.follow-card-name { font-weight: 700; font-size: 1.02rem; color: var(--wc-text); }
+.follow-card-team { font-size: 0.8rem; color: var(--wc-text-muted); }
+.follow-card .follow-btn { font-size: 1.4rem; }
+
+.follow-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.follow-stat {
+  background: var(--wc-surface-light);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+.follow-stat-value { display: block; font-size: 1.5rem; font-weight: 800; color: var(--wc-gold); }
+.follow-stat-label { display: block; font-size: 0.74rem; color: var(--wc-text-muted); margin-top: 2px; }
+
+.follow-card-fixtures { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
+.follow-fixtures-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--wc-text-muted);
+  margin-bottom: 8px;
+}
+.follow-fixture {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+  padding: 4px 0;
+}
+.follow-fixture-opp { display: inline-flex; align-items: center; gap: 6px; color: var(--wc-text); }
+.follow-fixture-opp .flag-img,
+.follow-fixture-opp img { width: 22px; height: 16px; }
+.follow-fixture-time { color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }
+.follow-fixture-empty { font-size: 0.8rem; color: var(--wc-text-muted); }
+
+/* ---- Goal fireworks overlay ---- */
+.fx-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  overflow: hidden;
+}
+.fx-goal-banner {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(2.2rem, 8vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: .04em;
+  color: var(--wc-gold);
+  text-shadow: 0 0 24px rgba(212,175,55,.9), 0 4px 14px rgba(0,0,0,.6);
+  animation: fxBanner 3s ease forwards;
+  white-space: nowrap;
+}
+@keyframes fxBanner {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  22%  { transform: translate(-50%, -50%) scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+.fx-burst { position: absolute; width: 0; height: 0; }
+.fx-particle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: fxParticle 1.2s ease-out forwards;
+}
+@keyframes fxParticle {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(.3); }
+}
+
+/* ---- Full-time whistle toast ---- */
+.whistle-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9001;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, var(--wc-primary), var(--wc-darker));
+  border: 1px solid rgba(212,175,55,.5);
+  box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 20px rgba(212,175,55,.25);
+  padding: 14px 22px;
+  border-radius: 16px;
+  animation: whistleIn .45s cubic-bezier(.18,.9,.32,1.2);
+}
+.whistle-toast-text { display: flex; flex-direction: column; line-height: 1.25; }
+.whistle-toast-text strong { color: var(--wc-gold); font-size: 1.05rem; }
+.whistle-toast-text span { color: var(--wc-text-muted); font-size: 0.8rem; }
+@keyframes whistleIn {
+  from { opacity: 0; transform: translate(-50%, 40px) scale(.85); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@media (max-width: 600px) {
+  .follow-grid { grid-template-columns: 1fr; }
+  .whistle-toast { bottom: 16px; padding: 12px 16px; }
+}

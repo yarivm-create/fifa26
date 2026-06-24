@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LiveMatches } from './components/LiveMatches';
 import { Standings } from './components/Standings';
 import { Schedule } from './components/Schedule';
 import { Bracket } from './components/Bracket';
 import { Stats } from './components/Stats';
+import { Following } from './components/Following';
+import { Fireworks, WhistleToast } from './components/Celebrations';
+import { useLiveData } from './hooks/useLiveData';
+import { useMatchAlerts } from './hooks/useMatchAlerts';
+import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
+import { Match } from './api/types';
 
-type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule';
+type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule' | 'following';
 
 const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
 const HEBREW_MONTHS = [
@@ -52,6 +58,13 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Tournament-wide live detection for goal / match-end celebrations (any tab).
+  const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
+  const allFetcher = useCallback(() => fetchAllMatches(), []);
+  const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000);
+  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 60000);
+  const { goalKey, whistleKey } = useMatchAlerts(liveMatches, allMatches);
+
   return (
     <div className="app">
       <header className="header">
@@ -97,6 +110,12 @@ const App: React.FC = () => {
         >
           📅 Schedule
         </button>
+        <button
+          className={activeTab === 'following' ? 'active' : ''}
+          onClick={() => setActiveTab('following')}
+        >
+          ⭐ My Players
+        </button>
       </nav>
 
       <main>
@@ -105,7 +124,11 @@ const App: React.FC = () => {
         {activeTab === 'stats' && <Stats />}
         {activeTab === 'bracket' && <Bracket />}
         {activeTab === 'schedule' && <Schedule />}
+        {activeTab === 'following' && <Following />}
       </main>
+
+      {goalKey > 0 && <Fireworks key={`goal-${goalKey}`} />}
+      {whistleKey > 0 && <WhistleToast key={`whistle-${whistleKey}`} />}
     </div>
   );
 };

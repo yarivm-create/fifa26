@@ -1,6 +1,6 @@
 import { Match, Group } from './types';
-import { fetchAllMatches, fetchGroups, fetchTopScorers } from './worldcup';
-import { Scorer } from './liveData';
+import { fetchAllMatches, fetchGroups, fetchPlayerStats } from './worldcup';
+import { Scorer, PlayerAgg } from './liveData';
 
 export interface MatchHighlight {
   match: Match;
@@ -28,6 +28,7 @@ export interface TournamentStats {
   topScoringTeams: TeamStat[];
   bestDefenses: TeamStat[];
   topScorers: Scorer[];
+  topAssists: PlayerAgg[];
   goalsByStage: { stage: string; goals: number; matches: number }[];
 }
 
@@ -56,7 +57,12 @@ const STAGE_ORDER = [
   'Semi-finals', 'Third Place', 'Final',
 ];
 
-export function computeStats(matches: Match[], groups: Group[], topScorers: Scorer[] = []): TournamentStats {
+export function computeStats(
+  matches: Match[],
+  groups: Group[],
+  topScorers: Scorer[] = [],
+  topAssists: PlayerAgg[] = []
+): TournamentStats {
   const played = matches.filter(isPlayed);
   const live = matches.filter(isLive);
 
@@ -132,15 +138,25 @@ export function computeStats(matches: Match[], groups: Group[], topScorers: Scor
     topScoringTeams,
     bestDefenses,
     topScorers,
+    topAssists,
     goalsByStage,
   };
 }
 
 export async function fetchStats(): Promise<TournamentStats> {
-  const [matches, groups, topScorers] = await Promise.all([
+  const [matches, groups, players] = await Promise.all([
     fetchAllMatches(),
     fetchGroups(),
-    fetchTopScorers(10),
+    fetchPlayerStats(),
   ]);
-  return computeStats(matches, groups, topScorers);
+  const topScorers: Scorer[] = players
+    .filter((p) => p.goals > 0)
+    .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+    .slice(0, 10)
+    .map((p) => ({ id: p.id, name: p.name, code: p.code, goals: p.goals }));
+  const topAssists: PlayerAgg[] = players
+    .filter((p) => p.assists > 0)
+    .sort((a, b) => b.assists - a.assists || a.name.localeCompare(b.name))
+    .slice(0, 10);
+  return computeStats(matches, groups, topScorers, topAssists);
 }

@@ -1,8 +1,20 @@
 import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
 import { fetchStats, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
-import { Scorer } from '../api/liveData';
 import { Flag } from '../utils/flags';
+import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
+
+interface PlayerRow {
+  id: string;
+  name: string;
+  code: string;
+  value: number;
+}
+
+interface FollowApi {
+  isFollowed: (id: string) => boolean;
+  toggle: (id: string) => void;
+}
 
 function StatTile({ value, label, accent }: { value: string; label: string; accent?: string }) {
   return (
@@ -49,22 +61,43 @@ function Leaderboard({ title, rows, suffix }: { title: string; rows: TeamStat[];
   );
 }
 
-function ScorersBoard({ scorers }: { scorers: Scorer[] }) {
-  if (scorers.length === 0) return null;
-  const max = Math.max(...scorers.map((s) => s.goals), 1);
+function PlayerBoard({
+  title,
+  icon,
+  rows,
+  follow,
+}: {
+  title: string;
+  icon: string;
+  rows: PlayerRow[];
+  follow: FollowApi;
+}) {
+  if (rows.length === 0) return null;
+  const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <div className="stat-board stat-board-scorers">
-      <h3 className="stat-board-title">👟 Golden Boot Race — Top Scorers</h3>
-      {scorers.map((s, i) => (
-        <div className="stat-board-row" key={s.id}>
-          <span className={`stat-board-rank${i === 0 ? ' gold' : ''}`}>{i + 1}</span>
-          <span className="stat-board-team"><Flag code={s.code} name={s.name} /> {s.name}</span>
-          <span className="stat-board-bar">
-            <span className="stat-board-fill" style={{ width: `${Math.max((s.goals / max) * 100, 8)}%` }} />
-          </span>
-          <span className="stat-board-value">{s.goals}<span className="stat-board-suffix"> ⚽</span></span>
-        </div>
-      ))}
+      <h3 className="stat-board-title">{title}</h3>
+      {rows.map((r, i) => {
+        const followed = follow.isFollowed(r.id);
+        return (
+          <div className="stat-board-row" key={r.id}>
+            <span className={`stat-board-rank${i === 0 ? ' gold' : ''}`}>{i + 1}</span>
+            <button
+              className={`follow-btn${followed ? ' following' : ''}`}
+              onClick={() => follow.toggle(r.id)}
+              title={followed ? 'Unfollow player' : 'Follow player'}
+              aria-label={followed ? 'Unfollow player' : 'Follow player'}
+            >
+              {followed ? '★' : '☆'}
+            </button>
+            <span className="stat-board-team"><Flag code={r.code} name={r.name} /> {r.name}</span>
+            <span className="stat-board-bar">
+              <span className="stat-board-fill" style={{ width: `${Math.max((r.value / max) * 100, 8)}%` }} />
+            </span>
+            <span className="stat-board-value">{r.value}<span className="stat-board-suffix"> {icon}</span></span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -72,6 +105,7 @@ function ScorersBoard({ scorers }: { scorers: Scorer[] }) {
 export const Stats: React.FC = () => {
   const fetcher = useCallback(() => fetchStats(), []);
   const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000);
+  const follow = useFollowedPlayers();
 
   if (loading) {
     return (
@@ -119,7 +153,21 @@ export const Stats: React.FC = () => {
         <StatTile value={`${stats.bttsPct.toFixed(0)}%`} label="Both Teams Scored" accent="var(--wc-green)" />
       </div>
 
-      <ScorersBoard scorers={stats.topScorers} />
+      <PlayerBoard
+        title="👟 Golden Boot Race — Top Scorers"
+        icon="⚽"
+        rows={stats.topScorers.map((s) => ({ id: s.id, name: s.name, code: s.code, value: s.goals }))}
+        follow={follow}
+      />
+
+      <PlayerBoard
+        title="🎯 Playmakers — Top Assists"
+        icon="🅰️"
+        rows={stats.topAssists.map((a) => ({ id: a.id, name: a.name, code: a.code, value: a.assists }))}
+        follow={follow}
+      />
+
+      <p className="follow-hint">⭐ Tap ☆ next to a player to follow them — see them in the “My Players” tab.</p>
 
       <div className="stat-highlights">
         <HighlightCard title="🔥 Biggest Win" highlight={stats.biggestWin} suffix="goal margin" />

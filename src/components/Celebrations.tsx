@@ -1,0 +1,99 @@
+import React, { useEffect, useState } from 'react';
+import { playWhistle } from '../utils/sound';
+
+// ---- Goal fireworks -------------------------------------------------------
+// A brief, non-interactive burst overlay shown right after a goal is confirmed.
+// Auto-removes after the animation so it never lingers or blocks the UI.
+
+const BURSTS = [
+  { left: '24%', top: '32%', hue: 45, delay: 0 },
+  { left: '70%', top: '28%', hue: 0, delay: 180 },
+  { left: '48%', top: '46%', hue: 150, delay: 340 },
+];
+const PARTICLES = 18;
+
+export const Fireworks: React.FC = () => {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 3200);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+
+  return (
+    <div className="fx-overlay" aria-hidden="true">
+      <div className="fx-goal-banner">GOAL! ⚽</div>
+      {BURSTS.map((b, bi) => (
+        <div
+          key={bi}
+          className="fx-burst"
+          style={{ left: b.left, top: b.top, animationDelay: `${b.delay}ms` }}
+        >
+          {Array.from({ length: PARTICLES }).map((_, i) => {
+            const angle = (360 / PARTICLES) * i;
+            const dist = 70 + (i % 3) * 22;
+            const rad = (angle * Math.PI) / 180;
+            const tx = Math.cos(rad) * dist;
+            const ty = Math.sin(rad) * dist;
+            const hue = b.hue + (i % 5) * 12;
+            return (
+              <span
+                key={i}
+                className="fx-particle"
+                style={
+                  {
+                    '--tx': `${tx}px`,
+                    '--ty': `${ty}px`,
+                    background: `hsl(${hue}, 90%, 60%)`,
+                    animationDelay: `${b.delay}ms`,
+                  } as React.CSSProperties
+                }
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ---- Full-time whistle ----------------------------------------------------
+// Shown ~1s after a match ends, with an optional synthesized whistle sound.
+
+const WhistleIcon: React.FC = () => (
+  <svg viewBox="0 0 64 40" width="56" height="36" aria-hidden="true">
+    <path
+      d="M40 6 H22 a16 16 0 1 0 0 32 h6 l4 -8 h8 a14 14 0 0 0 14 -14 V12 a6 6 0 0 0 -6 -6 z"
+      fill="#f0f0f5"
+      stroke="#D4AF37"
+      strokeWidth="2"
+    />
+    <circle cx="20" cy="22" r="7" fill="#56042C" />
+    <rect x="40" y="2" width="5" height="8" rx="2" fill="#D4AF37" />
+  </svg>
+);
+
+export const WhistleToast: React.FC = () => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const appear = setTimeout(() => {
+      setShow(true);
+      playWhistle();
+    }, 1000);
+    const hide = setTimeout(() => setShow(false), 4200);
+    return () => {
+      clearTimeout(appear);
+      clearTimeout(hide);
+    };
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="whistle-toast" role="status">
+      <WhistleIcon />
+      <div className="whistle-toast-text">
+        <strong>Full Time</strong>
+        <span>שריקת סיום • Match over</span>
+      </div>
+    </div>
+  );
+};

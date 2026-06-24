@@ -1,6 +1,7 @@
 import { Match, Group } from './types';
 import * as mock from './mockData';
 import * as live from './liveData';
+import { computeQualification, QualChance } from './qualification';
 
 // Live scores are overlaid on the curated schedule from TheSportsDB (CORS-enabled, free).
 // Every call falls back to mock data if the live fetch fails.
@@ -72,5 +73,22 @@ export async function fetchTopScorers(limit = 10): Promise<live.Scorer[]> {
     return await live.getTopScorers(limit);
   } catch {
     return [];
+  }
+}
+
+export async function fetchPlayerStats(): Promise<live.PlayerAgg[]> {
+  try {
+    return await live.getPlayerStats();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchQualification(): Promise<Record<string, QualChance>> {
+  try {
+    const [groups, matches] = await Promise.all([fetchGroups(), fetchAllMatches()]);
+    return computeQualification(groups, matches);
+  } catch {
+    return {};
   }
 }

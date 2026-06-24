@@ -220,11 +220,23 @@ export async function getMergedForm(): Promise<Record<string, mock.FormResult[]>
 //  only live matches are re-fetched on each call.
 // ============================================================
 
+// Goals (Type 0 "Goal!") and assists (Type 1 "Assist") both carry IdPlayer +
+// a name in EventDescription, so a single timeline fetch yields both.
 export interface Scorer {
   id: string;
   name: string;
   code: string;
   goals: number;
+}
+
+// Per-player tournament aggregate (goals + assists), used by the Stats
+// leaderboards and the Followed-players screen.
+export interface PlayerAgg {
+  id: string;
+  name: string;
+  code: string;
+  goals: number;
+  assists: number;
 }
 
 interface FifaTimelineEvent {
@@ -234,14 +246,20 @@ interface FifaTimelineEvent {
   EventDescription?: { Locale: string; Description: string }[];
 }
 
-interface GoalRec {
+interface EventRec {
   id: string;
   name: string;
   code: string;
 }
 
+interface MatchStats {
+  goals: EventRec[];
+  assists: EventRec[];
+}
+
 const FIFA_GOAL_EVENT_TYPE = 0;
-const finishedGoalsCache = new Map<string, GoalRec[]>();
+const FIFA_ASSIST_EVENT_TYPE = 1;
+const finishedStatsCache = new Map<string, MatchStats>();
 
 function timelineUrl(m: FifaMatch): string {
   return `https://api.fifa.com/api/v3/timelines/${m.IdCompetition}/${m.IdSeason}/${m.IdStage}/${m.IdMatch}?language=en`;
@@ -253,28 +271,40 @@ function parseScorerName(desc: string): string {
   return (idx > 0 ? desc.slice(0, idx) : desc).trim();
 }
 
-async function fetchMatchGoals(m: FifaMatch): Promise<GoalRec[]> {
+// "Assisted by Erik LIRA." -> "Erik LIRA"
+function parseAssistName(desc: string): string {
+  return desc.replace(/^Assisted by\s*/i, '').replace(/\.\s*$/, '').trim();
+}
+
+function teamCodeFor(ev: FifaTimelineEvent, m: FifaMatch): string {
+  return ev.IdTeam && m.Home?.IdTeam && ev.IdTeam === m.Home.IdTeam
+    ? m.Home?.IdCountry || ''
+    : m.Away?.IdCountry || '';
+}
+
+async function fetchMatchStats(m: FifaMatch): Promise<MatchStats> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
     const res = await fetch(timelineUrl(m), { signal: controller.signal });
-    if (!res.ok) return [];
+    if (!res.ok) return { goals: [], assists: [] };
     const json = await res.json();
     const events = (json?.Event as FifaTimelineEvent[]) || [];
-    const out: GoalRec[] = [];
+    const goals: EventRec[] = [];
+    const assists: EventRec[] = [];
     for (const e of events) {
-      if (e.Type !== FIFA_GOAL_EVENT_TYPE || !e.IdPlayer) continue;
+      if (!e.IdPlayer) continue;
       const desc = e.EventDescription?.[0]?.Description || '';
-      if (/own goal/i.test(desc)) continue; // own goals aren't credited to a scorer
-      const code =
-        e.IdTeam && m.Home?.IdTeam && e.IdTeam === m.Home.IdTeam
-          ? m.Home?.IdCountry || ''
-          : m.Away?.IdCountry || '';
-      out.push({ id: e.IdPlayer, name: parseScorerName(desc), code });
+      if (e.Type === FIFA_GOAL_EVENT_TYPE) {
+        if (/own goal/i.test(desc)) continue; // own goals aren't credited to a scorer
+        goals.push({ id: e.IdPlayer, name: parseScorerName(desc), code: teamCodeFor(e, m) });
+      } else if (e.Type === FIFA_ASSIST_EVENT_TYPE) {
+        assists.push({ id: e.IdPlayer, name: parseAssistName(desc), code: teamCodeFor(e, m) });
+      }
     }
-    return out;
+    return { goals, assists };
   } catch {
-    return [];
+    return { goals: [], assists: [] };
   } finally {
     clearTimeout(timeout);
   }
@@ -286,7 +316,10 @@ async function inBatches<T>(items: T[], size: number, fn: (t: T) => Promise<void
   }
 }
 
-export async function getTopScorers(limit = 10): Promise<Scorer[]> {
+// Aggregates goals + assists per player across all finished/live matches.
+// Finished-match timelines never change, so they are cached permanently;
+// only live matches are re-fetched on each call.
+export async function getPlayerStats(): Promise<PlayerAgg[]> {
   const matches = await fetchFifaMatches();
   const relevant = matches.filter(
     (m) =>
@@ -297,34 +330,45 @@ export async function getTopScorers(limit = 10): Promise<Scorer[]> {
   );
 
   const needFinished = relevant.filter(
-    (m) => m.MatchStatus === 0 && !finishedGoalsCache.has(m.IdMatch!)
+    (m) => m.MatchStatus === 0 && !finishedStatsCache.has(m.IdMatch!)
   );
   await inBatches(needFinished, 8, async (m) => {
-    finishedGoalsCache.set(m.IdMatch!, await fetchMatchGoals(m));
+    finishedStatsCache.set(m.IdMatch!, await fetchMatchStats(m));
   });
 
-  const liveGoals = new Map<string, GoalRec[]>();
+  const liveStats = new Map<string, MatchStats>();
   const liveMatches = relevant.filter((m) => m.MatchStatus === 3);
   await inBatches(liveMatches, 8, async (m) => {
-    liveGoals.set(m.IdMatch!, await fetchMatchGoals(m));
+    liveStats.set(m.IdMatch!, await fetchMatchStats(m));
   });
 
-  const byPlayer = new Map<string, Scorer>();
-  for (const m of relevant) {
-    const goals = m.MatchStatus === 0 ? finishedGoalsCache.get(m.IdMatch!) : liveGoals.get(m.IdMatch!);
-    if (!goals) continue;
-    for (const g of goals) {
-      const cur = byPlayer.get(g.id);
-      if (cur) {
-        cur.goals += 1;
-        if (!cur.code && g.code) cur.code = g.code;
-      } else {
-        byPlayer.set(g.id, { id: g.id, name: g.name, code: g.code, goals: 1 });
-      }
+  const byPlayer = new Map<string, PlayerAgg>();
+  const ensure = (rec: EventRec): PlayerAgg => {
+    let p = byPlayer.get(rec.id);
+    if (!p) {
+      p = { id: rec.id, name: rec.name, code: rec.code, goals: 0, assists: 0 };
+      byPlayer.set(rec.id, p);
     }
+    if (!p.code && rec.code) p.code = rec.code;
+    if (!p.name && rec.name) p.name = rec.name;
+    return p;
+  };
+
+  for (const m of relevant) {
+    const s = m.MatchStatus === 0 ? finishedStatsCache.get(m.IdMatch!) : liveStats.get(m.IdMatch!);
+    if (!s) continue;
+    for (const g of s.goals) ensure(g).goals += 1;
+    for (const a of s.assists) ensure(a).assists += 1;
   }
 
-  return [...byPlayer.values()]
+  return [...byPlayer.values()];
+}
+
+export async function getTopScorers(limit = 10): Promise<Scorer[]> {
+  const players = await getPlayerStats();
+  return players
+    .filter((p) => p.goals > 0)
     .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((p) => ({ id: p.id, name: p.name, code: p.code, goals: p.goals }));
 }
