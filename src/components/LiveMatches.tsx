@@ -65,8 +65,9 @@ export const LiveMatches: React.FC = () => {
     [...arr].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
   const hasLive = liveMatches && liveMatches.length > 0;
+  const liveIds = new Set((liveMatches || []).map((m) => m.id));
   const yesterdayMatches = matchesByDate[yesterdayISR]?.filter(m => m.status === 'completed') || [];
-  const todayMatches = sortMatches(matchesByDate[todayISR] || []);
+  const todayMatches = sortMatches((matchesByDate[todayISR] || []).filter(m => !liveIds.has(m.id)));
   const tomorrowMatches = sortMatches(matchesByDate[tomorrowISR] || []);
   const dayAfterMatches = sortMatches(matchesByDate[dayAfterISR] || []);
 
@@ -93,24 +94,24 @@ export const LiveMatches: React.FC = () => {
         </section>
       )}
 
-      {/* Yesterday */}
-      {yesterdayMatches.length > 0 && (
-        <section className="day-section">
-          <h2 className="section-title">📋 אתמול Yesterday</h2>
-          <div className="matches-grid">
-            {sortMatches(yesterdayMatches).map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Today */}
       {todayMatches.length > 0 && (
         <section className="day-section today-section">
           <h2 className="section-title">📅 היום Today</h2>
           <div className="matches-grid">
             {todayMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Yesterday */}
+      {yesterdayMatches.length > 0 && (
+        <section className="day-section">
+          <h2 className="section-title">📋 אתמול Yesterday</h2>
+          <div className="matches-grid">
+            {sortMatches(yesterdayMatches).map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
           </div>
