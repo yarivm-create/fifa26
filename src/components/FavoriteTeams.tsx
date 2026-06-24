@@ -206,31 +206,26 @@ export const FavoriteTeams: React.FC = () => {
 
   if (codes.size === 0) return null;
 
-  if (loading || !data) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-        <p>Loading your teams...</p>
-      </div>
-    );
-  }
-
-  const favTeams = [...codes]
-    .map((c) => data.teams[c])
-    .filter((t): t is TeamInfo => !!t)
-    .sort((a, b) => a.group.localeCompare(b.group) || a.position - b.position);
+  const favTeams = data
+    ? [...codes]
+        .map((c) => data.teams[c])
+        .filter((t): t is TeamInfo => !!t)
+        .sort((a, b) => a.group.localeCompare(b.group) || a.position - b.position)
+    : [];
 
   return (
     <section className="favorites-section">
-      <h2 style={{ marginBottom: 16 }}>⭐ Favorite Teams</h2>
-      {favTeams.length === 0 ? (
+      <h2 className="favorites-heading">⭐ Favorite Teams <span className="favorites-count">{codes.size}</span></h2>
+      {loading && !data ? (
+        <div className="favorites-loading"><div className="spinner" /><span>Loading team details…</span></div>
+      ) : favTeams.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 30 }}>
           <p style={{ color: 'var(--wc-text-muted)' }}>Your favorite teams aren't in the group stage data yet.</p>
         </div>
       ) : (
         <div className="follow-grid">
           {favTeams.map((t) => (
-            <TeamCard key={t.code} info={t} data={data} onRemove={() => toggle(t.code)} />
+            <TeamCard key={t.code} info={t} data={data!} onRemove={() => toggle(t.code)} />
           ))}
         </div>
       )}

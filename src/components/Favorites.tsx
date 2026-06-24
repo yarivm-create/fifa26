@@ -4,14 +4,31 @@ import { Following } from './Following';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 
+// Compact discovery prompt shown for whichever section is still empty, so a
+// user who has only teams (or only players) still learns how to add the other.
+const SectionPrompt: React.FC<{ heading: string; icon: string; children: React.ReactNode }> = ({
+  heading,
+  icon,
+  children,
+}) => (
+  <section className="favorites-section">
+    <h2 className="favorites-heading">{heading}</h2>
+    <div className="favorites-prompt">
+      <span className="favorites-prompt-icon">{icon}</span>
+      <p>{children}</p>
+    </div>
+  </section>
+);
+
 // Combined "My Favorites" tab: favorite teams (from Standings ☆) and followed
-// players (from Stats ☆). Each child renders null when it has no entries, so a
-// single shared empty-state is shown only when nothing is favorited at all.
+// players (from Stats ☆).
 export const Favorites: React.FC = () => {
   const { codes } = useFollowedTeams();
   const { ids } = useFollowedPlayers();
+  const hasTeams = codes.size > 0;
+  const hasPlayers = ids.size > 0;
 
-  if (codes.size === 0 && ids.size === 0) {
+  if (!hasTeams && !hasPlayers) {
     return (
       <div>
         <h2 style={{ marginBottom: 20 }}>⭐ My Favorites</h2>
@@ -29,8 +46,22 @@ export const Favorites: React.FC = () => {
 
   return (
     <div className="favorites-tab">
-      <FavoriteTeams />
-      <Following />
+      <h2 className="favorites-tab-title">⭐ My Favorites</h2>
+      {hasTeams ? (
+        <FavoriteTeams />
+      ) : (
+        <SectionPrompt heading="⭐ Favorite Teams" icon="🏆">
+          Tap ☆ next to a team in the <strong>Standings</strong> tab to add it here.
+        </SectionPrompt>
+      )}
+      {hasPlayers ? (
+        <Following />
+      ) : (
+        <SectionPrompt heading="👤 Followed Players" icon="⚽">
+          Tap ☆ next to a player in the <strong>Stats</strong> tab to follow them here.
+        </SectionPrompt>
+      )}
     </div>
   );
 };
+

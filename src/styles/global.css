@@ -1475,3 +1475,48 @@ body {
 @media (max-width: 600px) {
   .team-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---- Favorites tab: headings, counts, compact loader, prompts ---- */
+.favorites-tab-title { margin-bottom: 20px; }
+.favorites-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.favorites-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, .18);
+  border: 1px solid rgba(212, 175, 55, .4);
+  color: var(--wc-gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.favorites-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--wc-text-muted);
+  padding: 14px 4px;
+  font-size: 0.9rem;
+}
+.favorites-loading .spinner { width: 22px; height: 22px; margin: 0; }
+
+.favorites-prompt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--wc-surface);
+  border: 1px dashed rgba(212, 175, 55, .35);
+  border-radius: var(--wc-card-radius);
+  padding: 16px 18px;
+}
+.favorites-prompt-icon { font-size: 1.6rem; flex: 0 0 auto; }
+.favorites-prompt p { margin: 0; color: var(--wc-text-muted); font-size: 0.9rem; }
+.favorites-prompt strong { color: var(--wc-text); }

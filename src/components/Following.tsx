@@ -103,21 +103,15 @@ export const Following: React.FC = () => {
     return null;
   }
 
-  if (loading || !data) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-        <p>Loading your players...</p>
-      </div>
-    );
-  }
-
   const codeName: Record<string, string> = {};
-  for (const m of data.matches) {
-    codeName[m.home_team.code] = m.home_team.name;
-    codeName[m.away_team.code] = m.away_team.name;
+  const byId = new Map<string, PlayerAgg>();
+  if (data) {
+    for (const m of data.matches) {
+      codeName[m.home_team.code] = m.home_team.name;
+      codeName[m.away_team.code] = m.away_team.name;
+    }
+    for (const p of data.players) byId.set(p.id, p);
   }
-  const byId = new Map(data.players.map((p) => [p.id, p]));
   const followed = [...ids]
     .map((id) => byId.get(id))
     .filter((p): p is PlayerAgg => !!p)
@@ -125,8 +119,10 @@ export const Following: React.FC = () => {
 
   return (
     <section className="favorites-section">
-      <h2 style={{ marginBottom: 16 }}>👤 Followed Players</h2>
-      {followed.length === 0 ? (
+      <h2 className="favorites-heading">👤 Followed Players <span className="favorites-count">{ids.size}</span></h2>
+      {loading && !data ? (
+        <div className="favorites-loading"><div className="spinner" /><span>Loading player details…</span></div>
+      ) : followed.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <p style={{ color: 'var(--wc-text-muted)' }}>
             Your followed players haven't recorded goals or assists yet — check back after their next match.
@@ -138,7 +134,7 @@ export const Following: React.FC = () => {
             <PlayerCard
               key={p.id}
               player={p}
-              matches={data.matches}
+              matches={data!.matches}
               teamName={codeName[p.code] || p.code}
               onUnfollow={() => toggle(p.id)}
             />
