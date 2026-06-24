@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://yarivm-create.github.io/fifa26/</loc>
+    <lastmod>2026-06-25</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://yarivm-create.github.io/fifa26/og-image.png</image:loc>
+      <image:title>FIFA World Cup 2026 Live Dashboard</image:title>
+      <image:caption>Live FIFA World Cup 2026 scores, standings, bracket and stats.</image:caption>
+    </image:image>
   </url>
 </urlset>

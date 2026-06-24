@@ -60,8 +60,19 @@ export const OnlineCounter: React.FC = () => {
     }
 
     setCount(readCount());
-    const id = window.setInterval(() => setCount(readCount()), 5000);
-    return () => window.clearInterval(id);
+    const id = window.setInterval(() => setCount(readCount()), 4000);
+
+    // Mobile and background tabs throttle timers, so the cached count can lag
+    // behind the live server value. Re-read the moment the tab is focused again
+    // so each device converges to the true number as soon as it's looked at.
+    const refresh = () => setCount(readCount());
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, []);
 
   if (count == null) return null;
