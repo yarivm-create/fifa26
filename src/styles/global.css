@@ -613,6 +613,9 @@ body {
    ============================================================ */
 .group-section {
   margin-bottom: 28px;
+  max-width: 820px;
+  margin-inline: auto;
+  width: 100%;
 }
 
 .group-section h3 {
@@ -711,14 +714,7 @@ body {
 .groups-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-}
-
-@media (min-width: 820px) {
-  .groups-grid {
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 24px;
-  }
+  gap: 22px;
 }
 
 /* ============================================================
