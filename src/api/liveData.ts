@@ -59,16 +59,25 @@ function mapStatus(ev: FifaMatch): LiveStatus | null {
   }
 }
 
+let fifaMatchesCache: { at: number; data: FifaMatch[] } | null = null;
+const FIFA_MATCHES_TTL_MS = 15000;
+
 async function fetchFifaMatches(): Promise<FifaMatch[]> {
+  const now = Date.now();
+  if (fifaMatchesCache && now - fifaMatchesCache.at < FIFA_MATCHES_TTL_MS) {
+    return fifaMatchesCache.data;
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
     const res = await fetch(FIFA_URL, { signal: controller.signal });
-    if (!res.ok) return [];
+    if (!res.ok) return fifaMatchesCache?.data ?? [];
     const json = await res.json();
-    return (json?.Results as FifaMatch[]) || [];
+    const data = (json?.Results as FifaMatch[]) || [];
+    if (data.length) fifaMatchesCache = { at: now, data };
+    return data.length ? data : fifaMatchesCache?.data ?? [];
   } catch {
-    return [];
+    return fifaMatchesCache?.data ?? [];
   } finally {
     clearTimeout(timeout);
   }
@@ -343,6 +352,40 @@ const FIFA_GOAL_EVENT_TYPE = 0;
 const FIFA_ASSIST_EVENT_TYPE = 1;
 const finishedStatsCache = new Map<string, MatchStats>();
 
+// Finished-match timelines never change, so persist them to localStorage. This
+// makes repeat visits load Stats/Favorites almost instantly instead of
+// re-fetching 70+ timelines, and survives a page reload.
+const MSTATS_LS_PREFIX = 'wc2026:mstats:';
+let finishedCacheHydrated = false;
+
+function hydrateFinishedCache(): void {
+  if (finishedCacheHydrated || typeof localStorage === 'undefined') return;
+  finishedCacheHydrated = true;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(MSTATS_LS_PREFIX)) continue;
+      const id = k.slice(MSTATS_LS_PREFIX.length);
+      if (finishedStatsCache.has(id)) continue;
+      const v = JSON.parse(localStorage.getItem(k) || 'null');
+      if (v && Array.isArray(v.goals) && Array.isArray(v.assists)) {
+        finishedStatsCache.set(id, v);
+      }
+    }
+  } catch {
+    /* ignore corrupt/unavailable storage */
+  }
+}
+
+function persistFinished(id: string, s: MatchStats): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(MSTATS_LS_PREFIX + id, JSON.stringify(s));
+  } catch {
+    /* quota or unavailable — in-memory cache still applies */
+  }
+}
+
 function timelineUrl(m: FifaMatch): string {
   return `https://api.fifa.com/api/v3/timelines/${m.IdCompetition}/${m.IdSeason}/${m.IdStage}/${m.IdMatch}?language=en`;
 }
@@ -364,14 +407,22 @@ function teamCodeFor(ev: FifaTimelineEvent, m: FifaMatch): string {
     : m.Away?.IdCountry || '';
 }
 
-async function fetchMatchStats(m: FifaMatch): Promise<MatchStats> {
+// Returns null when the timeline fetch fails or times out, so the caller can
+// avoid permanently caching an empty result (which would silently drop a
+// player's goals/assists for that match). A genuine 0-event match still
+// returns an (empty) object, which is safe to cache.
+async function fetchMatchStats(m: FifaMatch): Promise<MatchStats | null> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
+  const timeout = setTimeout(() => controller.abort(), 9000);
   try {
     const res = await fetch(timelineUrl(m), { signal: controller.signal });
-    if (!res.ok) return { goals: [], assists: [] };
+    if (!res.ok) return null;
     const json = await res.json();
     const events = (json?.Event as FifaTimelineEvent[]) || [];
+    // A real finished/live match always has timeline events (kickoff, etc.).
+    // An empty array means an incomplete/placeholder response — treat it as a
+    // failure so we retry rather than caching a goal-less result.
+    if (events.length === 0) return null;
     const goals: EventRec[] = [];
     const assists: EventRec[] = [];
     for (const e of events) {
@@ -386,7 +437,7 @@ async function fetchMatchStats(m: FifaMatch): Promise<MatchStats> {
     }
     return { goals, assists };
   } catch {
-    return { goals: [], assists: [] };
+    return null;
   } finally {
     clearTimeout(timeout);
   }
@@ -399,9 +450,12 @@ async function inBatches<T>(items: T[], size: number, fn: (t: T) => Promise<void
 }
 
 // Aggregates goals + assists per player across all finished/live matches.
-// Finished-match timelines never change, so they are cached permanently;
-// only live matches are re-fetched on each call.
-export async function getPlayerStats(): Promise<PlayerAgg[]> {
+// Finished-match timelines never change, so they are cached (in memory and in
+// localStorage); only live matches are re-fetched on each call. Failed/timed-out
+// timeline fetches are NOT cached, so a transient error never permanently drops
+// a player's goals — the match is simply retried on the next call.
+async function computePlayerStats(): Promise<PlayerAgg[]> {
+  hydrateFinishedCache();
   const matches = await fetchFifaMatches();
   const relevant = matches.filter(
     (m) =>
@@ -414,14 +468,19 @@ export async function getPlayerStats(): Promise<PlayerAgg[]> {
   const needFinished = relevant.filter(
     (m) => m.MatchStatus === 0 && !finishedStatsCache.has(m.IdMatch!)
   );
-  await inBatches(needFinished, 8, async (m) => {
-    finishedStatsCache.set(m.IdMatch!, await fetchMatchStats(m));
+  await inBatches(needFinished, 12, async (m) => {
+    const s = await fetchMatchStats(m);
+    if (s) {
+      finishedStatsCache.set(m.IdMatch!, s);
+      persistFinished(m.IdMatch!, s);
+    }
   });
 
   const liveStats = new Map<string, MatchStats>();
   const liveMatches = relevant.filter((m) => m.MatchStatus === 3);
-  await inBatches(liveMatches, 8, async (m) => {
-    liveStats.set(m.IdMatch!, await fetchMatchStats(m));
+  await inBatches(liveMatches, 12, async (m) => {
+    const s = await fetchMatchStats(m);
+    if (s) liveStats.set(m.IdMatch!, s);
   });
 
   const byPlayer = new Map<string, PlayerAgg>();
@@ -444,6 +503,30 @@ export async function getPlayerStats(): Promise<PlayerAgg[]> {
   }
 
   return [...byPlayer.values()];
+}
+
+// Short-lived memo + in-flight dedupe so the Stats tab, the Favorites tab and
+// any other consumer share a single aggregation pass instead of each kicking
+// off their own batch of timeline fetches.
+let playerStatsMemo: { at: number; data: PlayerAgg[] } | null = null;
+let playerStatsInflight: Promise<PlayerAgg[]> | null = null;
+const PLAYER_STATS_TTL_MS = 20000;
+
+export async function getPlayerStats(): Promise<PlayerAgg[]> {
+  const now = Date.now();
+  if (playerStatsMemo && now - playerStatsMemo.at < PLAYER_STATS_TTL_MS) {
+    return playerStatsMemo.data;
+  }
+  if (playerStatsInflight) return playerStatsInflight;
+  playerStatsInflight = computePlayerStats()
+    .then((data) => {
+      playerStatsMemo = { at: Date.now(), data };
+      return data;
+    })
+    .finally(() => {
+      playerStatsInflight = null;
+    });
+  return playerStatsInflight;
 }
 
 export async function getTopScorers(limit = 10): Promise<Scorer[]> {
