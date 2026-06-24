@@ -1520,3 +1520,55 @@ body {
 .favorites-prompt-icon { font-size: 1.6rem; flex: 0 0 auto; }
 .favorites-prompt p { margin: 0; color: var(--wc-text-muted); font-size: 0.9rem; }
 .favorites-prompt strong { color: var(--wc-text); }
+
+/* ===== Live "watching now" counter ===== */
+.online-counter {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  margin: 10px auto 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(72, 187, 120, 0.12);
+  border: 1px solid rgba(72, 187, 120, 0.42);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--wc-green);
+  backdrop-filter: blur(4px);
+}
+.online-counter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wc-green);
+  box-shadow: 0 0 6px 1px rgba(72, 187, 120, 0.6);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.online-counter-num {
+  color: var(--wc-text);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.online-counter-label {
+  color: var(--wc-text-muted);
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.6px;
+}
+
+/* Hide the third-party whos.amung.us widget; we render our own chip from its
+   localStorage count instead. */
+[id^="_wau"],
+img[src*="whos.amung.us"],
+img[src*="waust.at"],
+a[href*="whos.amung.us"] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}

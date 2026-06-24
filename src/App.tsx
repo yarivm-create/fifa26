@@ -5,6 +5,7 @@ import { Schedule } from './components/Schedule';
 import { Bracket } from './components/Bracket';
 import { Stats } from './components/Stats';
 import { Favorites } from './components/Favorites';
+import { OnlineCounter } from './components/OnlineCounter';
 import { Fireworks, WhistleToast } from './components/Celebrations';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts } from './hooks/useMatchAlerts';
@@ -77,6 +78,7 @@ const App: React.FC = () => {
           <span className="live-dot" />
           LIVE DASHBOARD
         </div>
+        <OnlineCounter />
       </header>
 
       <nav className="nav">
