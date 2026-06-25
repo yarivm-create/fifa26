@@ -92,7 +92,7 @@ export const WhistleToast: React.FC = () => {
       <WhistleIcon />
       <div className="whistle-toast-text">
         <strong>Full Time</strong>
-        <span>שריקת סיום • Match over</span>
+        <span>Match over</span>
       </div>
     </div>
   );

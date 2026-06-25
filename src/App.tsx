@@ -77,10 +77,12 @@ const App: React.FC = () => {
         <p className="subtitle">
           United States • Mexico • Canada
         </p>
-        <LocalClock />
         <div className="live-indicator">
           <span className="live-dot" aria-hidden="true" />
           LIVE DASHBOARD
+        </div>
+        <div className="header-clock-wrap">
+          <LocalClock />
         </div>
         <OnlineCounter />
       </header>

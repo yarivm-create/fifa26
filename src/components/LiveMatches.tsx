@@ -74,7 +74,7 @@ export const LiveMatches: React.FC = () => {
       {/* Today */}
       {todayMatches.length > 0 && (
         <section className="day-section today-section">
-          <h2 className="section-title">📅 היום Today</h2>
+          <h2 className="section-title">📅 Today</h2>
           <div className="matches-grid">
             {todayMatches.map((match) => (
               <MatchCard key={match.id} match={match} />
@@ -86,7 +86,7 @@ export const LiveMatches: React.FC = () => {
       {/* Yesterday */}
       {yesterdayMatches.length > 0 && (
         <section className="day-section">
-          <h2 className="section-title">📋 אתמול Yesterday</h2>
+          <h2 className="section-title">📋 Yesterday</h2>
           <div className="matches-grid">
             {sortMatches(yesterdayMatches).map((match) => (
               <MatchCard key={match.id} match={match} />
@@ -98,7 +98,7 @@ export const LiveMatches: React.FC = () => {
       {/* Tomorrow */}
       {tomorrowMatches.length > 0 && (
         <section className="day-section">
-          <h2 className="section-title">⏭️ מחר Tomorrow</h2>
+          <h2 className="section-title">⏭️ Tomorrow</h2>
           <div className="matches-grid">
             {tomorrowMatches.map((match) => (
               <MatchCard key={match.id} match={match} />
@@ -110,7 +110,7 @@ export const LiveMatches: React.FC = () => {
       {/* Day After Tomorrow */}
       {dayAfterMatches.length > 0 && (
         <section className="day-section">
-          <h2 className="section-title">📅 מחרתיים Day After Tomorrow</h2>
+          <h2 className="section-title">📅 Day After Tomorrow</h2>
           <div className="matches-grid">
             {dayAfterMatches.map((match) => (
               <MatchCard key={match.id} match={match} />
@@ -122,7 +122,7 @@ export const LiveMatches: React.FC = () => {
       {!hasAnything && (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <div style={{ fontSize: '2.4rem', marginBottom: 8 }}>🌙</div>
-          <p style={{ color: 'var(--wc-text)', fontWeight: 600 }}>אין משחקים בסביבת התאריך הזה</p>
+          <p style={{ color: 'var(--wc-text)', fontWeight: 600 }}>No matches around this date</p>
           <p style={{ color: 'var(--wc-text-muted)', fontSize: '0.85rem', marginTop: 6 }}>
             No matches around today — check the Schedule tab for upcoming fixtures.
           </p>

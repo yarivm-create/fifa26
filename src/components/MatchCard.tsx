@@ -72,7 +72,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          פרטים נוספים ←
+          Watch on KAN 11 →
         </a>
       </div>
     </div>

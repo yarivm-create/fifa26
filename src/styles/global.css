@@ -141,6 +141,17 @@ body {
   font-weight: 500;
   font-size: .82em;
 }
+/* Separate the local-time clock from the LIVE DASHBOARD badge above it */
+.header-clock-wrap {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  justify-content: center;
+}
+.header-clock-wrap .header-clock {
+  margin-top: 0;
+}
 
 /* Live badge */
 .header .live-indicator {
