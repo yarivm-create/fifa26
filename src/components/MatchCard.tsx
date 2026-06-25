@@ -73,7 +73,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {isLive ? 'Watch on KAN 11 →' : 'Match Recap & Highlights →'}
+            {isLive ? 'Live Match Center →' : 'Match Recap & Highlights →'}
           </a>
         )}
       </div>
