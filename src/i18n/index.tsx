@@ -229,7 +229,7 @@ const he: Dict = {
   'group.toAdvance': '{pct} להעפלה',
   'group.advanceTitle': '{pct} סיכוי להעפיל לשלב 32 הקבוצות · {top2} לסיים בשתי הראשונות',
   'col.team': 'קבוצה',
-  'col.form': 'כושר',
+  'col.form': 'Form',
   'fav.add': 'הוסף למועדפים',
   'fav.remove': 'הסר מהמועדפים',
   // Stats
