@@ -473,6 +473,21 @@ body {
   justify-content: flex-start;
 }
 
+/* Keep the flag glued beside the team name so a long name (e.g. "United
+   States") never pushes the flag onto its own line. The name wraps only at
+   word boundaries (never mid-word); the flag stays put and centered. */
+.match-card .team-flag-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.match-card .team.home .team-flag-name { justify-content: flex-end; }
+.match-card .team.away .team-flag-name { justify-content: flex-start; }
+.match-card .team-flag-name .flag-img,
+.match-card .team-flag-name .flag-placeholder { flex: 0 0 auto; }
+.match-card .team-name { overflow-wrap: break-word; }
+
 .match-card .team-code {
   font-size: .72rem;
   color: var(--wc-text-muted);
@@ -1824,14 +1839,13 @@ select:focus-visible {
   margin-left: 4px;
 }
 
-/* Winner indication on finished matches */
+/* Winner indication on finished matches: the winning team's name and score
+   are highlighted in gold (no inline badge — it overlapped on mobile). */
 .score-winner {
   color: var(--wc-gold);
   text-shadow: 0 0 10px rgba(212,175,55,.45);
 }
-.team-winner { font-weight: 700; }
-.winner-badge {
-  font-size: .85em;
-  margin: 0 4px;
-  vertical-align: middle;
+.team-winner {
+  font-weight: 800;
+  color: var(--wc-gold);
 }
