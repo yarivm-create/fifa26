@@ -240,8 +240,8 @@ const MATCHES: Match[] = [
   { id: 104, venue: 'New York/New Jersey Stadium', location: 'New Jersey, USA', datetime: '2026-07-19T19:00:00Z', status: 'future_scheduled', stage_name: 'Final', home_team: { country: 'W101', name: 'W101', code: 'W101', goals: null }, away_team: { country: 'W102', name: 'W102', code: 'W102', goals: null } },
 ];
 
-function getIsraelDateString(date: Date): string {
-  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+function getLocalDateString(date: Date): string {
+  return date.toLocaleDateString('en-CA');
 }
 
 export type FormResult = 'W' | 'D' | 'L';
@@ -283,18 +283,18 @@ export async function fetchCurrentMatches(): Promise<Match[]> {
 }
 
 export async function fetchTodayMatches(): Promise<Match[]> {
-  const todayISR = getIsraelDateString(new Date());
+  const todayISR = getLocalDateString(new Date());
   return MATCHES.filter((m) => {
-    const matchDateISR = getIsraelDateString(new Date(m.datetime));
+    const matchDateISR = getLocalDateString(new Date(m.datetime));
     return matchDateISR === todayISR && m.status === 'completed';
   });
 }
 
 export async function fetchYesterdayMatches(): Promise<Match[]> {
   const yesterday = new Date(Date.now() - 86400000);
-  const yesterdayISR = getIsraelDateString(yesterday);
+  const yesterdayISR = getLocalDateString(yesterday);
   return MATCHES.filter((m) => {
-    const matchDateISR = getIsraelDateString(new Date(m.datetime));
+    const matchDateISR = getLocalDateString(new Date(m.datetime));
     return matchDateISR === yesterdayISR && m.status === 'completed';
   });
 }

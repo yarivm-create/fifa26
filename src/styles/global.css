@@ -132,6 +132,14 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: .02em;
   text-shadow: 0 0 10px rgba(212,175,55,.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.header-clock-tz {
+  color: var(--wc-text-muted);
+  font-weight: 500;
+  font-size: .82em;
 }
 
 /* Live badge */

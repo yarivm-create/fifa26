@@ -4,15 +4,11 @@ import { fetchPlayerStats, fetchAllMatches } from '../api/worldcup';
 import { PlayerAgg } from '../api/liveData';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
+import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 
-const ISRAEL_TZ = 'Asia/Jerusalem';
-
 function formatKickoff(datetime: string): string {
-  const d = new Date(datetime);
-  const date = d.toLocaleDateString('he-IL', { timeZone: ISRAEL_TZ, day: 'numeric', month: 'numeric' });
-  const time = d.toLocaleTimeString('he-IL', { timeZone: ISRAEL_TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${date} ${time}`;
+  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
 }
 
 interface Data {

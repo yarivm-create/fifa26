@@ -3,8 +3,7 @@ import { useLiveData } from '../hooks/useLiveData';
 import { fetchAllMatches } from '../api/worldcup';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
-
-const ISRAEL_TZ = 'Asia/Jerusalem';
+import { formatLocalDate, formatLocalTime, LocalTimeFlag } from '../utils/localTime';
 
 const ROUNDS: { key: string; label: string }[] = [
   { key: 'Round of 32', label: 'Round of 32' },
@@ -30,23 +29,8 @@ function teamLabel(code: string, name: string): string {
 }
 
 function formatKickoff(datetime: string): string {
-  const d = new Date(datetime);
-  const date = d.toLocaleDateString('he-IL', { timeZone: ISRAEL_TZ, day: 'numeric', month: 'numeric' });
-  const time = d.toLocaleTimeString('he-IL', { timeZone: ISRAEL_TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${date} • ${time}`;
+  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
 }
-
-const IsraelFlag: React.FC = () => (
-  <img
-    src="https://flagcdn.com/w20/il.png"
-    srcSet="https://flagcdn.com/w40/il.png 2x"
-    alt="Israel time"
-    width={16}
-    height={11}
-    loading="lazy"
-    style={{ verticalAlign: 'middle', borderRadius: 2, marginInlineStart: 4, display: 'inline-block' }}
-  />
-);
 
 const BracketTeam: React.FC<{ code: string; name: string; goals: number | null }> = ({ code, name, goals }) => (
   <div className="bracket-team">
@@ -58,7 +42,7 @@ const BracketTeam: React.FC<{ code: string; name: string; goals: number | null }
 
 const BracketMatch: React.FC<{ match: Match }> = ({ match }) => (
   <div className="bracket-match">
-    <div className="bracket-match-time">{formatKickoff(match.datetime)}<IsraelFlag /></div>
+    <div className="bracket-match-time">{formatKickoff(match.datetime)} <LocalTimeFlag size={16} /></div>
     <BracketTeam code={match.home_team.code} name={match.home_team.name} goals={match.home_team.goals} />
     <BracketTeam code={match.away_team.code} name={match.away_team.name} goals={match.away_team.goals} />
     <div className="bracket-venue">{match.venue}</div>

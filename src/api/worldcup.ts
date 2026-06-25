@@ -6,8 +6,8 @@ import { computeQualification, QualChance } from './qualification';
 // Live scores are overlaid on the curated schedule from TheSportsDB (CORS-enabled, free).
 // Every call falls back to mock data if the live fetch fails.
 
-function getIsraelDateString(date: Date): string {
-  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+function getLocalDateString(date: Date): string {
+  return date.toLocaleDateString('en-CA');
 }
 
 export async function fetchAllMatches(): Promise<Match[]> {
@@ -31,9 +31,9 @@ export async function fetchCurrentMatches(): Promise<Match[]> {
 export async function fetchTodayMatches(): Promise<Match[]> {
   try {
     const merged = await live.getMergedMatches();
-    const todayISR = getIsraelDateString(new Date());
+    const todayISR = getLocalDateString(new Date());
     return merged.filter(
-      (m) => getIsraelDateString(new Date(m.datetime)) === todayISR && m.status === 'completed'
+      (m) => getLocalDateString(new Date(m.datetime)) === todayISR && m.status === 'completed'
     );
   } catch {
     return mock.fetchTodayMatches();
@@ -43,9 +43,9 @@ export async function fetchTodayMatches(): Promise<Match[]> {
 export async function fetchYesterdayMatches(): Promise<Match[]> {
   try {
     const merged = await live.getMergedMatches();
-    const yesterdayISR = getIsraelDateString(new Date(Date.now() - 86400000));
+    const yesterdayISR = getLocalDateString(new Date(Date.now() - 86400000));
     return merged.filter(
-      (m) => getIsraelDateString(new Date(m.datetime)) === yesterdayISR && m.status === 'completed'
+      (m) => getLocalDateString(new Date(m.datetime)) === yesterdayISR && m.status === 'completed'
     );
   } catch {
     return mock.fetchYesterdayMatches();

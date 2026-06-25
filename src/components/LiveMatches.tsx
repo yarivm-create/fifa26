@@ -1,35 +1,11 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
 import { fetchCurrentMatches, fetchAllMatches } from '../api/worldcup';
 import { MatchCard } from './MatchCard';
 import { Match } from '../api/types';
-
-const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
-
-function getIsraelDate(date: Date): string {
-  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-}
-
-function getIsraelClock(): string {
-  const now = new Date();
-  const israelDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-  const dayName = HEBREW_DAYS[israelDate.getDay()];
-  const day = israelDate.getDate();
-  const month = israelDate.getMonth() + 1;
-  const year = israelDate.getFullYear();
-  const hours = israelDate.getHours().toString().padStart(2, '0');
-  const minutes = israelDate.getMinutes().toString().padStart(2, '0');
-  return `${dayName} ${day}.${month}.${year} • ${hours}:${minutes}`;
-}
+import { localDateKey, formatLocalTime, LOCAL_TZ_LABEL } from '../utils/localTime';
 
 export const LiveMatches: React.FC = () => {
-  const [clock, setClock] = useState(getIsraelClock);
-
-  useEffect(() => {
-    const interval = setInterval(() => setClock(getIsraelClock()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const currentFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
 
@@ -46,16 +22,16 @@ export const LiveMatches: React.FC = () => {
   }
 
   const now = new Date();
-  const todayISR = getIsraelDate(now);
-  const yesterdayISR = getIsraelDate(new Date(now.getTime() - 86400000));
-  const tomorrowISR = getIsraelDate(new Date(now.getTime() + 86400000));
-  const dayAfterISR = getIsraelDate(new Date(now.getTime() + 172800000));
+  const todayKey = localDateKey(now);
+  const yesterdayKey = localDateKey(new Date(now.getTime() - 86400000));
+  const tomorrowKey = localDateKey(new Date(now.getTime() + 86400000));
+  const dayAfterKey = localDateKey(new Date(now.getTime() + 172800000));
 
-  // Categorize all matches by Israel date
+  // Categorize all matches by the visitor's local date
   const matchesByDate: Record<string, Match[]> = {};
   if (allMatches) {
     for (const m of allMatches) {
-      const dateKey = getIsraelDate(new Date(m.datetime));
+      const dateKey = localDateKey(new Date(m.datetime));
       if (!matchesByDate[dateKey]) matchesByDate[dateKey] = [];
       matchesByDate[dateKey].push(m);
     }
@@ -66,10 +42,10 @@ export const LiveMatches: React.FC = () => {
 
   const hasLive = liveMatches && liveMatches.length > 0;
   const liveIds = new Set((liveMatches || []).map((m) => m.id));
-  const yesterdayMatches = matchesByDate[yesterdayISR]?.filter(m => m.status === 'completed') || [];
-  const todayMatches = sortMatches((matchesByDate[todayISR] || []).filter(m => !liveIds.has(m.id)));
-  const tomorrowMatches = sortMatches(matchesByDate[tomorrowISR] || []);
-  const dayAfterMatches = sortMatches(matchesByDate[dayAfterISR] || []);
+  const yesterdayMatches = matchesByDate[yesterdayKey]?.filter(m => m.status === 'completed') || [];
+  const todayMatches = sortMatches((matchesByDate[todayKey] || []).filter(m => !liveIds.has(m.id)));
+  const tomorrowMatches = sortMatches(matchesByDate[tomorrowKey] || []);
+  const dayAfterMatches = sortMatches(matchesByDate[dayAfterKey] || []);
 
   const hasAnything =
     hasLive ||
@@ -80,12 +56,6 @@ export const LiveMatches: React.FC = () => {
 
   return (
     <div>
-      {/* Israel Time Clock */}
-      <div className="israel-clock-section">
-        <span className="israel-clock-label">🕐 שעון ישראל</span>
-        <span className="israel-clock-time">{clock}</span>
-      </div>
-
       {/* Live Now */}
       {hasLive && (
         <section className="live-section">
@@ -161,7 +131,7 @@ export const LiveMatches: React.FC = () => {
 
       {lastUpdated && (
         <div className="last-updated">
-          עדכון אחרון: {lastUpdated.toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem' })} (שעון ישראל) • מתעדכן אוטומטית
+          Last updated: {formatLocalTime(lastUpdated)}{LOCAL_TZ_LABEL ? ` (${LOCAL_TZ_LABEL})` : ''} • auto-refreshing
         </div>
       )}
     </div>

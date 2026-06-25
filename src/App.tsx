@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useCallback, Suspense, lazy } from 'react';
 import { LiveMatches } from './components/LiveMatches';
 import { OnlineCounter } from './components/OnlineCounter';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Fireworks, WhistleToast } from './components/Celebrations';
+import { LocalClock } from './utils/localTime';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
@@ -27,42 +28,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'favorites', label: '⭐ My Favorites' },
 ];
 
-const HEBREW_DAYS = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
-const HEBREW_MONTHS = [
-  'בינואר', 'בפברואר', 'במרץ', 'באפריל', 'במאי', 'ביוני',
-  'ביולי', 'באוגוסט', 'בספטמבר', 'באוקטובר', 'בנובמבר', 'בדצמבר',
-];
-
-function getIsraelClock(): string {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Jerusalem',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).formatToParts(now);
-
-  const get = (type: string) => parts.find(p => p.type === type)?.value || '';
-  const month = parseInt(get('month'), 10);
-  const day = parseInt(get('day'), 10);
-  const year = get('year');
-  const hour = get('hour');
-  const minute = get('minute');
-  const second = get('second');
-
-  const israelDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-  const dayOfWeek = israelDate.getDay();
-  const hebrewDay = HEBREW_DAYS[dayOfWeek];
-  const hebrewMonth = HEBREW_MONTHS[month - 1];
-
-  return `🕐 ${hebrewDay}, ${day} ${hebrewMonth} ${year} • ${hour}:${minute}:${second}`;
-}
-
 const TabFallback: React.FC = () => (
   <div className="loading">
     <div className="spinner" />
@@ -72,12 +37,6 @@ const TabFallback: React.FC = () => (
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('live');
-  const [clock, setClock] = useState(getIsraelClock);
-
-  useEffect(() => {
-    const interval = setInterval(() => setClock(getIsraelClock()), 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
@@ -118,7 +77,7 @@ const App: React.FC = () => {
         <p className="subtitle">
           United States • Mexico • Canada
         </p>
-        <div className="header-clock" aria-live="off">{clock}</div>
+        <LocalClock />
         <div className="live-indicator">
           <span className="live-dot" aria-hidden="true" />
           LIVE DASHBOARD

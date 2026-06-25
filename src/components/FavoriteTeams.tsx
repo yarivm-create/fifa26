@@ -6,15 +6,11 @@ import { QualChance } from '../api/qualification';
 import { FormResult } from '../api/mockData';
 import { PlayerAgg } from '../api/liveData';
 import { Flag } from '../utils/flags';
+import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 
-const ISRAEL_TZ = 'Asia/Jerusalem';
-
 function formatKickoff(datetime: string): string {
-  const d = new Date(datetime);
-  const date = d.toLocaleDateString('he-IL', { timeZone: ISRAEL_TZ, day: 'numeric', month: 'numeric' });
-  const time = d.toLocaleTimeString('he-IL', { timeZone: ISRAEL_TZ, hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${date} ${time}`;
+  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
 }
 
 const ORDINAL = ['1st', '2nd', '3rd', '4th'];

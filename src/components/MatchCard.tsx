@@ -1,30 +1,10 @@
 import React from 'react';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
+import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
 
 interface Props {
   match: Match;
-}
-
-// Israel Daylight Time (IDT) = UTC+3
-const ISRAEL_TZ = 'Asia/Jerusalem';
-
-function formatIsraelTime(datetime: string): string {
-  return new Date(datetime).toLocaleTimeString('he-IL', {
-    timeZone: ISRAEL_TZ,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatIsraelDate(datetime: string): string {
-  return new Date(datetime).toLocaleDateString('he-IL', {
-    timeZone: ISRAEL_TZ,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'numeric',
-  });
 }
 
 function getStatusLabel(status: string, time?: string): { label: string; isLive: boolean } {
@@ -61,7 +41,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
             </>
           ) : (
             <span className="score" style={{ fontSize: '1rem' }}>
-              {formatIsraelTime(match.datetime)}
+              {formatLocalTime(match.datetime)}
             </span>
           )}
         </div>
@@ -82,16 +62,8 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         <div className="meta-line">{match.venue} • {match.stage_name}</div>
         <div className="meta-line">
           <span style={{ unicodeBidi: 'isolate', whiteSpace: 'nowrap' }}>
-            {formatIsraelDate(match.datetime)} {formatIsraelTime(match.datetime)}{' '}
-            <img
-              src="https://flagcdn.com/w20/il.png"
-              srcSet="https://flagcdn.com/w40/il.png 2x"
-              alt="Israel time"
-              width={18}
-              height={12}
-              loading="lazy"
-              style={{ verticalAlign: 'middle', borderRadius: 2, display: 'inline-block' }}
-            />
+            {formatLocalDate(match.datetime)} {formatLocalTime(match.datetime)}{' '}
+            <LocalTimeFlag size={18} />
           </span>
         </div>
         <a

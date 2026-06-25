@@ -3,14 +3,10 @@ import { useLiveData } from '../hooks/useLiveData';
 import { fetchAllMatches } from '../api/worldcup';
 import { MatchCard } from './MatchCard';
 import { Match } from '../api/types';
+import { localDateKey, formatLocalDate } from '../utils/localTime';
 
-function getIsraelDateKey(datetime: string): string {
-  return new Date(datetime).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-}
-
-function getIsraelDateLabel(datetime: string): string {
-  return new Date(datetime).toLocaleDateString('he-IL', {
-    timeZone: 'Asia/Jerusalem',
+function getLocalDateLabel(datetime: string): string {
+  return formatLocalDate(datetime, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -40,7 +36,7 @@ export const Schedule: React.FC = () => {
   const fetcher = useCallback(() => fetchAllMatches(), []);
   const { data: matches, loading, error } = useLiveData<Match[]>(fetcher, 300000);
 
-  const todayKey = useMemo(() => getIsraelDateKey(new Date().toISOString()), []);
+  const todayKey = useMemo(() => localDateKey(new Date().toISOString()), []);
 
   const { dateGroups, stageTransitions } = useMemo(() => {
     if (!matches) return { dateGroups: [] as DateGroup[], stageTransitions: {} as Record<string, string> };
@@ -52,7 +48,7 @@ export const Schedule: React.FC = () => {
     const groups: Record<string, Match[]> = {};
     const dateOrder: string[] = [];
     for (const m of sorted) {
-      const dk = getIsraelDateKey(m.datetime);
+      const dk = localDateKey(m.datetime);
       if (!groups[dk]) {
         groups[dk] = [];
         dateOrder.push(dk);
@@ -62,7 +58,7 @@ export const Schedule: React.FC = () => {
 
     const dgs: DateGroup[] = dateOrder.map(dk => ({
       dateKey: dk,
-      dateLabel: getIsraelDateLabel(groups[dk][0].datetime),
+      dateLabel: getLocalDateLabel(groups[dk][0].datetime),
       matches: groups[dk],
       isToday: dk === todayKey,
     }));
