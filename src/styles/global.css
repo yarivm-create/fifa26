@@ -471,24 +471,15 @@ body {
 
 .match-card .team.away {
   justify-content: flex-start;
+  text-align: left;
 }
 
-/* Keep the flag glued beside the team name so a long name never pushes the
-   flag onto its own line or leaves a gap. inline-flex shrinks the group to
-   its content; the name wraps only at word boundaries (never mid-word). */
-.match-card .team-flag-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-}
-.match-card .team-flag-name .flag-img,
-.match-card .team-flag-name .flag-placeholder { flex: 0 0 auto; }
+/* The flag is inline inside .team-name (with a non-breaking space binding it
+   to the adjacent word), so it always stays beside the text and the whole
+   unit hugs the score via text-align. Names wrap only at word boundaries. */
 .match-card .team-name { overflow-wrap: break-word; }
-/* Align the (possibly wrapped) name text toward its flag, so a short
-   wrapped line never leaves a gap between the flag and the text. */
-.match-card .team.home .team-name { text-align: left; }
-.match-card .team.away .team-name { text-align: right; }
+.match-card .team-name .flag-img,
+.match-card .team-name .flag-placeholder { vertical-align: middle; }
 
 .match-card .team-code {
   font-size: .72rem;

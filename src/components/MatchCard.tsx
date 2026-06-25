@@ -36,12 +36,10 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
     <div className="card">
       <div className="match-card">
         <div className={`team home${homeWon ? ' team-winner' : ''}`}>
-          <div>
-            <div className="team-flag-name">
-              <Flag code={match.home_team.code} name={match.home_team.name} />
-              <span className="team-name">{match.home_team.name}</span>
-            </div>
-          </div>
+          <span className="team-name">
+            <Flag code={match.home_team.code} name={match.home_team.name} />
+            {'\u00A0'}{match.home_team.name}
+          </span>
         </div>
 
         <div className="score-box">
@@ -59,12 +57,10 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         </div>
 
         <div className={`team away${awayWon ? ' team-winner' : ''}`}>
-          <div>
-            <div className="team-flag-name">
-              <span className="team-name">{match.away_team.name}</span>
-              <Flag code={match.away_team.code} name={match.away_team.name} />
-            </div>
-          </div>
+          <span className="team-name">
+            {match.away_team.name}{'\u00A0'}
+            <Flag code={match.away_team.code} name={match.away_team.name} />
+          </span>
         </div>
       </div>
 
