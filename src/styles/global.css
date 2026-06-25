@@ -473,17 +473,15 @@ body {
   justify-content: flex-start;
 }
 
-/* Keep the flag glued beside the team name so a long name (e.g. "United
-   States") never pushes the flag onto its own line. The name wraps only at
-   word boundaries (never mid-word); the flag stays put and centered. */
+/* Keep the flag glued beside the team name so a long name never pushes the
+   flag onto its own line or leaves a gap. inline-flex shrinks the group to
+   its content; the name wraps only at word boundaries (never mid-word). */
 .match-card .team-flag-name {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   max-width: 100%;
 }
-.match-card .team.home .team-flag-name { justify-content: flex-end; }
-.match-card .team.away .team-flag-name { justify-content: flex-start; }
 .match-card .team-flag-name .flag-img,
 .match-card .team-flag-name .flag-placeholder { flex: 0 0 auto; }
 .match-card .team-name { overflow-wrap: break-word; }
