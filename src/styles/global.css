@@ -123,6 +123,37 @@ body {
   letter-spacing: .04em;
 }
 
+/* Header actions row: live counter + share */
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.08));
+  border: 1px solid rgba(212,175,55,.5);
+  color: var(--wc-gold);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.share-btn:hover {
+  background: linear-gradient(135deg, rgba(212,175,55,.3), rgba(212,175,55,.15));
+  box-shadow: 0 0 14px rgba(212,175,55,.3);
+  transform: translateY(-1px);
+}
+.share-btn:active { transform: translateY(0); }
+
 /* Header clock */
 .header-clock {
   font-size: .9rem;

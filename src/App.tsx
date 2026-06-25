@@ -5,6 +5,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Fireworks, WhistleToast } from './components/Celebrations';
 import { LocalClock } from './utils/localTime';
+import { ShareButton } from './components/ShareButton';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
@@ -84,7 +85,10 @@ const App: React.FC = () => {
         <div className="header-clock-wrap">
           <LocalClock />
         </div>
-        <OnlineCounter />
+        <div className="header-actions">
+          <OnlineCounter />
+          <ShareButton />
+        </div>
       </header>
 
       <nav className="nav" role="tablist" aria-label="Dashboard sections">

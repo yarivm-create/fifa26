@@ -1,7 +1,7 @@
 {
   "name": "FIFA World Cup 2026 — Live Dashboard",
   "short_name": "WC2026 Live",
-  "description": "Live FIFA World Cup 2026 scores, standings, knockout bracket, stats and schedule in Israel time.",
+  "description": "Live FIFA World Cup 2026 scores, standings, knockout bracket, stats and schedule in your local time.",
   "start_url": "/fifa26/",
   "scope": "/fifa26/",
   "display": "standalone",
