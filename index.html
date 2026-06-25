@@ -79,10 +79,48 @@
             "url": "https://yarivm-create.github.io/fifa26/",
             "image": "https://yarivm-create.github.io/fifa26/og-image.png",
             "description": "The 2026 FIFA World Cup, hosted by the United States, Canada and Mexico.",
+            "organizer": {
+              "@type": "Organization",
+              "name": "FIFA",
+              "url": "https://www.fifa.com/"
+            },
+            "performer": {
+              "@type": "PerformingGroup",
+              "name": "FIFA World Cup 2026 national teams"
+            },
+            "offers": {
+              "@type": "AggregateOffer",
+              "url": "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/tickets",
+              "lowPrice": "60",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "validFrom": "2025-09-01"
+            },
             "location": [
-              { "@type": "Country", "name": "United States" },
-              { "@type": "Country", "name": "Canada" },
-              { "@type": "Country", "name": "Mexico" }
+              {
+                "@type": "Place",
+                "name": "United States",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressCountry": "US"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Canada",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressCountry": "CA"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Mexico",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressCountry": "MX"
+                }
+              }
             ]
           }
         ]
