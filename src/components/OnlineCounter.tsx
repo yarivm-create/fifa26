@@ -44,6 +44,10 @@ function readCount(): number | null {
 
 export const OnlineCounter: React.FC = () => {
   const [count, setCount] = useState<number | null>(null);
+  // 'loading' reserves the chip's space with a skeleton so it doesn't pop in
+  // and reflow the header a few seconds after paint. We collapse to
+  // 'unavailable' only if the presence service never reports a count.
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
     // Register the presence widget once, then load the tracker script during
@@ -69,6 +73,12 @@ export const OnlineCounter: React.FC = () => {
 
     const id = window.setInterval(() => setCount(readCount()), 4000);
 
+    // If no count has arrived after a grace period, the service is blocked or
+    // unavailable — collapse the skeleton so we don't show a permanent shell.
+    const grace = window.setTimeout(() => {
+      setPhase((p) => (p === 'loading' ? 'unavailable' : p));
+    }, 8000);
+
     // Mobile and background tabs throttle timers, so the cached count can lag
     // behind the live server value. Re-read the moment the tab is focused again
     // so each device converges to the true number as soon as it's looked at.
@@ -77,17 +87,40 @@ export const OnlineCounter: React.FC = () => {
     window.addEventListener('focus', refresh);
     return () => {
       window.clearInterval(id);
+      window.clearTimeout(grace);
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('focus', refresh);
     };
   }, []);
 
-  if (count == null) return null;
+  // Promote to 'ready' as soon as we have a real count.
+  useEffect(() => {
+    if (count != null) setPhase('ready');
+  }, [count]);
+
+  if (phase === 'unavailable') return null;
+
+  if (phase === 'loading') {
+    // Reserved-space skeleton: same shape as the real chip so the header
+    // doesn't shift when the live number arrives.
+    return (
+      <div
+        className="online-counter online-counter--loading"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading live viewer count"
+      >
+        <span className="online-counter-dot" aria-hidden="true" />
+        <span className="online-counter-skeleton" aria-hidden="true" />
+        <span className="online-counter-label">watching now</span>
+      </div>
+    );
+  }
 
   return (
     <div className="online-counter" role="status" aria-live="polite" title={`${count} ${count === 1 ? 'person is' : 'people are'} viewing right now`}>
       <span className="online-counter-dot" aria-hidden="true" />
-      <span className="online-counter-num">{count.toLocaleString()}</span>
+      <span className="online-counter-num">{count!.toLocaleString()}</span>
       <span className="online-counter-label">watching now</span>
     </div>
   );
