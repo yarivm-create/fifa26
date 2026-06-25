@@ -66,16 +66,14 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
             <LocalTimeFlag size={18} />
           </span>
         </div>
-        {isLive && (
-          <a
-            className="meta-link"
-            href="https://www.kan.org.il/lobby/worldcup2026/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Watch on KAN 11 →
-          </a>
-        )}
+        <a
+          className="meta-link"
+          href="https://www.kan.org.il/lobby/worldcup2026/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {isLive ? 'Watch on KAN 11 →' : 'Match Recap & Highlights →'}
+        </a>
       </div>
     </div>
   );
