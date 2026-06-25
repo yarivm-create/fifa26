@@ -485,6 +485,10 @@ body {
 .match-card .team-flag-name .flag-img,
 .match-card .team-flag-name .flag-placeholder { flex: 0 0 auto; }
 .match-card .team-name { overflow-wrap: break-word; }
+/* Align the (possibly wrapped) name text toward its flag, so a short
+   wrapped line never leaves a gap between the flag and the text. */
+.match-card .team.home .team-name { text-align: left; }
+.match-card .team.away .team-name { text-align: right; }
 
 .match-card .team-code {
   font-size: .72rem;
@@ -1023,12 +1027,12 @@ body {
 
   .match-card {
     grid-template-columns: 1fr auto 1fr;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
   .match-card .team {
-    font-size: .9rem;
+    font-size: .82rem;
     gap: 6px;
   }
 
@@ -1044,18 +1048,19 @@ body {
 
   .match-card .score-box {
     margin: 0 auto;
-    min-width: 84px;
-    padding: 12px 16px;
-    gap: 8px;
+    min-width: 64px;
+    padding: 10px 12px;
+    gap: 6px;
   }
 
   .match-card .score {
-    font-size: 1.9rem;
+    font-size: 1.7rem;
+    white-space: nowrap;
   }
 
   .match-card .flag-img {
-    width: 22px;
-    height: 15px;
+    width: 20px;
+    height: 14px;
   }
 
   .israel-clock-section {
