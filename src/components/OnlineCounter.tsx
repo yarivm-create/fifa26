@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useI18n } from '../i18n';
 
 // Live "people watching now" counter.
 //
@@ -43,6 +44,7 @@ function readCount(): number | null {
 }
 
 export const OnlineCounter: React.FC = () => {
+  const { t } = useI18n();
   const [count, setCount] = useState<number | null>(null);
   // 'loading' reserves the chip's space with a skeleton so it doesn't pop in
   // and reflow the header a few seconds after paint. We collapse to
@@ -112,16 +114,16 @@ export const OnlineCounter: React.FC = () => {
       >
         <span className="online-counter-dot" aria-hidden="true" />
         <span className="online-counter-skeleton" aria-hidden="true" />
-        <span className="online-counter-label">watching now</span>
+        <span className="online-counter-label">{t('app.watchingNow')}</span>
       </div>
     );
   }
 
   return (
-    <div className="online-counter" role="status" aria-live="polite" title={`${count} ${count === 1 ? 'person is' : 'people are'} viewing right now`}>
+    <div className="online-counter" role="status" aria-live="polite" title={`${count!.toLocaleString()} ${t('app.watchingNow')}`}>
       <span className="online-counter-dot" aria-hidden="true" />
       <span className="online-counter-num">{count!.toLocaleString()}</span>
-      <span className="online-counter-label">watching now</span>
+      <span className="online-counter-label">{t('app.watchingNow')}</span>
     </div>
   );
 };

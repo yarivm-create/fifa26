@@ -484,7 +484,7 @@ body {
 .match-card .team-name.name-single { width: max-content; max-width: 100%; }
 .match-card .team-name.name-multi { width: min-content; }
 .match-card .team.home .team-name { text-align: left; }
-.match-card .team.away .team-name { text-align: right; }
+.match-card .team.away .team-name { text-align: left; }
 
 .match-card .team-code {
   font-size: .72rem;

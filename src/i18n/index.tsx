@@ -29,6 +29,7 @@ const en: Dict = {
   'app.title': '⚽ FIFA World Cup 2026',
   'app.subtitle': 'United States • Mexico • Canada',
   'app.liveDashboard': 'LIVE DASHBOARD',
+  'app.watchingNow': 'watching now',
   // Tabs
   'tab.live': '🔴 Live & Today',
   'tab.standings': '🏆 Standings',
@@ -174,6 +175,7 @@ const he: Dict = {
   'app.title': '⚽ מונדיאל 2026',
   'app.subtitle': 'ארצות הברית • מקסיקו • קנדה',
   'app.liveDashboard': 'לוח חי',
+  'app.watchingNow': 'צופים עכשיו',
   // Tabs
   'tab.live': '🔴 חי והיום',
   'tab.standings': '🏆 טבלאות',

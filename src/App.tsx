@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { LiveMatches } from './components/LiveMatches';
 import { OnlineCounter } from './components/OnlineCounter';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -44,6 +44,12 @@ const TabFallback: React.FC = () => {
 const App: React.FC = () => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('live');
+
+  // Reset scroll to the top whenever the user switches tabs so each panel
+  // starts at the beginning rather than inheriting the previous scroll offset.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
