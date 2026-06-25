@@ -7,13 +7,14 @@ test.use({ timezoneId: 'Asia/Jerusalem', locale: 'en-US', reducedMotion: 'reduce
 
 const TABS = ['live', 'standings', 'stats', 'bracket', 'schedule', 'favorites'];
 
-// Collect uncaught page errors, ignoring the one known + accepted third-party
-// counter error (whos.amung.us uses eval(), blocked by our CSP on purpose).
+// Collect uncaught page errors, ignoring known-benign noise:
+//  - the third-party counter's eval() error (whos.amung.us, blocked by our CSP)
+//  - "ResizeObserver loop ..." which is a benign browser notification, not a bug
 function trackAppErrors(page: import('@playwright/test').Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => {
     const msg = String(e);
-    if (!/eval/i.test(msg)) errors.push(msg);
+    if (!/eval/i.test(msg) && !/ResizeObserver loop/i.test(msg)) errors.push(msg);
   });
   return errors;
 }

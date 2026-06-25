@@ -21,9 +21,8 @@ const TeamName: React.FC<{ name: string }> = ({ name }) => {
     const team = el?.closest('.team') as HTMLElement | null;
     if (!el || !team) return;
 
-    let ro: ResizeObserver;
+    let raf = 0;
     const measure = () => {
-      if (ro) ro.disconnect();
       const flag = team.querySelector('.flag-img, .flag-placeholder') as HTMLElement | null;
       const avail = team.clientWidth - (flag ? flag.offsetWidth : 0) - 10;
       const prevW = el.style.width;
@@ -33,13 +32,25 @@ const TeamName: React.FC<{ name: string }> = ({ name }) => {
       const oneLine = el.scrollWidth;
       el.style.width = prevW;
       el.style.whiteSpace = prevWS;
-      setMulti(oneLine > avail + 4);
-      if (ro) ro.observe(team);
+      const next = oneLine > avail + 4;
+      setMulti((prev) => (prev === next ? prev : next));
     };
 
-    ro = new ResizeObserver(measure);
-    measure();
-    return () => ro.disconnect();
+    // Defer measurement with rAF so DOM reads/writes never happen synchronously
+    // inside the ResizeObserver callback (which would raise the benign
+    // "ResizeObserver loop" warning that our smoke test treats as an error).
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(team);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [name]);
 
   return (
