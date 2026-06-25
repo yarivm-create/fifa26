@@ -87,6 +87,15 @@ function detectCountryIso(tz: string): string | null {
 export const LOCAL_TZ = detectTimeZone();
 export const LOCAL_ISO = detectCountryIso(LOCAL_TZ);
 
+// Active Intl locale for date/time formatting. `undefined` = the visitor's own
+// browser locale (English-mode default); the i18n layer sets this to 'he-IL'
+// when Hebrew is selected. Date-displaying components re-render on language
+// change (they consume the i18n context), so they pick up the new locale.
+let activeLocale: string | undefined;
+export function setActiveLocale(locale: string | undefined): void {
+  activeLocale = locale;
+}
+
 // Short timezone abbreviation (e.g. "GMT+3", "EDT") for clarity.
 function tzAbbrev(): string {
   try {
@@ -103,7 +112,7 @@ export const LOCAL_TZ_LABEL = tzAbbrev();
 
 // Format a UTC/ISO datetime as the visitor's local time (their locale's style).
 export function formatLocalTime(datetime: string | number | Date): string {
-  return new Date(datetime).toLocaleTimeString(undefined, {
+  return new Date(datetime).toLocaleTimeString(activeLocale, {
     timeZone: LOCAL_TZ,
     hour: '2-digit',
     minute: '2-digit',
@@ -115,7 +124,7 @@ export function formatLocalDate(
   datetime: string | number | Date,
   opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }
 ): string {
-  return new Date(datetime).toLocaleDateString(undefined, { timeZone: LOCAL_TZ, ...opts });
+  return new Date(datetime).toLocaleDateString(activeLocale, { timeZone: LOCAL_TZ, ...opts });
 }
 
 // Stable YYYY-MM-DD key in the visitor's local timezone (for day bucketing).
@@ -142,10 +151,10 @@ export const LocalTimeFlag: React.FC<{ size?: number }> = ({ size = 18 }) => {
 
 function clockString(): string {
   const now = new Date();
-  const date = now.toLocaleDateString(undefined, {
+  const date = now.toLocaleDateString(activeLocale, {
     timeZone: LOCAL_TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
-  const time = now.toLocaleTimeString(undefined, {
+  const time = now.toLocaleTimeString(activeLocale, {
     timeZone: LOCAL_TZ, hour: '2-digit', minute: '2-digit', second: '2-digit',
   });
   return `${date} • ${time}`;

@@ -6,6 +6,7 @@ import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
+import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
@@ -27,6 +28,7 @@ function PlayerCard({
   teamName: string;
   onUnfollow: () => void;
 }) {
+  const { t } = useI18n();
   const upcoming = matches
     .filter(
       (m) =>
@@ -48,7 +50,7 @@ function PlayerCard({
             <div className="follow-card-team">{teamName || player.code}</div>
           </div>
         </div>
-        <button className="follow-btn following" onClick={onUnfollow} title="Unfollow" aria-label="Unfollow">
+        <button className="follow-btn following" onClick={onUnfollow} title={t('card.unfollow')} aria-label={t('card.unfollow')}>
           ★
         </button>
       </div>
@@ -56,18 +58,18 @@ function PlayerCard({
       <div className="follow-card-stats">
         <div className="follow-stat">
           <span className="follow-stat-value">{player.goals}</span>
-          <span className="follow-stat-label">⚽ Goals</span>
+          <span className="follow-stat-label">{t('card.goals')}</span>
         </div>
         <div className="follow-stat">
           <span className="follow-stat-value">{player.assists}</span>
-          <span className="follow-stat-label">🅰️ Assists</span>
+          <span className="follow-stat-label">{t('card.assists')}</span>
         </div>
       </div>
 
       <div className="follow-card-fixtures">
-        <div className="follow-fixtures-title">Upcoming {teamName || ''} matches</div>
+        <div className="follow-fixtures-title">{t('card.upcomingMatches', { team: teamName || '' })}</div>
         {upcoming.length === 0 ? (
-          <div className="follow-fixture-empty">No upcoming matches scheduled.</div>
+          <div className="follow-fixture-empty">{t('card.noUpcoming')}</div>
         ) : (
           upcoming.map((m) => {
             const oppHome = m.home_team.code !== player.code;
@@ -75,7 +77,7 @@ function PlayerCard({
             return (
               <div className="follow-fixture" key={m.id}>
                 <span className="follow-fixture-opp">
-                  vs <Flag code={opp.code} name={opp.name} /> {opp.name}
+                  {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
                 </span>
                 <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
               </div>
@@ -88,6 +90,7 @@ function PlayerCard({
 }
 
 export const Following: React.FC = () => {
+  const { t } = useI18n();
   const { ids, toggle } = useFollowedPlayers();
   const fetcher = useCallback(async (): Promise<Data> => {
     const [players, matches] = await Promise.all([fetchPlayerStats(), fetchAllMatches()]);
@@ -115,13 +118,13 @@ export const Following: React.FC = () => {
 
   return (
     <section className="favorites-section">
-      <h2 className="favorites-heading">👤 Followed Players <span className="favorites-count">{ids.size}</span></h2>
+      <h2 className="favorites-heading">{t('fav.players')} <span className="favorites-count">{ids.size}</span></h2>
       {loading && !data ? (
-        <div className="favorites-loading"><div className="spinner" /><span>Loading player details…</span></div>
+        <div className="favorites-loading"><div className="spinner" /><span>{t('loading.playerDetails')}</span></div>
       ) : followed.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <p style={{ color: 'var(--wc-text-muted)' }}>
-            Your followed players haven't recorded goals or assists yet — check back after their next match.
+            {t('fav.playersNoStats')}
           </p>
         </div>
       ) : (

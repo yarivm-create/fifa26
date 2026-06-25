@@ -160,6 +160,30 @@ body {
 }
 .share-btn:active { transform: translateY(0); }
 
+/* Language toggle pill — mirrors the share-btn look */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.08));
+  border: 1px solid rgba(212,175,55,.5);
+  color: var(--wc-gold);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.lang-toggle:hover {
+  background: linear-gradient(135deg, rgba(212,175,55,.3), rgba(212,175,55,.15));
+  box-shadow: 0 0 14px rgba(212,175,55,.3);
+  transform: translateY(-1px);
+}
+.lang-toggle:active { transform: translateY(0); }
+
 /* Header clock */
 .header-clock {
   font-size: .9rem;
@@ -1752,4 +1776,36 @@ select:focus-visible {
 @keyframes offline-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .35; }
+}
+
+/* ============================================================
+   RTL SUPPORT — Hebrew language mode (document dir="rtl")
+   Most layout is flexbox and mirrors automatically; these are
+   the explicit directional rules that need flipping.
+   ============================================================ */
+[dir="rtl"] .match-card .team.home {
+  justify-content: flex-start;
+  text-align: left;
+}
+[dir="rtl"] .match-card .team.away {
+  justify-content: flex-end;
+  text-align: right;
+}
+[dir="rtl"] .match-status .live-dot {
+  margin-right: 0;
+  margin-left: 5px;
+}
+[dir="rtl"] .standings-table th {
+  text-align: right;
+}
+[dir="rtl"] .qual-badge {
+  margin-left: 0;
+  margin-right: 6px;
+}
+[dir="rtl"] .team-card-qual .qual-badge {
+  margin-right: 0;
+}
+[dir="rtl"] .team-fav-btn {
+  margin-right: 0;
+  margin-left: 4px;
 }

@@ -6,6 +6,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Fireworks, WhistleToast } from './components/Celebrations';
 import { LocalClock } from './utils/localTime';
 import { ShareButton } from './components/ShareButton';
+import { LanguageToggle } from './components/LanguageToggle';
+import { useI18n } from './i18n';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
@@ -20,23 +22,27 @@ const Favorites = lazy(() => import('./components/Favorites').then(m => ({ defau
 
 type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule' | 'favorites';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'live', label: '🔴 Live & Today' },
-  { key: 'standings', label: '🏆 Standings' },
-  { key: 'stats', label: '📊 Stats' },
-  { key: 'bracket', label: '🗺️ Bracket' },
-  { key: 'schedule', label: '📅 Schedule' },
-  { key: 'favorites', label: '⭐ My Favorites' },
+const TABS: { key: Tab; tkey: string }[] = [
+  { key: 'live', tkey: 'tab.live' },
+  { key: 'standings', tkey: 'tab.standings' },
+  { key: 'stats', tkey: 'tab.stats' },
+  { key: 'bracket', tkey: 'tab.bracket' },
+  { key: 'schedule', tkey: 'tab.schedule' },
+  { key: 'favorites', tkey: 'tab.favorites' },
 ];
 
-const TabFallback: React.FC = () => (
-  <div className="loading">
-    <div className="spinner" />
-    <p>Loading…</p>
-  </div>
-);
+const TabFallback: React.FC = () => {
+  const { t } = useI18n();
+  return (
+    <div className="loading">
+      <div className="spinner" />
+      <p>{t('loading.generic')}</p>
+    </div>
+  );
+};
 
 const App: React.FC = () => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('live');
 
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
@@ -74,13 +80,13 @@ const App: React.FC = () => {
     <div className="app">
       <OfflineBanner />
       <header className="header">
-        <h1>⚽ FIFA World Cup 2026</h1>
+        <h1>{t('app.title')}</h1>
         <p className="subtitle">
-          United States • Mexico • Canada
+          {t('app.subtitle')}
         </p>
         <div className="live-indicator">
           <span className="live-dot" aria-hidden="true" />
-          LIVE DASHBOARD
+          {t('app.liveDashboard')}
         </div>
         <div className="header-clock-wrap">
           <LocalClock />
@@ -88,31 +94,32 @@ const App: React.FC = () => {
         <div className="header-actions">
           <OnlineCounter />
           <ShareButton />
+          <LanguageToggle />
         </div>
       </header>
 
-      <nav className="nav" role="tablist" aria-label="Dashboard sections">
-        {TABS.map((t, i) => (
+      <nav className="nav" role="tablist" aria-label={t('nav.aria')}>
+        {TABS.map((tab, i) => (
           <button
-            key={t.key}
-            id={`tab-${t.key}`}
+            key={tab.key}
+            id={`tab-${tab.key}`}
             role="tab"
             type="button"
-            aria-selected={activeTab === t.key}
+            aria-selected={activeTab === tab.key}
             aria-controls="tab-panel"
-            tabIndex={activeTab === t.key ? 0 : -1}
-            className={activeTab === t.key ? 'active' : ''}
-            onClick={() => setActiveTab(t.key)}
+            tabIndex={activeTab === tab.key ? 0 : -1}
+            className={activeTab === tab.key ? 'active' : ''}
+            onClick={() => setActiveTab(tab.key)}
             onKeyDown={(e) => onTabKeyDown(e, i)}
           >
-            {t.label}
+            {t(tab.tkey)}
           </button>
         ))}
       </nav>
 
       <main>
         <div id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={-1}>
-          <ErrorBoundary label={TABS.find(t => t.key === activeTab)?.label.replace(/^\S+\s/, '')}>
+          <ErrorBoundary label={t(TABS.find(tab => tab.key === activeTab)?.tkey ?? 'tab.live').replace(/^\S+\s/, '')}>
             <Suspense fallback={<TabFallback />}>
               {renderTab()}
             </Suspense>

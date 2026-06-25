@@ -4,13 +4,14 @@ import { fetchAllMatches } from '../api/worldcup';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalDate, formatLocalTime, LocalTimeFlag } from '../utils/localTime';
+import { useI18n, TFunc } from '../i18n';
 
-const ROUNDS: { key: string; label: string }[] = [
-  { key: 'Round of 32', label: 'Round of 32' },
-  { key: 'Round of 16', label: 'Round of 16' },
-  { key: 'Quarter-final', label: 'Quarter-finals' },
-  { key: 'Semi-final', label: 'Semi-finals' },
-  { key: 'Final', label: 'Final' },
+const ROUNDS: { key: string; tkey: string }[] = [
+  { key: 'Round of 32', tkey: 'stage.r32' },
+  { key: 'Round of 16', tkey: 'stage.r16' },
+  { key: 'Quarter-final', tkey: 'stage.qf' },
+  { key: 'Semi-final', tkey: 'stage.sf' },
+  { key: 'Final', tkey: 'stage.final' },
 ];
 
 // Real teams have a known flag; placeholders (2A, W73, RU101, 3ABCDF) get a readable label.
@@ -18,13 +19,13 @@ function isPlaceholder(code: string): boolean {
   return /^(\d|W\d|RU\d|3[A-L]{2,})/.test(code);
 }
 
-function teamLabel(code: string, name: string): string {
+function teamLabel(code: string, name: string, t: TFunc): string {
   if (!isPlaceholder(code)) return name;
-  if (/^W\d+$/.test(code)) return `Winner M${code.slice(1)}`;
-  if (/^RU\d+$/.test(code)) return `Loser M${code.slice(2)}`;
-  if (/^1[A-L]$/.test(code)) return `Winner Grp ${code[1]}`;
-  if (/^2[A-L]$/.test(code)) return `Runner-up ${code[1]}`;
-  if (/^3/.test(code)) return `3rd ${code.slice(1).split('').join('/')}`;
+  if (/^W\d+$/.test(code)) return t('bracket.winnerMatch', { n: code.slice(1) });
+  if (/^RU\d+$/.test(code)) return t('bracket.loserMatch', { n: code.slice(2) });
+  if (/^1[A-L]$/.test(code)) return t('bracket.winnerGroup', { letter: code[1] });
+  if (/^2[A-L]$/.test(code)) return t('bracket.runnerUp', { letter: code[1] });
+  if (/^3/.test(code)) return t('bracket.third', { groups: code.slice(1).split('').join('/') });
   return code;
 }
 
@@ -32,13 +33,16 @@ function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
 }
 
-const BracketTeam: React.FC<{ code: string; name: string; goals: number | null }> = ({ code, name, goals }) => (
-  <div className="bracket-team">
-    <Flag code={code} name={name} className="bracket-flag" />
-    <span className="bracket-name">{teamLabel(code, name)}</span>
-    {goals !== null && <span className="bracket-score">{goals}</span>}
-  </div>
-);
+const BracketTeam: React.FC<{ code: string; name: string; goals: number | null }> = ({ code, name, goals }) => {
+  const { t } = useI18n();
+  return (
+    <div className="bracket-team">
+      <Flag code={code} name={name} className="bracket-flag" />
+      <span className="bracket-name">{teamLabel(code, name, t)}</span>
+      {goals !== null && <span className="bracket-score">{goals}</span>}
+    </div>
+  );
+};
 
 const BracketMatch: React.FC<{ match: Match }> = ({ match }) => (
   <div className="bracket-match">
@@ -50,6 +54,7 @@ const BracketMatch: React.FC<{ match: Match }> = ({ match }) => (
 );
 
 export const Bracket: React.FC = () => {
+  const { t } = useI18n();
   const fetcher = useCallback(() => fetchAllMatches(), []);
   const { data: matches, loading } = useLiveData<Match[]>(fetcher, 120000);
 
@@ -57,7 +62,7 @@ export const Bracket: React.FC = () => {
     return (
       <div className="loading">
         <div className="spinner" />
-        <p>Loading bracket...</p>
+        <p>{t('loading.bracket')}</p>
       </div>
     );
   }
@@ -70,7 +75,7 @@ export const Bracket: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 20 }}>🗺️ Knockout Bracket</h2>
+      <h2 style={{ marginBottom: 20 }}>{t('bracket.title')}</h2>
       <div className="bracket-scroll">
         <div className="bracket-grid">
           {ROUNDS.map((round) => {
@@ -78,7 +83,7 @@ export const Bracket: React.FC = () => {
             if (roundMatches.length === 0) return null;
             return (
               <div className="bracket-column" key={round.key}>
-                <h3 className="bracket-round-title">{round.label}</h3>
+                <h3 className="bracket-round-title">{t(round.tkey)}</h3>
                 {roundMatches.map((m) => (
                   <BracketMatch key={m.id} match={m} />
                 ))}
@@ -90,7 +95,7 @@ export const Bracket: React.FC = () => {
 
       {thirdPlace.length > 0 && (
         <div className="bracket-third-place">
-          <h3 className="bracket-round-title">🥉 Third Place Play-off</h3>
+          <h3 className="bracket-round-title">{t('bracket.thirdPlace')}</h3>
           {thirdPlace.map((m) => (
             <BracketMatch key={m.id} match={m} />
           ))}

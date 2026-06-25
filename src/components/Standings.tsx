@@ -6,8 +6,10 @@ import { Group } from '../api/types';
 import { FormResult } from '../api/mockData';
 import { QualChance } from '../api/qualification';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
+import { useI18n } from '../i18n';
 
 export const Standings: React.FC = () => {
+  const { t } = useI18n();
   const fetcher = useCallback(() => fetchGroups(), []);
   const formFetcher = useCallback(() => fetchForm(), []);
   const qualFetcher = useCallback(() => fetchQualification(), []);
@@ -20,7 +22,7 @@ export const Standings: React.FC = () => {
     return (
       <div className="loading">
         <div className="spinner" />
-        <p>Loading group standings...</p>
+        <p>{t('loading.standings')}</p>
       </div>
     );
   }
@@ -32,9 +34,9 @@ export const Standings: React.FC = () => {
   if (!groups || groups.length === 0) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <p style={{ color: '#a0aec0' }}>Group standings not yet available.</p>
+        <p style={{ color: '#a0aec0' }}>{t('standings.notAvailable')}</p>
         <p style={{ color: '#a0aec0', fontSize: '0.85rem', marginTop: 8 }}>
-          Standings will appear once the group stage begins.
+          {t('standings.willAppear')}
         </p>
       </div>
     );
@@ -42,12 +44,12 @@ export const Standings: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 8 }}>🏆 Group Standings</h2>
+      <h2 style={{ marginBottom: 8 }}>{t('standings.title')}</h2>
       <p className="qual-legend">
-        Top 2 of each group + 8 best third-placed teams reach the Round of 32. Tap ☆ to favorite a team.
-        <span className="qual-badge qual-q">✓ Through</span>
-        <span className="qual-badge qual-pct">% chance</span>
-        <span className="qual-badge qual-out">✕ Out</span>
+        {t('standings.legend')}
+        <span className="qual-badge qual-q">{t('standings.through')}</span>
+        <span className="qual-badge qual-pct">{t('standings.pctChance')}</span>
+        <span className="qual-badge qual-out">{t('standings.out')}</span>
       </p>
       <div className="groups-grid">
         {groups.map((group) => (

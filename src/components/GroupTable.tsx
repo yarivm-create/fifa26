@@ -3,6 +3,7 @@ import { Group } from '../api/types';
 import { Flag } from '../utils/flags';
 import { FormResult } from '../api/mockData';
 import { QualChance } from '../api/qualification';
+import { useI18n } from '../i18n';
 
 interface TeamFollowApi {
   isFavorite: (code: string) => boolean;
@@ -17,12 +18,13 @@ interface Props {
 }
 
 const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
+  const { t } = useI18n();
   if (!chance) return null;
   if (chance.status === 'Qualified') {
-    return <span className="qual-badge qual-q" title="Qualified for the Round of 32">✓</span>;
+    return <span className="qual-badge qual-q" title={t('group.qualifiedTitle')}>✓</span>;
   }
   if (chance.status === 'Eliminated') {
-    return <span className="qual-badge qual-out" title="Eliminated">✕</span>;
+    return <span className="qual-badge qual-out" title={t('group.eliminatedTitle')}>✕</span>;
   }
   // Still alive but not mathematically decided — never show a bare 0%/100%,
   // which would read as "out"/"through". Clamp to <1% / >99%.
@@ -30,7 +32,7 @@ const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
   return (
     <span
       className="qual-badge qual-pct"
-      title={`${chance.pAdvance}% chance to reach the Round of 32 · ${chance.pTop2}% to finish top 2`}
+      title={t('group.advanceTitle', { pct: `${chance.pAdvance}%`, top2: `${chance.pTop2}%` })}
     >
       {pct}
     </span>
@@ -51,15 +53,16 @@ const FormDots: React.FC<{ results?: FormResult[] }> = ({ results }) => {
 };
 
 export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) => {
+  const { t } = useI18n();
   return (
     <div className="card group-section">
-      <h3>Group {group.letter}</h3>
+      <h3>{t('group.label', { letter: group.letter })}</h3>
       <div className="table-scroll">
         <table className="standings-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Team</th>
+              <th>{t('col.team')}</th>
               <th>P</th>
               <th>W</th>
               <th>D</th>
@@ -68,7 +71,7 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
               <th>GA</th>
               <th>GD</th>
               <th>Pts</th>
-              <th>Form</th>
+              <th>{t('col.form')}</th>
             </tr>
           </thead>
           <tbody>
@@ -83,8 +86,8 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
                       <button
                         className={`follow-btn team-fav-btn${fav ? ' following' : ''}`}
                         onClick={() => teamFollow.toggle(code)}
-                        title={fav ? 'Remove from favorites' : 'Add to favorites'}
-                        aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}
+                        title={fav ? t('fav.remove') : t('fav.add')}
+                        aria-label={fav ? t('fav.remove') : t('fav.add')}
                       >
                         {fav ? '★' : '☆'}
                       </button>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useI18n } from '../i18n';
 
 // One-tap sharing. On mobile (and any browser with the Web Share API) this
 // opens the native share sheet — WhatsApp, Telegram, X, Messenger, email, etc.
@@ -25,6 +26,7 @@ function isMobileDevice(): boolean {
 }
 
 export const ShareButton: React.FC = () => {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   // Mobile-only. Desktop Chrome/Edge also expose navigator.share, so that
@@ -59,10 +61,10 @@ export const ShareButton: React.FC = () => {
       type="button"
       className="share-btn"
       onClick={onShare}
-      aria-label="Share this World Cup dashboard"
+      aria-label={t('share.aria')}
     >
       <span aria-hidden="true">{copied ? '✓' : '🔗'}</span>
-      {copied ? 'Link copied!' : 'Share'}
+      {copied ? t('share.copied') : t('share.label')}
     </button>
   );
 };

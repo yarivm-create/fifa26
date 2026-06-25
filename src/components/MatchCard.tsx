@@ -2,26 +2,28 @@ import React from 'react';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
+import { useI18n, TFunc } from '../i18n';
 
 interface Props {
   match: Match;
 }
 
-function getStatusLabel(status: string, time?: string): { label: string; isLive: boolean } {
+function getStatusLabel(status: string, t: TFunc, time?: string): { label: string; isLive: boolean } {
   switch (status) {
     case 'in_progress':
-      return { label: time || '⚽ LIVE', isLive: true };
+      return { label: time || t('status.live'), isLive: true };
     case 'half_time':
-      return { label: 'HALF TIME', isLive: true };
+      return { label: t('status.halfTime'), isLive: true };
     case 'completed':
-      return { label: 'FULL TIME', isLive: false };
+      return { label: t('status.fullTime'), isLive: false };
     default:
-      return { label: 'UPCOMING', isLive: false };
+      return { label: t('status.upcoming'), isLive: false };
   }
 }
 
 export const MatchCard: React.FC<Props> = ({ match }) => {
-  const { label, isLive } = getStatusLabel(match.status, match.time);
+  const { t } = useI18n();
+  const { label, isLive } = getStatusLabel(match.status, t, match.time);
 
   return (
     <div className="card">
@@ -73,7 +75,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {isLive ? 'Live Match Center →' : 'Match Recap & Highlights →'}
+            {isLive ? t('match.liveCenter') : t('match.recap')}
           </a>
         )}
       </div>

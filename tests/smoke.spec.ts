@@ -101,3 +101,25 @@ test('share button is mobile-only and fires the native share sheet', async ({ pa
   );
   expect(shared?.url).toContain('/fifa26/');
 });
+
+test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({ page }) => {
+  await page.goto('');
+
+  // Default is English / left-to-right.
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  await expect(page.getByRole('heading', { name: /FIFA World Cup 2026/i })).toBeVisible();
+
+  // Flip to Hebrew: document becomes RTL and the heading switches.
+  await page.locator('.lang-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+  await expect(page.getByRole('heading', { name: /מונדיאל 2026/ })).toBeVisible();
+
+  // Choice persists across reloads.
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+
+  // Flip back to English.
+  await page.locator('.lang-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+});

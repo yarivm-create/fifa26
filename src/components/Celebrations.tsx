@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { playWhistle } from '../utils/sound';
+import { useI18n } from '../i18n';
 
 // ---- Goal fireworks -------------------------------------------------------
 // A brief, non-interactive burst overlay shown right after a goal is confirmed.
@@ -13,16 +14,17 @@ const BURSTS = [
 const PARTICLES = 18;
 
 export const Fireworks: React.FC = () => {
+  const { t } = useI18n();
   const [show, setShow] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => setShow(false), 3200);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setShow(false), 3200);
+    return () => clearTimeout(timer);
   }, []);
   if (!show) return null;
 
   return (
     <div className="fx-overlay" aria-hidden="true">
-      <div className="fx-goal-banner">GOAL! ⚽</div>
+      <div className="fx-goal-banner">{t('fx.goal')}</div>
       {BURSTS.map((b, bi) => (
         <div
           key={bi}
@@ -74,6 +76,7 @@ const WhistleIcon: React.FC = () => (
 );
 
 export const WhistleToast: React.FC = () => {
+  const { t } = useI18n();
   const [show, setShow] = useState(false);
   useEffect(() => {
     const appear = setTimeout(() => {
@@ -91,8 +94,8 @@ export const WhistleToast: React.FC = () => {
     <div className="whistle-toast" role="status">
       <WhistleIcon />
       <div className="whistle-toast-text">
-        <strong>Full Time</strong>
-        <span>Match over</span>
+        <strong>{t('fx.fullTime')}</strong>
+        <span>{t('fx.matchOver')}</span>
       </div>
     </div>
   );

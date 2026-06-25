@@ -8,6 +8,7 @@ import { PlayerAgg } from '../api/liveData';
 import { Flag } from '../utils/flags';
 import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
+import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
@@ -32,15 +33,16 @@ interface Data {
 }
 
 function QualLine({ chance }: { chance?: QualChance }) {
+  const { t } = useI18n();
   if (!chance) return null;
   if (chance.status === 'Qualified') {
-    return <span className="qual-badge qual-q">✓ Qualified for Round of 32</span>;
+    return <span className="qual-badge qual-q">{t('group.qualified')}</span>;
   }
   if (chance.status === 'Eliminated') {
-    return <span className="qual-badge qual-out">✕ Eliminated</span>;
+    return <span className="qual-badge qual-out">{t('group.eliminated')}</span>;
   }
   const pct = chance.pAdvance <= 0 ? '<1%' : chance.pAdvance >= 100 ? '>99%' : `${chance.pAdvance}%`;
-  return <span className="qual-badge qual-pct">{pct} to advance</span>;
+  return <span className="qual-badge qual-pct">{t('group.toAdvance', { pct })}</span>;
 }
 
 function FormDots({ results }: { results?: FormResult[] }) {
@@ -63,6 +65,7 @@ function TeamCard({
   data: Data;
   onRemove: () => void;
 }) {
+  const { t, lang } = useI18n();
   const { code, name, group, position, standing } = info;
   const teamMatches = data.matches.filter(
     (m) => m.home_team.code === code || m.away_team.code === code
@@ -90,11 +93,11 @@ function TeamCard({
           <div>
             <div className="follow-card-name">{name}</div>
             <div className="follow-card-team">
-              Group {group} · {ORDINAL[position] || `${position + 1}th`}
+              {t('group.label', { letter: group })} · {lang === 'he' ? `מקום ${position + 1}` : (ORDINAL[position] || `${position + 1}th`)}
             </div>
           </div>
         </div>
-        <button className="follow-btn following" onClick={onRemove} title="Remove from favorites" aria-label="Remove from favorites">
+        <button className="follow-btn following" onClick={onRemove} title={t('card.removeFav')} aria-label={t('card.removeFav')}>
           ★
         </button>
       </div>
@@ -104,17 +107,17 @@ function TeamCard({
       </div>
 
       <div className="team-stat-grid">
-        <div className="team-stat"><span className="team-stat-value">{standing.points}</span><span className="team-stat-label">Pts</span></div>
-        <div className="team-stat"><span className="team-stat-value">{standing.played}</span><span className="team-stat-label">Played</span></div>
-        <div className="team-stat"><span className="team-stat-value">{standing.won}-{standing.drawn}-{standing.lost}</span><span className="team-stat-label">W-D-L</span></div>
-        <div className="team-stat"><span className="team-stat-value">{standing.goals_for}:{standing.goals_against}</span><span className="team-stat-label">GF:GA</span></div>
-        <div className="team-stat"><span className="team-stat-value">{standing.goal_difference > 0 ? '+' : ''}{standing.goal_difference}</span><span className="team-stat-label">GD</span></div>
-        <div className="team-stat team-stat-form"><FormDots results={data.form[code]} /><span className="team-stat-label">Form</span></div>
+        <div className="team-stat"><span className="team-stat-value">{standing.points}</span><span className="team-stat-label">{t('card.pts')}</span></div>
+        <div className="team-stat"><span className="team-stat-value">{standing.played}</span><span className="team-stat-label">{t('card.played')}</span></div>
+        <div className="team-stat"><span className="team-stat-value">{standing.won}-{standing.drawn}-{standing.lost}</span><span className="team-stat-label">{t('card.wdl')}</span></div>
+        <div className="team-stat"><span className="team-stat-value">{standing.goals_for}:{standing.goals_against}</span><span className="team-stat-label">{t('card.gfga')}</span></div>
+        <div className="team-stat"><span className="team-stat-value">{standing.goal_difference > 0 ? '+' : ''}{standing.goal_difference}</span><span className="team-stat-label">{t('card.gd')}</span></div>
+        <div className="team-stat team-stat-form"><FormDots results={data.form[code]} /><span className="team-stat-label">{t('card.form')}</span></div>
       </div>
 
       {topPlayers.length > 0 && (
         <div className="team-card-section">
-          <div className="follow-fixtures-title">Top players</div>
+          <div className="follow-fixtures-title">{t('card.topPlayers')}</div>
           {topPlayers.map((p) => (
             <div className="team-player-row" key={p.id}>
               <span className="team-player-name">{p.name}</span>
@@ -128,14 +131,14 @@ function TeamCard({
       )}
 
       <div className="team-card-section">
-        <div className="follow-fixtures-title">Fixtures</div>
+        <div className="follow-fixtures-title">{t('card.fixtures')}</div>
         {live && (
           <div className="follow-fixture team-fixture-live">
             <span className="follow-fixture-opp">
-              🔴 vs <Flag code={live.home_team.code === code ? live.away_team.code : live.home_team.code} name="" />{' '}
+              🔴 {t('card.vs')} <Flag code={live.home_team.code === code ? live.away_team.code : live.home_team.code} name="" />{' '}
               {live.home_team.code === code ? live.away_team.name : live.home_team.name}
             </span>
-            <span className="follow-fixture-time">{live.home_team.goals}-{live.away_team.goals} {live.time || 'LIVE'}</span>
+            <span className="follow-fixture-time">{live.home_team.goals}-{live.away_team.goals} {live.time || t('status.live')}</span>
           </div>
         )}
         {recent.map((m) => {
@@ -144,7 +147,7 @@ function TeamCard({
           return (
             <div className="follow-fixture" key={`r-${m.id}`}>
               <span className="follow-fixture-opp">
-                vs <Flag code={opp.code} name={opp.name} /> {opp.name}
+                {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
               </span>
               <span className="follow-fixture-time team-result">{us.goals}-{opp.goals}</span>
             </div>
@@ -157,9 +160,9 @@ function TeamCard({
             <div className="follow-fixture" key={`u-${m.id}`}>
               <span className="follow-fixture-opp">
                 {isReal ? (
-                  <>vs <Flag code={opp.code} name={opp.name} /> {opp.name}</>
+                  <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
                 ) : (
-                  <>🏆 {m.stage_name || 'Knockout'} · TBD</>
+                  <>🏆 {m.stage_name || t('card.knockout')} · {t('card.tbd')}</>
                 )}
               </span>
               <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
@@ -167,7 +170,7 @@ function TeamCard({
           );
         })}
         {!live && recent.length === 0 && upcoming.length === 0 && (
-          <div className="follow-fixture-empty">No fixtures available.</div>
+          <div className="follow-fixture-empty">{t('card.noFixtures')}</div>
         )}
       </div>
     </div>
@@ -175,6 +178,7 @@ function TeamCard({
 }
 
 export const FavoriteTeams: React.FC = () => {
+  const { t } = useI18n();
   const { codes, toggle } = useFollowedTeams();
   const fetcher = useCallback(async (): Promise<Data> => {
     const [groups, matches, qual, form, players] = await Promise.all([
@@ -211,12 +215,12 @@ export const FavoriteTeams: React.FC = () => {
 
   return (
     <section className="favorites-section">
-      <h2 className="favorites-heading">⭐ Favorite Teams <span className="favorites-count">{codes.size}</span></h2>
+      <h2 className="favorites-heading">{t('fav.teams')} <span className="favorites-count">{codes.size}</span></h2>
       {loading && !data ? (
-        <div className="favorites-loading"><div className="spinner" /><span>Loading team details…</span></div>
+        <div className="favorites-loading"><div className="spinner" /><span>{t('loading.teamDetails')}</span></div>
       ) : favTeams.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 30 }}>
-          <p style={{ color: 'var(--wc-text-muted)' }}>Your favorite teams aren't in the group stage data yet.</p>
+          <p style={{ color: 'var(--wc-text-muted)' }}>{t('fav.teamsNotInData')}</p>
         </div>
       ) : (
         <div className="follow-grid">

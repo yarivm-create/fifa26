@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useI18n } from '../i18n';
 
 // Lightweight connectivity indicator. Shows a banner only when the browser
 // goes offline, so users understand why live data has stopped updating.
 export const OfflineBanner: React.FC = () => {
+  const { t } = useI18n();
   const [offline, setOffline] = useState(
     typeof navigator !== 'undefined' && navigator.onLine === false
   );
@@ -23,7 +25,7 @@ export const OfflineBanner: React.FC = () => {
   return (
     <div className="offline-banner" role="status" aria-live="assertive">
       <span className="offline-banner-dot" aria-hidden="true" />
-      You’re offline — showing the last loaded data. Live updates resume when you reconnect.
+      {t('offline.message')}
     </div>
   );
 };

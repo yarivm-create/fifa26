@@ -3,6 +3,7 @@ import { useLiveData } from '../hooks/useLiveData';
 import { fetchStats, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
 import { Flag } from '../utils/flags';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
+import { useI18n } from '../i18n';
 
 interface PlayerRow {
   id: string;
@@ -72,6 +73,7 @@ function PlayerBoard({
   rows: PlayerRow[];
   follow: FollowApi;
 }) {
+  const { t } = useI18n();
   if (rows.length === 0) return null;
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
@@ -85,8 +87,8 @@ function PlayerBoard({
             <button
               className={`follow-btn${followed ? ' following' : ''}`}
               onClick={() => follow.toggle(r.id)}
-              title={followed ? 'Unfollow player' : 'Follow player'}
-              aria-label={followed ? 'Unfollow player' : 'Follow player'}
+              title={followed ? t('stats.unfollowPlayer') : t('stats.followPlayer')}
+              aria-label={followed ? t('stats.unfollowPlayer') : t('stats.followPlayer')}
             >
               {followed ? '★' : '☆'}
             </button>
@@ -103,6 +105,7 @@ function PlayerBoard({
 }
 
 export const Stats: React.FC = () => {
+  const { t } = useI18n();
   const fetcher = useCallback(() => fetchStats(), []);
   const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000);
   const follow = useFollowedPlayers();
@@ -111,7 +114,7 @@ export const Stats: React.FC = () => {
     return (
       <div className="loading">
         <div className="spinner" />
-        <p>Loading tournament statistics...</p>
+        <p>{t('loading.stats')}</p>
       </div>
     );
   }
@@ -123,7 +126,7 @@ export const Stats: React.FC = () => {
   if (!stats || stats.playedMatches === 0) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <p style={{ color: 'var(--wc-text-muted)' }}>Statistics will appear once matches are played.</p>
+        <p style={{ color: 'var(--wc-text-muted)' }}>{t('stats.willAppear')}</p>
       </div>
     );
   }
@@ -132,12 +135,12 @@ export const Stats: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 20 }}>📊 Tournament Statistics</h2>
+      <h2 style={{ marginBottom: 20 }}>{t('stats.title')}</h2>
 
       <div className="stat-progress">
         <div className="stat-progress-head">
-          <span>Tournament Progress</span>
-          <span>{stats.playedMatches} / {stats.totalMatches} matches</span>
+          <span>{t('stats.progress')}</span>
+          <span>{t('stats.matchesOf', { played: stats.playedMatches, total: stats.totalMatches })}</span>
         </div>
         <div className="stat-progress-bar">
           <span className="stat-progress-fill" style={{ width: `${progressPct}%` }} />
@@ -145,48 +148,48 @@ export const Stats: React.FC = () => {
       </div>
 
       <div className="stat-grid">
-        <StatTile value={String(stats.totalGoals)} label="Total Goals" accent="var(--wc-gold)" />
-        <StatTile value={stats.avgGoalsPerMatch.toFixed(2)} label="Goals / Match" accent="var(--wc-secondary)" />
-        <StatTile value={String(stats.playedMatches)} label="Matches Played" />
-        <StatTile value={String(stats.upcomingMatches)} label="Upcoming" />
-        <StatTile value={String(stats.cleanSheets)} label="Clean Sheets" accent="var(--wc-blue)" />
-        <StatTile value={`${stats.bttsPct.toFixed(0)}%`} label="Both Teams Scored" accent="var(--wc-green)" />
+        <StatTile value={String(stats.totalGoals)} label={t('stats.totalGoals')} accent="var(--wc-gold)" />
+        <StatTile value={stats.avgGoalsPerMatch.toFixed(2)} label={t('stats.goalsPerMatch')} accent="var(--wc-secondary)" />
+        <StatTile value={String(stats.playedMatches)} label={t('stats.matchesPlayed')} />
+        <StatTile value={String(stats.upcomingMatches)} label={t('stats.upcoming')} />
+        <StatTile value={String(stats.cleanSheets)} label={t('stats.cleanSheets')} accent="var(--wc-blue)" />
+        <StatTile value={`${stats.bttsPct.toFixed(0)}%`} label={t('stats.btts')} accent="var(--wc-green)" />
       </div>
 
       <PlayerBoard
-        title="👟 Golden Boot Race — Top Scorers"
+        title={t('stats.goldenBoot')}
         icon="⚽"
         rows={stats.topScorers.map((s) => ({ id: s.id, name: s.name, code: s.code, value: s.goals }))}
         follow={follow}
       />
 
       <PlayerBoard
-        title="🎯 Playmakers — Top Assists"
+        title={t('stats.playmakers')}
         icon="🅰️"
         rows={stats.topAssists.map((a) => ({ id: a.id, name: a.name, code: a.code, value: a.assists }))}
         follow={follow}
       />
 
-      <p className="follow-hint">⭐ Tap ☆ next to a player to follow them — see them in the “My Favorites” tab.</p>
+      <p className="follow-hint">{t('stats.followHint')}</p>
 
       <div className="stat-highlights">
-        <HighlightCard title="🔥 Biggest Win" highlight={stats.biggestWin} suffix="goal margin" />
-        <HighlightCard title="⚽ Highest Scoring" highlight={stats.highestScoring} suffix="goals" />
+        <HighlightCard title={t('stats.biggestWin')} highlight={stats.biggestWin} suffix={t('stats.goalMargin')} />
+        <HighlightCard title={t('stats.highestScoring')} highlight={stats.highestScoring} suffix={t('stats.goals')} />
       </div>
 
       <div className="stat-boards">
-        <Leaderboard title="🥅 Top Scoring Teams" rows={stats.topScoringTeams} suffix="GF" />
-        <Leaderboard title="🛡️ Best Defenses" rows={stats.bestDefenses} suffix="GA" />
+        <Leaderboard title={t('stats.topScoringTeams')} rows={stats.topScoringTeams} suffix="GF" />
+        <Leaderboard title={t('stats.bestDefenses')} rows={stats.bestDefenses} suffix="GA" />
       </div>
 
       {stats.goalsByStage.length > 0 && (
         <div className="stat-board" style={{ marginTop: 20 }}>
-          <h3 className="stat-board-title">⚡ Goals by Stage</h3>
+          <h3 className="stat-board-title">{t('stats.goalsByStage')}</h3>
           {stats.goalsByStage.map((s) => (
             <div className="stat-board-row" key={s.stage}>
               <span className="stat-board-team">{s.stage}</span>
               <span className="stat-board-value">
-                {s.goals}<span className="stat-board-suffix"> goals · {s.matches} matches · {(s.goals / s.matches).toFixed(1)}/match</span>
+                {s.goals}<span className="stat-board-suffix"> {t('stats.stageSuffix', { matches: s.matches, avg: (s.goals / s.matches).toFixed(1) })}</span>
               </span>
             </div>
           ))}
