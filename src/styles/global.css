@@ -458,28 +458,31 @@ body {
 .match-card .team {
   display: flex;
   align-items: center;
-  gap: 12px;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: .01em;
 }
 
-.match-card .team.home {
-  justify-content: flex-end;
-  text-align: right;
-}
+.match-card .team.home { justify-content: flex-end; }
+.match-card .team.away { justify-content: flex-start; }
 
-.match-card .team.away {
-  justify-content: flex-start;
-  text-align: left;
+/* Flag is a separate flex item, vertically centered beside the (possibly
+   multi-line) name so it never orphans onto its own wrapped line. The name
+   text aligns toward the flag so flag + name read as one tight label; the
+   whole unit hugs the score via the column's justify-content. */
+.match-card .team-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
 }
+.match-card .team-inner .flag-img,
+.match-card .team-inner .flag-placeholder { flex-shrink: 0; vertical-align: middle; }
 
-/* The flag is inline inside .team-name (with a non-breaking space binding it
-   to the adjacent word), so it always stays beside the text and the whole
-   unit hugs the score via text-align. Names wrap only at word boundaries. */
-.match-card .team-name { overflow-wrap: break-word; }
-.match-card .team-name .flag-img,
-.match-card .team-name .flag-placeholder { vertical-align: middle; }
+.match-card .team-name { min-width: 0; width: min-content; overflow-wrap: break-word; }
+.match-card .team.home .team-name { text-align: left; }
+.match-card .team.away .team-name { text-align: right; }
 
 .match-card .team-code {
   font-size: .72rem;
@@ -1024,18 +1027,9 @@ body {
 
   .match-card .team {
     font-size: .82rem;
-    gap: 6px;
   }
 
-  .match-card .team.home {
-    justify-content: flex-end;
-    text-align: right;
-  }
-
-  .match-card .team.away {
-    justify-content: flex-start;
-    text-align: left;
-  }
+  .match-card .team-inner { gap: 5px; }
 
   .match-card .score-box {
     margin: 0 auto;
