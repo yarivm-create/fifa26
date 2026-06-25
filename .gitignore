@@ -3,3 +3,6 @@ dist/
 .vite/
 rayfin/.env
 *.local
+playwright-report/
+test-results/
+/.playwright/
