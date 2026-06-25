@@ -69,10 +69,9 @@ test('keyboard navigation moves between tabs (a11y)', async ({ page }) => {
   await expect(page.locator('#tab-live')).toHaveAttribute('aria-selected', 'true');
 });
 
-test('share button is mobile-only and fires the native share sheet', async ({ page }) => {
+test('share button is mobile-only and fires the native share sheet', async ({ page }, testInfo) => {
   // Stub the Web Share API (Playwright engines don't implement it) so we can
-  // verify the button only renders where native share exists and that it
-  // invokes navigator.share with our canonical URL.
+  // verify the button invokes navigator.share with our canonical URL.
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'share', {
       configurable: true,
@@ -85,6 +84,15 @@ test('share button is mobile-only and fires the native share sheet', async ({ pa
   await page.goto('');
 
   const share = page.getByRole('button', { name: /share/i });
+  const isMobileProject = /mobile/i.test(testInfo.project.name);
+
+  if (!isMobileProject) {
+    // Desktop browsers must never render the Share button.
+    await expect(share).toHaveCount(0);
+    return;
+  }
+
+  // Mobile (touch + mobile UA emulation): button renders and fires share.
   await expect(share).toBeVisible();
   await share.click();
 

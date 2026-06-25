@@ -9,15 +9,28 @@ const SHARE_TITLE = 'FIFA World Cup 2026 — Live Dashboard';
 const SHARE_TEXT =
   'Live World Cup 2026 scores, standings, bracket & stats — in your local time. Check it out:';
 
+// True only on phones/tablets: a coarse (touch) primary pointer combined with
+// a mobile user-agent. This deliberately excludes desktop browsers, which now
+// expose navigator.share too, so the Share button appears on mobile only.
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
+    return false;
+  }
+  const ua = navigator.userAgent || '';
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Windows Phone|webOS|BlackBerry/i.test(ua);
+  const coarsePointer =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
+  return mobileUA && coarsePointer;
+}
+
 export const ShareButton: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
-  // Mobile-only: render exclusively where the native share sheet exists.
-  // Desktop browsers (no navigator.share) simply don't show the button.
-  const canNativeShare =
-    typeof navigator !== 'undefined' &&
-    typeof (navigator as Navigator & { share?: unknown }).share === 'function';
-  if (!canNativeShare) return null;
+  // Mobile-only. Desktop Chrome/Edge also expose navigator.share, so that
+  // alone isn't enough — we additionally require a touch device: a coarse
+  // primary pointer plus a phone/tablet user-agent. Desktop never shows it.
+  if (!isMobileDevice()) return null;
 
   const onShare = async () => {
     const nav = navigator as Navigator & {
