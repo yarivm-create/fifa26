@@ -145,12 +145,14 @@ const App: React.FC = () => {
         ))}
       </nav>
 
-      <main id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={-1}>
-        <ErrorBoundary label={TABS.find(t => t.key === activeTab)?.label.replace(/^\S+\s/, '')}>
-          <Suspense fallback={<TabFallback />}>
-            {renderTab()}
-          </Suspense>
-        </ErrorBoundary>
+      <main>
+        <div id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={-1}>
+          <ErrorBoundary label={TABS.find(t => t.key === activeTab)?.label.replace(/^\S+\s/, '')}>
+            <Suspense fallback={<TabFallback />}>
+              {renderTab()}
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </main>
 
       {goalKey > 0 && <Fireworks key={`goal-${goalKey}`} />}

@@ -46,20 +46,27 @@ export const OnlineCounter: React.FC = () => {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    // Register the presence widget once, then load the tracker script once.
-    window._wau = window._wau || [];
-    if (!window._wau.some((w) => w[1] === PILE)) {
-      window._wau.push(['small', PILE]);
-    }
-    if (!document.getElementById(SCRIPT_ID)) {
-      const s = document.createElement('script');
-      s.id = SCRIPT_ID;
-      s.async = true;
-      s.src = 'https://waust.at/s.js';
-      document.body.appendChild(s);
-    }
+    // Register the presence widget once, then load the tracker script during
+    // idle time so its parse/exec stays off the critical path (lower blocking
+    // time / faster interactivity). The live count is non-essential to first paint.
+    const start = () => {
+      window._wau = window._wau || [];
+      if (!window._wau.some((w) => w[1] === PILE)) {
+        window._wau.push(['small', PILE]);
+      }
+      if (!document.getElementById(SCRIPT_ID)) {
+        const s = document.createElement('script');
+        s.id = SCRIPT_ID;
+        s.async = true;
+        s.src = 'https://waust.at/s.js';
+        document.body.appendChild(s);
+      }
+      setCount(readCount());
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (typeof ric === 'function') ric(start, { timeout: 3000 });
+    else window.setTimeout(start, 1200);
 
-    setCount(readCount());
     const id = window.setInterval(() => setCount(readCount()), 4000);
 
     // Mobile and background tabs throttle timers, so the cached count can lag
