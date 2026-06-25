@@ -36,9 +36,6 @@ test('app loads with header, local clock and region flag', async ({ page }) => {
   // No leftover second clock.
   await expect(page.locator('.israel-clock-section')).toHaveCount(0);
 
-  // Share button (organic growth lever) is present.
-  await expect(page.getByRole('button', { name: /share/i })).toBeVisible();
-
   expect(errors, errors.join('\n')).toEqual([]);
 });
 
@@ -70,4 +67,29 @@ test('keyboard navigation moves between tabs (a11y)', async ({ page }) => {
   await expect(page.locator('#tab-favorites')).toHaveAttribute('aria-selected', 'true');
   await page.keyboard.press('Home');
   await expect(page.locator('#tab-live')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('share button is mobile-only and fires the native share sheet', async ({ page }) => {
+  // Stub the Web Share API (Playwright engines don't implement it) so we can
+  // verify the button only renders where native share exists and that it
+  // invokes navigator.share with our canonical URL.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: (data: ShareData) => {
+        (window as unknown as { __shared?: ShareData }).__shared = data;
+        return Promise.resolve();
+      },
+    });
+  });
+  await page.goto('');
+
+  const share = page.getByRole('button', { name: /share/i });
+  await expect(share).toBeVisible();
+  await share.click();
+
+  const shared = await page.evaluate(
+    () => (window as unknown as { __shared?: ShareData }).__shared
+  );
+  expect(shared?.url).toContain('/fifa26/');
 });

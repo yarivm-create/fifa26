@@ -132,6 +132,11 @@ body {
   flex-wrap: wrap;
   margin-top: 10px;
 }
+/* Inside the row, drop the counter's standalone auto-centering margin so it
+   sits level with the share button instead of being pushed down. */
+.header-actions .online-counter {
+  margin: 0;
+}
 .share-btn {
   display: inline-flex;
   align-items: center;
@@ -140,10 +145,11 @@ body {
   border: 1px solid rgba(212,175,55,.5);
   color: var(--wc-gold);
   border-radius: 999px;
-  padding: 6px 16px;
-  font-size: .8rem;
+  padding: 5px 14px;
+  font-size: .75rem;
   font-weight: 700;
   letter-spacing: .02em;
+  line-height: 1.4;
   cursor: pointer;
   transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
 }

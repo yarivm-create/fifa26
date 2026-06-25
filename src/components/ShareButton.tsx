@@ -12,6 +12,13 @@ const SHARE_TEXT =
 export const ShareButton: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
+  // Mobile-only: render exclusively where the native share sheet exists.
+  // Desktop browsers (no navigator.share) simply don't show the button.
+  const canNativeShare =
+    typeof navigator !== 'undefined' &&
+    typeof (navigator as Navigator & { share?: unknown }).share === 'function';
+  if (!canNativeShare) return null;
+
   const onShare = async () => {
     const nav = navigator as Navigator & {
       share?: (data: ShareData) => Promise<void>;
