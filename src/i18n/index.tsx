@@ -66,6 +66,7 @@ const en: Dict = {
   'status.upcoming': 'UPCOMING',
   'match.liveCenter': 'Live Match Center →',
   'match.recap': 'Match Recap & Highlights →',
+  'match.winner': 'Winner',
   // Standings
   'standings.title': '🏆 Group Standings',
   'standings.legend': 'Top 2 of each group + 8 best third-placed teams reach the Round of 32. Tap ☆ to favorite a team.',
@@ -211,6 +212,7 @@ const he: Dict = {
   'status.upcoming': 'עתידי',
   'match.liveCenter': '← מרכז המשחק החי',
   'match.recap': '← סיכום ותקצירים',
+  'match.winner': 'מנצחת',
   // Standings
   'standings.title': '🏆 טבלאות הבתים',
   'standings.legend': 'שתי הראשונות בכל בית + 8 השלישיות הטובות עולות לשלב 32 הקבוצות. הקישו על ☆ כדי להוסיף קבוצה למועדפים.',

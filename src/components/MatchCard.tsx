@@ -25,21 +25,31 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
   const { t } = useI18n();
   const { label, isLive } = getStatusLabel(match.status, t, match.time);
 
+  const hg = match.home_team.goals;
+  const ag = match.away_team.goals;
+  const hasScore = hg !== null && ag !== null;
+  const finished = match.status === 'completed' && hasScore;
+  const homeWon = finished && (hg as number) > (ag as number);
+  const awayWon = finished && (ag as number) > (hg as number);
+
   return (
     <div className="card">
       <div className="match-card">
-        <div className="team home">
+        <div className={`team home${homeWon ? ' team-winner' : ''}`}>
           <div>
-            <div><Flag code={match.home_team.code} name={match.home_team.name} /> {match.home_team.name}</div>
+            <div>
+              <Flag code={match.home_team.code} name={match.home_team.name} /> {match.home_team.name}
+              {homeWon && <span className="winner-badge" title={t('match.winner')} aria-label={t('match.winner')}>🏆</span>}
+            </div>
           </div>
         </div>
 
         <div className="score-box">
-          {match.home_team.goals !== null ? (
+          {hasScore ? (
             <>
-              <span className="score">{match.home_team.goals}</span>
+              <span className={`score${homeWon ? ' score-winner' : ''}`}>{hg}</span>
               <span className="score-divider">-</span>
-              <span className="score">{match.away_team.goals}</span>
+              <span className={`score${awayWon ? ' score-winner' : ''}`}>{ag}</span>
             </>
           ) : (
             <span className="score" style={{ fontSize: '1rem' }}>
@@ -48,9 +58,12 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
           )}
         </div>
 
-        <div className="team away">
+        <div className={`team away${awayWon ? ' team-winner' : ''}`}>
           <div>
-            <div>{match.away_team.name} <Flag code={match.away_team.code} name={match.away_team.name} /></div>
+            <div>
+              {awayWon && <span className="winner-badge" title={t('match.winner')} aria-label={t('match.winner')}>🏆</span>}
+              {match.away_team.name} <Flag code={match.away_team.code} name={match.away_team.name} />
+            </div>
           </div>
         </div>
       </div>
