@@ -78,7 +78,7 @@ export const OnlineCounter: React.FC = () => {
   if (count == null) return null;
 
   return (
-    <div className="online-counter" title={`${count} ${count === 1 ? 'person is' : 'people are'} viewing right now`}>
+    <div className="online-counter" role="status" aria-live="polite" title={`${count} ${count === 1 ? 'person is' : 'people are'} viewing right now`}>
       <span className="online-counter-dot" aria-hidden="true" />
       <span className="online-counter-num">{count.toLocaleString()}</span>
       <span className="online-counter-label">watching now</span>
