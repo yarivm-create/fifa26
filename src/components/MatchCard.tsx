@@ -8,6 +8,47 @@ interface Props {
   match: Match;
 }
 
+// Keeps the team name on a single line when it fits the available column space,
+// and only switches to a compact min-content wrap (e.g. "Bosnia and" /
+// "Herzegovina") when a single line would overflow. This avoids needlessly
+// splitting shorter names like "Korea Republic" onto two lines.
+const TeamName: React.FC<{ name: string }> = ({ name }) => {
+  const ref = React.useRef<HTMLSpanElement>(null);
+  const [multi, setMulti] = React.useState(false);
+
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    const team = el?.closest('.team') as HTMLElement | null;
+    if (!el || !team) return;
+
+    let ro: ResizeObserver;
+    const measure = () => {
+      if (ro) ro.disconnect();
+      const flag = team.querySelector('.flag-img, .flag-placeholder') as HTMLElement | null;
+      const avail = team.clientWidth - (flag ? flag.offsetWidth : 0) - 10;
+      const prevW = el.style.width;
+      const prevWS = el.style.whiteSpace;
+      el.style.width = 'max-content';
+      el.style.whiteSpace = 'nowrap';
+      const oneLine = el.scrollWidth;
+      el.style.width = prevW;
+      el.style.whiteSpace = prevWS;
+      setMulti(oneLine > avail + 4);
+      if (ro) ro.observe(team);
+    };
+
+    ro = new ResizeObserver(measure);
+    measure();
+    return () => ro.disconnect();
+  }, [name]);
+
+  return (
+    <span ref={ref} className={`team-name ${multi ? 'name-multi' : 'name-single'}`}>
+      {name}
+    </span>
+  );
+};
+
 function getStatusLabel(status: string, t: TFunc, time?: string): { label: string; isLive: boolean } {
   switch (status) {
     case 'in_progress':
@@ -38,7 +79,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         <div className={`team home${homeWon ? ' team-winner' : ''}`}>
           <span className="team-inner">
             <Flag code={match.home_team.code} name={match.home_team.name} />
-            <span className="team-name">{match.home_team.name}</span>
+            <TeamName name={match.home_team.name} />
           </span>
         </div>
 
@@ -58,7 +99,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
 
         <div className={`team away${awayWon ? ' team-winner' : ''}`}>
           <span className="team-inner">
-            <span className="team-name">{match.away_team.name}</span>
+            <TeamName name={match.away_team.name} />
             <Flag code={match.away_team.code} name={match.away_team.name} />
           </span>
         </div>

@@ -480,7 +480,9 @@ body {
 .match-card .team-inner .flag-img,
 .match-card .team-inner .flag-placeholder { flex-shrink: 0; vertical-align: middle; }
 
-.match-card .team-name { min-width: 0; width: min-content; overflow-wrap: break-word; }
+.match-card .team-name { min-width: 0; overflow-wrap: break-word; }
+.match-card .team-name.name-single { width: max-content; max-width: 100%; }
+.match-card .team-name.name-multi { width: min-content; }
 .match-card .team.home .team-name { text-align: left; }
 .match-card .team.away .team-name { text-align: right; }
 
