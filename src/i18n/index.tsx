@@ -52,6 +52,7 @@ const en: Dict = {
   'loading.playerDetails': 'Loading player details…',
   // Live / day sections
   'live.now': '🔴 Live Now',
+  'live.upcoming': '⏭️ Next Up',
   'live.today': '📅 Today',
   'live.yesterday': '📋 Yesterday',
   'live.tomorrow': '⏭️ Tomorrow',
@@ -200,6 +201,7 @@ const he: Dict = {
   'loading.playerDetails': 'טוען פרטי שחקנים…',
   // Live / day sections
   'live.now': '🔴 חי עכשיו',
+  'live.upcoming': '⏭️ הבאים בתור',
   'live.today': '📅 היום',
   'live.yesterday': '📋 אתמול',
   'live.tomorrow': '⏭️ מחר',

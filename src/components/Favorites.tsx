@@ -48,18 +48,18 @@ export const Favorites: React.FC = () => {
   return (
     <div className="favorites-tab">
       <h2 className="favorites-tab-title">{t('fav.title')}</h2>
-      {hasTeams ? (
-        <FavoriteTeams />
-      ) : (
-        <SectionPrompt heading={t('fav.teams')} icon="🏆">
-          {t('fav.teamsPrompt')}
-        </SectionPrompt>
-      )}
       {hasPlayers ? (
         <Following />
       ) : (
         <SectionPrompt heading={t('fav.players')} icon="⚽">
           {t('fav.playersPrompt')}
+        </SectionPrompt>
+      )}
+      {hasTeams ? (
+        <FavoriteTeams />
+      ) : (
+        <SectionPrompt heading={t('fav.teams')} icon="🏆">
+          {t('fav.teamsPrompt')}
         </SectionPrompt>
       )}
     </div>
