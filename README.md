@@ -15,17 +15,21 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
-- 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score; multiple simultaneous finishes each get their own toast
+- 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score, plus a whistle sound (first game); multiple simultaneous finishes each get their own toast
 - 🏆 **Group Standings** — Real-time group tables with all stats
 - 🥇 **Qualification Tracking** — Group/3rd-place teams that reach the Round of 32 show a "✓ Through" badge instead of a probability %
 - 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
 - ⭐ **Favorites** — Follow players and teams; followed players are listed before favorite teams
 - 📈 **Player Stats** — Top scorers and assists
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
-- ⏰ **Times in Your Local Timezone** — Kickoff times auto-convert to the visitor's browser timezone (with a short label like GMT+3), no manual setting needed
+- ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
 - ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min
 - 🌙 **Dark Theme** — Rich maroon, gold, and navy with FIFA 2026 branding
+- 🌐 **Bilingual (English / עברית)** — One-tap language toggle with full right-to-left (RTL) layout for Hebrew; choice persists across reloads
+- 📤 **Share** — On mobile, a Share button opens the native share sheet with the site link
+- 📴 **Offline Aware** — A banner appears when the device goes offline so users know why live data paused
+- 👀 **Live Viewer Count** — "Watching now" counter via whos.amung.us presence
 
 ## Quick Start
 
@@ -41,7 +45,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+Open http://localhost:3000/fifa26/ in your browser (the app is served under the `/fifa26/` base path).
 
 ### Build for Production
 
@@ -53,14 +57,14 @@ npm run build
 
 - **Frontend**: React 19 + TypeScript + Vite
 - **Data**: 104 matches sourced from FIFA.com (UTC timestamps)
-- **Timezone**: All display times auto-convert to the visitor's own browser timezone (Intl-detected), shown with their country flag
+- **Timezone**: Every displayed time across the site auto-converts to the visitor's own browser timezone (Intl-detected), with their country flag shown by the clock
 - **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations
 - **Deployment**: GitHub Pages at `/fifa26/`
 
 ## Data Source
 
 All 104 matches of the FIFA World Cup 2026™ with real scores and schedules.
-Times are stored in UTC and displayed in each visitor's local timezone (auto-detected from the browser).
+Times are stored in UTC and every time shown on the site is displayed in each visitor's local timezone (auto-detected from the browser).
 
 | Section | Data | Refresh Rate |
 |---------|------|-------------|
@@ -74,20 +78,49 @@ Times are stored in UTC and displayed in each visitor's local timezone (auto-det
 ```
 worldcup2026-app/
 ├── src/
-│   ├── api/            # API client, types, match data (104 matches)
-│   ├── components/     # React UI components
-│   │   ├── LiveMatches.tsx   # Live & Today tab with clock
-│   │   ├── Schedule.tsx      # Full 104-match schedule
-│   │   ├── MatchCard.tsx     # Individual match display
-│   │   ├── Standings.tsx     # Group standings
-│   │   └── GroupTable.tsx    # Group table component
-│   ├── hooks/          # useLiveData auto-refresh hook
-│   ├── styles/         # CSS with WC2026 dark theme
-│   └── App.tsx         # Main app with header clock
+│   ├── api/                    # Data layer
+│   │   ├── liveData.ts         # Live FIFA data fetch + player stats
+│   │   ├── mockData.ts         # 104-match fallback dataset (UTC)
+│   │   ├── worldcup.ts         # fetchGroups/Matches/Qualification/Form/Stats
+│   │   ├── qualification.ts    # Group + 3rd-place "Through" logic
+│   │   ├── stats.ts            # Top scorers / assists
+│   │   └── types.ts            # Shared types
+│   ├── components/             # React UI components
+│   │   ├── LiveMatches.tsx     # Live & Today tab (Next Up + day sections)
+│   │   ├── Schedule.tsx        # Full 104-match schedule
+│   │   ├── Standings.tsx       # Group standings (+ GroupTable.tsx)
+│   │   ├── Stats.tsx           # Top scorers / assists
+│   │   ├── Bracket.tsx         # Knockout bracket tree (centered feeders)
+│   │   ├── Favorites.tsx       # Favorites tab (Following + FavoriteTeams)
+│   │   ├── Following.tsx       # Followed players
+│   │   ├── FavoriteTeams.tsx   # Favorite teams
+│   │   ├── MatchCard.tsx       # Individual match display
+│   │   ├── Celebrations.tsx    # Full-time toasts (winner/score/whistle)
+│   │   ├── LanguageToggle.tsx  # EN/HE toggle
+│   │   ├── ShareButton.tsx     # Mobile native share
+│   │   ├── OnlineCounter.tsx   # "Watching now" presence
+│   │   ├── OfflineBanner.tsx   # Offline indicator
+│   │   └── ErrorBoundary.tsx   # Per-tab error boundary
+│   ├── hooks/                  # useLiveData, useMatchAlerts, useFollowedTeams/Players
+│   ├── i18n/                   # English + Hebrew strings (RTL)
+│   ├── utils/                  # localTime (visitor TZ + flag), flags, sound
+│   ├── styles/                 # CSS with WC2026 dark theme
+│   └── App.tsx                 # Tabs, header clock, full-time toast stack
+├── tests/                      # Playwright E2E smoke tests
 ├── index.html
 ├── vite.config.ts
 └── package.json
 ```
+
+## Testing
+
+End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects:
+
+```bash
+npm run test:e2e
+```
+
+CI runs the same suite on every push to `main` (`.github/workflows/e2e.yml`), alongside the GitHub Pages deploy (`deploy.yml`).
 
 ## License
 
