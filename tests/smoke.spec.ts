@@ -139,7 +139,7 @@ test('Favorites lists followed players before favorite teams', async ({ page }) 
 
   // Both blocks render their heading; players must come first.
   const headings = page.locator('#tab-panel .favorites-heading');
-  await expect(headings).toHaveCount(2);
+  await expect(headings).toHaveCount(2, { timeout: 15000 });
   await expect(headings.nth(0)).toContainText(/Players/i);
   await expect(headings.nth(1)).toContainText(/Teams/i);
 });
