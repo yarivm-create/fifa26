@@ -7,6 +7,7 @@ import { Fireworks, WhistleStack } from './components/Celebrations';
 import { LocalClock } from './utils/localTime';
 import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
+import { Trophy } from './components/Trophy';
 import { useI18n } from './i18n';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
@@ -129,7 +130,13 @@ const App: React.FC = () => {
             onClick={() => setActiveTab(tab.key)}
             onKeyDown={(e) => onTabKeyDown(e, i)}
           >
-            {t(tab.tkey)}
+            {tab.key === 'standings' ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <Trophy size={15} /> {t(tab.tkey)}
+              </span>
+            ) : (
+              t(tab.tkey)
+            )}
           </button>
         ))}
       </nav>

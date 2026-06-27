@@ -32,7 +32,7 @@ const en: Dict = {
   'app.watchingNow': 'watching now',
   // Tabs
   'tab.live': '🔴 Live & Today',
-  'tab.standings': '🏆 Standings',
+  'tab.standings': 'Standings',
   'tab.stats': '📊 Stats',
   'tab.bracket': '🗺️ Bracket',
   'tab.schedule': '📅 Schedule',
@@ -181,7 +181,7 @@ const he: Dict = {
   'app.watchingNow': 'צופים עכשיו',
   // Tabs
   'tab.live': '🔴 חי והיום',
-  'tab.standings': '🏆 טבלאות',
+  'tab.standings': 'טבלאות',
   'tab.stats': '📊 סטטיסטיקה',
   'tab.bracket': '🗺️ עץ הנוקאאוט',
   'tab.schedule': '📅 לוח משחקים',

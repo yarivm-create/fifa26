@@ -159,7 +159,7 @@ test('branding uses the World Cup trophy SVG (favicon + standings title)', async
   // Standings title renders the inline trophy SVG (no 🏆 emoji fallback).
   await page.locator('#tab-standings').click({ force: true });
   await expect(
-    page.locator('#tab-panel h2 svg[aria-label="World Cup trophy"]').first()
+    page.locator('#tab-panel h2 svg[aria-label="Champion trophy"]').first()
   ).toBeVisible();
 });
 

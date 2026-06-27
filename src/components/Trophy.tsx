@@ -1,49 +1,41 @@
 import React from 'react';
 
-// Original stylized gold World Cup trophy (a globe held aloft over a tapered
-// body and plinth). Intentionally a simplified, original mark — not a copy of
-// FIFA's protected sculpture — used wherever the app shows "the cup".
+// Original, generic gold champion's cup — a classic two-handled trophy on a
+// plinth. Intentionally an original mark (not a reproduction of any specific
+// branded/protected trophy), used wherever the app shows "the cup".
 export const Trophy: React.FC<{ size?: number; className?: string; title?: string }> = ({
   size = 20,
   className,
-  title = 'World Cup trophy',
+  title = 'Champion trophy',
 }) => (
   <svg
-    width={size}
+    width={(size * 48) / 64}
     height={size}
-    viewBox="0 0 64 64"
+    viewBox="0 0 48 64"
     role="img"
     aria-label={title}
     className={className}
-    style={{ display: 'inline-block', verticalAlign: '-0.15em', flexShrink: 0 }}
+    style={{ display: 'inline-block', verticalAlign: '-0.18em', flexShrink: 0 }}
   >
     <defs>
       <linearGradient id="wcTrophyGold" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#f7e08a" />
-        <stop offset="0.45" stopColor="#e2bd4e" />
-        <stop offset="1" stopColor="#b07d18" />
+        <stop offset="0" stopColor="#fbeaa0" />
+        <stop offset="0.45" stopColor="#e7c14e" />
+        <stop offset="1" stopColor="#a9760f" />
       </linearGradient>
-      <linearGradient id="wcTrophyGlobe" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stopColor="#fbeea6" />
-        <stop offset="1" stopColor="#c9971f" />
+      <linearGradient id="wcTrophyShine" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+        <stop offset="0.5" stopColor="#ffffff" stopOpacity="0" />
       </linearGradient>
     </defs>
-    <circle cx="32" cy="15" r="9" fill="url(#wcTrophyGlobe)" stroke="#8a5e10" strokeWidth="1" />
-    <path
-      d="M23.4 13.2h17.2M24.6 18.6h14.8M32 6v18"
-      fill="none"
-      stroke="#8a5e10"
-      strokeWidth="1"
-      opacity="0.55"
-    />
-    <path
-      d="M24 22 C24 33 28 40 32 44 C36 40 40 33 40 22 C37 25 35 27 32 27 C29 27 27 25 24 22 Z"
-      fill="url(#wcTrophyGold)"
-      stroke="#8a5e10"
-      strokeWidth="1"
-    />
-    <rect x="29.5" y="43" width="5" height="6" rx="1" fill="url(#wcTrophyGold)" stroke="#8a5e10" strokeWidth="0.8" />
-    <path d="M22 49h20l-2 5H24z" fill="url(#wcTrophyGold)" stroke="#8a5e10" strokeWidth="1" />
-    <rect x="20" y="54" width="24" height="5" rx="1.5" fill="url(#wcTrophyGold)" stroke="#8a5e10" strokeWidth="1" />
+    <path d="M12 17 C2 17 1 33 14 33 L14 29 C8 29 8 21 13 21 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <path d="M36 17 C46 17 47 33 34 33 L34 29 C40 29 40 21 35 21 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <path d="M11 16 H37 C37 28 31 36 24 36 C17 36 11 28 11 16 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <rect x="9" y="11" width="30" height="6" rx="3" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <path d="M16 18 C16 26 19 31 23 33 C19 31 17 25 17 18 Z" fill="url(#wcTrophyShine)" />
+    <path d="M21 36 H27 L26 43 H22 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <ellipse cx="24" cy="44" rx="4.5" ry="2.2" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <path d="M18 46 H30 L28 52 H20 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
+    <rect x="13" y="52" width="22" height="7" rx="2.5" fill="url(#wcTrophyGold)" stroke="#7a5310" strokeWidth="1" />
   </svg>
 );
