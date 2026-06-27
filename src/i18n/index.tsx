@@ -164,6 +164,8 @@ const en: Dict = {
   'fx.goal': 'GOAL! ⚽',
   'fx.fullTime': 'Full Time',
   'fx.matchOver': 'Match over',
+  'fx.won': '{team} win! 🎉',
+  'fx.draw': 'Honours even — it ends level',
   // Share
   'share.label': 'Share',
   'share.copied': 'Link copied!',
@@ -310,6 +312,8 @@ const he: Dict = {
   'fx.goal': 'גול! ⚽',
   'fx.fullTime': 'סיום המשחק',
   'fx.matchOver': 'המשחק הסתיים',
+  'fx.won': '{team} ניצחה! 🎉',
+  'fx.draw': 'המשחק הסתיים בתיקו',
   // Share
   'share.label': 'שיתוף',
   'share.copied': 'הקישור הועתק!',

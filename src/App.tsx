@@ -3,13 +3,13 @@ import { LiveMatches } from './components/LiveMatches';
 import { OnlineCounter } from './components/OnlineCounter';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Fireworks, WhistleToast } from './components/Celebrations';
+import { Fireworks, WhistleStack } from './components/Celebrations';
 import { LocalClock } from './utils/localTime';
 import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
 import { useI18n } from './i18n';
 import { useLiveData } from './hooks/useLiveData';
-import { useMatchAlerts } from './hooks/useMatchAlerts';
+import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
 import { Match } from './api/types';
 
@@ -56,7 +56,18 @@ const App: React.FC = () => {
   const allFetcher = useCallback(() => fetchAllMatches(), []);
   const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000);
   const { data: allMatches } = useLiveData<Match[]>(allFetcher, 60000);
-  const { goalKey, whistleKey } = useMatchAlerts(liveMatches, allMatches);
+  const { goalKey, endEvents } = useMatchAlerts(liveMatches, allMatches);
+
+  // Keep a live list of full-time toasts so several games ending together each
+  // get their own celebration; each toast removes itself when it finishes.
+  const [endToasts, setEndToasts] = useState<MatchEndEvent[]>([]);
+  useEffect(() => {
+    if (endEvents.length > 0) setEndToasts((prev) => [...prev, ...endEvents]);
+  }, [endEvents]);
+  const dismissToast = useCallback(
+    (key: number) => setEndToasts((prev) => prev.filter((e) => e.key !== key)),
+    []
+  );
 
   // Roving-tabindex keyboard support for the WAI-ARIA tab list.
   const onTabKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -134,7 +145,7 @@ const App: React.FC = () => {
       </main>
 
       {goalKey > 0 && <Fireworks key={`goal-${goalKey}`} />}
-      {whistleKey > 0 && <WhistleToast key={`whistle-${whistleKey}`} />}
+      <WhistleStack events={endToasts} onDone={dismissToast} />
     </div>
   );
 };

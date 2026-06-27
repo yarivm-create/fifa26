@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { playWhistle } from '../utils/sound';
 import { useI18n } from '../i18n';
+import { Flag } from '../utils/flags';
+import type { MatchEndEvent } from '../hooks/useMatchAlerts';
 
 // ---- Goal fireworks -------------------------------------------------------
 // A brief, non-interactive burst overlay shown right after a goal is confirmed.
@@ -61,6 +63,8 @@ export const Fireworks: React.FC = () => {
 
 // ---- Full-time whistle ----------------------------------------------------
 // Shown ~1s after a match ends, with an optional synthesized whistle sound.
+// Each ended game gets its own toast (they stack), naming the result and the
+// winner so several games finishing together are all celebrated distinctly.
 
 const WhistleIcon: React.FC = () => (
   <svg viewBox="0 0 64 40" width="56" height="36" aria-hidden="true">
@@ -75,28 +79,72 @@ const WhistleIcon: React.FC = () => (
   </svg>
 );
 
-export const WhistleToast: React.FC = () => {
+interface WhistleToastProps {
+  event: MatchEndEvent;
+  onDone: (key: number) => void;
+  withSound?: boolean;
+}
+
+export const WhistleToast: React.FC<WhistleToastProps> = ({ event, onDone, withSound = true }) => {
   const { t } = useI18n();
   const [show, setShow] = useState(false);
+
   useEffect(() => {
     const appear = setTimeout(() => {
       setShow(true);
-      playWhistle();
-    }, 1000);
-    const hide = setTimeout(() => setShow(false), 4200);
+      if (withSound) playWhistle();
+    }, 600);
+    const hide = setTimeout(() => setShow(false), 6500);
+    const remove = setTimeout(() => onDone(event.key), 6900);
     return () => {
       clearTimeout(appear);
       clearTimeout(hide);
+      clearTimeout(remove);
     };
-  }, []);
-  if (!show) return null;
+  }, [event.key, onDone, withSound]);
+
+  const winnerName =
+    event.winner === 'home' ? event.homeName : event.winner === 'away' ? event.awayName : '';
+  const winnerCode =
+    event.winner === 'home' ? event.homeCode : event.winner === 'away' ? event.awayCode : '';
+  const resultText =
+    event.winner === 'draw' ? t('fx.draw') : t('fx.won', { team: winnerName });
+
   return (
-    <div className="whistle-toast" role="status">
+    <div className={`whistle-toast${show ? ' show' : ''}`} role="status">
       <WhistleIcon />
       <div className="whistle-toast-text">
         <strong>{t('fx.fullTime')}</strong>
-        <span>{t('fx.matchOver')}</span>
+        <span className="whistle-score">
+          <Flag code={event.homeCode} name={event.homeName} className="whistle-flag" />
+          {event.homeName} {event.homeGoals}
+          <span className="whistle-dash"> – </span>
+          {event.awayGoals} {event.awayName}
+          <Flag code={event.awayCode} name={event.awayName} className="whistle-flag" />
+        </span>
+        <span className="whistle-result">
+          {event.winner !== 'draw' && (
+            <Flag code={winnerCode} name={winnerName} className="whistle-flag" />
+          )}
+          {resultText}
+        </span>
       </div>
+    </div>
+  );
+};
+
+// Renders one toast per ended game, stacked. The first plays the whistle so
+// simultaneous endings don't overlap into noise.
+export const WhistleStack: React.FC<{ events: MatchEndEvent[]; onDone: (key: number) => void }> = ({
+  events,
+  onDone,
+}) => {
+  if (events.length === 0) return null;
+  return (
+    <div className="whistle-stack" aria-live="polite">
+      {events.map((ev, i) => (
+        <WhistleToast key={ev.key} event={ev} onDone={onDone} withSound={i === 0} />
+      ))}
     </div>
   );
 };

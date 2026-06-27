@@ -906,17 +906,60 @@ body {
 
 .bracket-grid {
   display: flex;
-  gap: 18px;
+  gap: var(--bk-gap);
   min-width: min-content;
+  align-items: stretch;
+  --bk-gap: 30px;
 }
 
 .bracket-column {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
-  gap: 14px;
   min-width: 200px;
 }
+
+.bracket-slots {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Each match lives in an equal-height slot and is vertically centered within
+   it. Because every later round has half as many slots over the same total
+   height, a match always lands midway between the two feeder games below it. */
+.bracket-slot {
+  flex: 1 0 auto;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.bracket-slot .bracket-match {
+  width: 100%;
+}
+
+/* Connector lines drawn into the gaps between rounds. Logical inset props flip
+   automatically for the Hebrew (RTL) layout. */
+.bk-conn {
+  position: absolute;
+  background: rgba(212, 175, 55, 0.45);
+  pointer-events: none;
+}
+.bk-in,
+.bk-out {
+  top: 50%;
+  height: 2px;
+  width: calc(var(--bk-gap) / 2);
+}
+.bk-in { inset-inline-start: calc(-1 * var(--bk-gap) / 2); }
+.bk-out { inset-inline-end: calc(-1 * var(--bk-gap) / 2); }
+.bk-vert {
+  width: 2px;
+  inset-inline-end: calc(-1 * var(--bk-gap) / 2);
+  height: 50%;
+}
+.bk-vert.top { top: 50%; }
+.bk-vert.bottom { bottom: 50%; }
 
 .bracket-round-title {
   font-size: .9rem;
@@ -995,7 +1038,9 @@ body {
 }
 
 @media (max-width: 640px) {
+  .bracket-grid { --bk-gap: 18px; }
   .bracket-column { min-width: 168px; }
+  .bracket-slot { min-height: 76px; }
   .bracket-name { font-size: .76rem; }
 }
 
@@ -1480,13 +1525,22 @@ body {
   100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(.3); }
 }
 
-/* ---- Full-time whistle toast ---- */
-.whistle-toast {
+/* ---- Full-time whistle toasts (stack one per ended game) ---- */
+.whistle-stack {
   position: fixed;
   bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9001;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 10px;
+  max-width: min(94vw, 460px);
+  pointer-events: none;
+}
+.whistle-toast {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -1495,19 +1549,34 @@ body {
   box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 20px rgba(212,175,55,.25);
   padding: 14px 22px;
   border-radius: 16px;
-  animation: whistleIn .45s cubic-bezier(.18,.9,.32,1.2);
+  opacity: 0;
+  transform: translateY(40px) scale(.85);
+  transition: opacity .35s ease, transform .45s cubic-bezier(.18,.9,.32,1.2);
 }
-.whistle-toast-text { display: flex; flex-direction: column; line-height: 1.25; }
+.whistle-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.whistle-toast-text { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; min-width: 0; }
 .whistle-toast-text strong { color: var(--wc-gold); font-size: 1.05rem; }
-.whistle-toast-text span { color: var(--wc-text-muted); font-size: 0.8rem; }
-@keyframes whistleIn {
-  from { opacity: 0; transform: translate(-50%, 40px) scale(.85); }
-  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.whistle-toast-text span { color: var(--wc-text-muted); font-size: 0.82rem; }
+.whistle-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wc-text) !important;
+  font-weight: 700;
+  flex-wrap: wrap;
 }
+.whistle-dash { color: var(--wc-gold); font-weight: 800; }
+.whistle-result { display: flex; align-items: center; gap: 6px; color: var(--wc-gold) !important; font-weight: 700; }
+.whistle-flag { font-size: 1.05rem; line-height: 1; }
+.whistle-flag.flag-img { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; }
 
 @media (max-width: 600px) {
   .follow-grid { grid-template-columns: 1fr; }
-  .whistle-toast { bottom: 16px; padding: 12px 16px; }
+  .whistle-stack { bottom: 16px; }
+  .whistle-toast { padding: 12px 16px; }
 }
 
 /* ============================================================

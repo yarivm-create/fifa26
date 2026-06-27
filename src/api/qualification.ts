@@ -76,7 +76,23 @@ function rankKey(t: TeamState): number {
   return t.pts * 1e6 + (t.gd + 100) * 1e3 + t.gf + Math.random() * 0.5;
 }
 
+// Codes that are still placeholders in the knockout schedule (e.g. "2A", "1C",
+// "W73", "3ABCDF"). A real country code in a Round-of-32 slot means the team has
+// actually reached the knockouts — including via a best-third-place finish.
+const KO_PLACEHOLDER = /^(\d|W\d|RU\d|3[A-L]{2,})/;
+
 export function computeQualification(groups: Group[], matches: Match[]): Record<string, QualChance> {
+  // Teams FIFA has already slotted into the Round of 32 have definitively
+  // advanced. This captures third-placed qualifiers that the points-only group
+  // bounds below can't prove, so they read "Through" instead of a percentage.
+  const advancedReal = new Set<string>();
+  for (const m of matches) {
+    if (m.stage_name !== 'Round of 32') continue;
+    for (const code of [m.home_team.code, m.away_team.code]) {
+      if (code && !KO_PLACEHOLDER.test(code)) advancedReal.add(code);
+    }
+  }
+
   // Map each team code to its group letter.
   const codeToGroup: Record<string, string> = {};
   const baseStates: TeamState[] = [];
@@ -192,7 +208,9 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
     }).length;
 
     let status: QualStatus = 'Contention';
-    if (couldBeAbove <= 1) {
+    if (advancedReal.has(t.code)) {
+      status = 'Qualified'; // already placed into the Round of 32 (incl. 3rd place)
+    } else if (couldBeAbove <= 1) {
       status = 'Qualified'; // guaranteed top 2 of the group
     } else if (certainlyAbove >= 3) {
       status = 'Eliminated'; // cannot even finish 3rd
