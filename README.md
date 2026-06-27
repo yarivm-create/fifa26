@@ -13,13 +13,14 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 
 - 🕐 **Live Local Time Clock** — Real-time clock updating every second in the visitor's own timezone, shown with their country flag
 - 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
+- 📺 **Kan 11 Broadcast Links** — Live and completed match cards link out to Kan's World Cup hub ("Live Match Center" while live, "Match Recap & Highlights" once finished)
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
 - 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score, plus a whistle sound (first game); multiple simultaneous finishes each get their own toast
 - 🏆 **Group Standings** — Real-time group tables with all stats
 - 🥇 **Qualification Tracking** — Group/3rd-place teams that reach the Round of 32 show a "✓ Through" badge instead of a probability %
 - 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
-- ⭐ **Favorites** — Follow players and teams; followed players are listed before favorite teams
+- ⭐ **Favorites** — Follow players and teams (star toggle on the standings table and the stats list too); followed players are listed before favorite teams, each with their next/recent fixtures and key stats
 - 📈 **Player Stats** — Top scorers and assists
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
 - ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
@@ -64,6 +65,7 @@ npm run build
 ## Data Source
 
 All 104 matches of the FIFA World Cup 2026™ with real scores and schedules.
+Live data is pulled from the FIFA API and automatically falls back to a bundled 104-match dataset when the API is unavailable.
 Times are stored in UTC and every time shown on the site is displayed in each visitor's local timezone (auto-detected from the browser).
 
 | Section | Data | Refresh Rate |
