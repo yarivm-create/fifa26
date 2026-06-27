@@ -71,7 +71,7 @@ const App: React.FC = () => {
 
   // Roving-tabindex keyboard support for the WAI-ARIA tab list.
   const onTabKeyDown = (e: React.KeyboardEvent, index: number) => {
-    let next = index;
+    let next: number;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (index + 1) % TABS.length;
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (index - 1 + TABS.length) % TABS.length;
     else if (e.key === 'Home') next = 0;
