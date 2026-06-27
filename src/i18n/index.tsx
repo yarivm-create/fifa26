@@ -26,7 +26,7 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   // Header
-  'app.title': '⚽ FIFA World Cup 2026',
+  'app.title': 'FIFA World Cup 2026',
   'app.subtitle': 'United States • Mexico • Canada',
   'app.liveDashboard': 'LIVE DASHBOARD',
   'app.watchingNow': 'watching now',
@@ -175,7 +175,7 @@ const en: Dict = {
 
 const he: Dict = {
   // Header
-  'app.title': '⚽ מונדיאל 2026',
+  'app.title': 'מונדיאל 2026',
   'app.subtitle': 'ארצות הברית • מקסיקו • קנדה',
   'app.liveDashboard': 'לוח חי',
   'app.watchingNow': 'צופים עכשיו',

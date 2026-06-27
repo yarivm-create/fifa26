@@ -161,6 +161,14 @@ test('branding uses the World Cup trophy SVG (favicon + standings title)', async
   await expect(
     page.locator('#tab-panel h2 svg[aria-label="Champion trophy"]').first()
   ).toBeVisible();
+
+  // The header soccer ball must render as a real emoji, NOT be flattened into a
+  // gold disc by the gradient text-clip on the h1.
+  const ballFill = await page
+    .locator('.header h1 .title-ball')
+    .evaluate((el) => getComputedStyle(el).webkitTextFillColor);
+  expect(ballFill).not.toBe('rgba(0, 0, 0, 0)');
+  expect(ballFill).not.toBe('transparent');
 });
 
 test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({ page }) => {

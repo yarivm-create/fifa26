@@ -98,7 +98,10 @@ const App: React.FC = () => {
     <div className="app">
       <OfflineBanner />
       <header className="header">
-        <h1>{t('app.title')}</h1>
+        <h1>
+          <span className="title-ball" aria-hidden="true">⚽</span>{' '}
+          <span className="title-grad">{t('app.title')}</span>
+        </h1>
         <p className="subtitle">
           {t('app.subtitle')}
         </p>

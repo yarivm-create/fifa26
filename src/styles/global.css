@@ -106,12 +106,19 @@ body {
   font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: -.02em;
+  margin-bottom: 4px;
+  line-height: 1.15;
+}
+
+.header h1 .title-grad {
   background: linear-gradient(135deg, var(--wc-gold) 0%, #f5d678 40%, var(--wc-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 4px;
-  line-height: 1.15;
+}
+
+.header h1 .title-ball {
+  -webkit-text-fill-color: initial;
 }
 
 @media (min-width: 600px) {
