@@ -3,43 +3,24 @@ import { useI18n } from '../i18n';
 
 // Live "people watching now" counter.
 //
-// GitHub Pages is a static host, so it can't count concurrent visitors on its
-// own. We use whos.amung.us (free, no account, domain/pile-scoped, presence is
-// computed server-side) purely as a data source: its script keeps the live
-// count in localStorage under "_waucount:<pile>". We read that value and render
-// our own themed chip, hiding the third-party widget itself. If the service is
-// blocked or unavailable, the chip simply doesn't show (no fake numbers).
+// GitHub Pages is static, so it can't count concurrent visitors itself. We use
+// whos.amung.us purely as a data source — but NOT its heavy s.js widget, which
+// uses eval() and injects a third-party tracker (t.dtscout.com); both are
+// blocked by our CSP and were spamming the console while the count never
+// worked. Instead we hit its lightweight JSONP "pingjs" heartbeat directly:
+// each call registers our presence and responds with a single function call,
+//   WAU_r_s('<count>', '<pile>', -1);
+// which invokes the global callback we define below. No eval, no tracker, no
+// CSP violation. If the service is blocked or unavailable, the chip simply
+// doesn't show (no fake numbers).
 
-const PILE = 'fifa26yarivm'; // clean alphanumeric, <=12 chars so the service keeps it intact
-const SCRIPT_ID = 'wau-presence';
-const STORAGE_KEY = `_waucount:${PILE}`;
+const PILE = 'fifa26yarivm';
+const PING_URL = `https://whos.amung.us/pingjs/?k=${PILE}&c=s`;
+const HEARTBEAT_MS = 18000;
 
 declare global {
   interface Window {
-    _wau?: unknown[][];
-  }
-}
-
-function readCount(): number | null {
-  try {
-    let raw = localStorage.getItem(STORAGE_KEY);
-    if (raw == null) {
-      // whos.amung.us normalizes the pile id (strips non-alphanumerics and
-      // truncates to 12 chars), so the stored key can differ from PILE. We only
-      // register one widget, so fall back to any "_waucount:" entry.
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('_waucount:')) {
-          raw = localStorage.getItem(k);
-          break;
-        }
-      }
-    }
-    if (raw == null) return null;
-    const n = Math.round(Number(raw));
-    return Number.isFinite(n) && n > 0 ? n : null;
-  } catch {
-    return null;
+    WAU_r_s?: (count: string, pile: string, x: number) => void;
   }
 }
 
@@ -47,51 +28,62 @@ export const OnlineCounter: React.FC = () => {
   const { t } = useI18n();
   const [count, setCount] = useState<number | null>(null);
   // 'loading' reserves the chip's space with a skeleton so it doesn't pop in
-  // and reflow the header a few seconds after paint. We collapse to
-  // 'unavailable' only if the presence service never reports a count.
+  // and reflow the header. We collapse to 'unavailable' only if no count ever
+  // arrives (service blocked/unavailable).
   const [phase, setPhase] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
-    // Register the presence widget once, then load the tracker script during
-    // idle time so its parse/exec stays off the critical path (lower blocking
-    // time / faster interactivity). The live count is non-essential to first paint.
-    const start = () => {
-      window._wau = window._wau || [];
-      if (!window._wau.some((w) => w[1] === PILE)) {
-        window._wau.push(['small', PILE]);
-      }
-      if (!document.getElementById(SCRIPT_ID)) {
-        const s = document.createElement('script');
-        s.id = SCRIPT_ID;
-        s.async = true;
-        s.src = 'https://waust.at/s.js';
-        document.body.appendChild(s);
-      }
-      setCount(readCount());
+    let cancelled = false;
+
+    // The pingjs response body is `WAU_r_s('<n>', '<pile>', -1);` — a direct call
+    // to this global, so loading the script just hands us the live count.
+    window.WAU_r_s = (raw: string) => {
+      if (cancelled) return;
+      const n = Math.round(Number(raw));
+      if (Number.isFinite(n) && n > 0) setCount(n);
     };
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    if (typeof ric === 'function') ric(start, { timeout: 3000 });
-    else window.setTimeout(start, 1200);
 
-    const id = window.setInterval(() => setCount(readCount()), 4000);
+    // One heartbeat = one short-lived JSONP <script>. Loading it both registers
+    // our presence with the service and reports the current concurrent count.
+    const ping = () => {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = `${PING_URL}&r=${Date.now()}`;
+      s.onload = s.onerror = () => s.remove();
+      document.body.appendChild(s);
+    };
 
-    // If no count has arrived after a grace period, the service is blocked or
-    // unavailable — collapse the skeleton so we don't show a permanent shell.
+    // Defer the first ping to idle time so it stays off the critical path; the
+    // live count is non-essential to first paint.
+    const ric = (
+      window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }
+    ).requestIdleCallback;
+    if (typeof ric === 'function') ric(ping, { timeout: 3000 });
+    else window.setTimeout(ping, 1200);
+
+    const id = window.setInterval(ping, HEARTBEAT_MS);
+
+    // If no count has arrived after a grace period, collapse the skeleton so we
+    // don't show a permanent shell.
     const grace = window.setTimeout(() => {
       setPhase((p) => (p === 'loading' ? 'unavailable' : p));
     }, 8000);
 
-    // Mobile and background tabs throttle timers, so the cached count can lag
-    // behind the live server value. Re-read the moment the tab is focused again
-    // so each device converges to the true number as soon as it's looked at.
-    const refresh = () => setCount(readCount());
+    // Re-ping the moment the tab is focused again so throttled/background tabs
+    // converge on the true number as soon as they're looked at.
+    const refresh = () => ping();
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);
+
     return () => {
+      cancelled = true;
       window.clearInterval(id);
       window.clearTimeout(grace);
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('focus', refresh);
+      // Swap to a no-op (not delete) so any in-flight ping that resolves after
+      // unmount can't throw a ReferenceError.
+      window.WAU_r_s = () => {};
     };
   }, []);
 

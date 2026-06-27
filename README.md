@@ -30,7 +30,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 🌐 **Bilingual (English / עברית)** — One-tap language toggle with full right-to-left (RTL) layout for Hebrew; choice persists across reloads
 - 📤 **Share** — On mobile, a Share button opens the native share sheet with the site link
 - 📴 **Offline Aware** — A banner appears when the device goes offline so users know why live data paused
-- 👀 **Live Viewer Count** — "Watching now" counter via whos.amung.us presence
+- 👀 **Live Viewer Count** — "Watching now" counter via the whos.amung.us JSONP presence ping (no third-party tracker, CSP-safe)
 
 ## Quick Start
 
