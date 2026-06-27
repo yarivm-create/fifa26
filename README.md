@@ -1,6 +1,6 @@
 # ⚽ FIFA World Cup 2026 — Live Dashboard
 
-A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores, and Israel timezone support.
+A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores, and automatic local-timezone support.
 
 🔗 **Live Site:** [https://yarivm-create.github.io/fifa26/](https://yarivm-create.github.io/fifa26/)  
 📺 **Kan Coverage:** [https://www.kan.org.il/lobby/worldcup2026/](https://www.kan.org.il/lobby/worldcup2026/)
@@ -11,10 +11,10 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 
 ## Features
 
-- 🕐 **Live Israel Time Clock** — Real-time clock updating every second (Asia/Jerusalem timezone)
+- 🕐 **Live Local Time Clock** — Real-time clock updating every second in the visitor's own timezone, shown with their country flag
 - 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
-- 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by Israel date
+- 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
 - 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score; multiple simultaneous finishes each get their own toast
 - 🏆 **Group Standings** — Real-time group tables with all stats
 - 🥇 **Qualification Tracking** — Group/3rd-place teams that reach the Round of 32 show a "✓ Through" badge instead of a probability %
@@ -22,7 +22,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - ⭐ **Favorites** — Follow players and teams; followed players are listed before favorite teams
 - 📈 **Player Stats** — Top scorers and assists
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
-- ⏰ **All Times in Israel Timezone** — GMT+3 (IDT) for all match kickoff times
+- ⏰ **Times in Your Local Timezone** — Kickoff times auto-convert to the visitor's browser timezone (with a short label like GMT+3), no manual setting needed
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
 - ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min
 - 🌙 **Dark Theme** — Rich maroon, gold, and navy with FIFA 2026 branding
@@ -53,14 +53,14 @@ npm run build
 
 - **Frontend**: React 19 + TypeScript + Vite
 - **Data**: 104 matches sourced from FIFA.com (UTC timestamps)
-- **Timezone**: All display times converted to Israel (Asia/Jerusalem, GMT+3)
+- **Timezone**: All display times auto-convert to the visitor's own browser timezone (Intl-detected), shown with their country flag
 - **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations
 - **Deployment**: GitHub Pages at `/fifa26/`
 
 ## Data Source
 
 All 104 matches of the FIFA World Cup 2026™ with real scores and schedules.
-Times are stored in UTC and displayed in Israel time (IDT, GMT+3).
+Times are stored in UTC and displayed in each visitor's local timezone (auto-detected from the browser).
 
 | Section | Data | Refresh Rate |
 |---------|------|-------------|
