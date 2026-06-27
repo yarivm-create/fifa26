@@ -130,6 +130,13 @@ End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, We
 npm run test:e2e
 ```
 
+This runs in two passes: the fully-parallel smoke suite, then an isolated
+concurrency gate (`tests/concurrency.spec.ts`, tagged `@load`) that opens
+multiple real browser sessions at once and asserts they all render with zero app
+errors. The gate runs with a single worker so it doesn't starve the other tests.
+Tune the simulated user count with `CONCURRENCY_USERS` (default 10). For a
+heavier ad-hoc load test see [`loadtest/`](loadtest/README.md).
+
 CI runs the same suite on every push to `main` (`.github/workflows/e2e.yml`), alongside the GitHub Pages deploy (`deploy.yml`).
 
 ## License

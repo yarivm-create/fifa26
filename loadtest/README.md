@@ -44,6 +44,9 @@ You usually don't need that, because:
 
 ### Free ways to push further (no paid account)
 
+- **Wired into the E2E gate:** `npm run test:e2e` already runs an isolated
+  concurrency pass (`tests/concurrency.spec.ts`) before every push.
+
 - **HTTP-level load** (thousands of req/s, not real browsers): point
   [`autocannon`](https://github.com/mcollina/autocannon),
   [`k6`](https://k6.io), or [`Artillery`](https://www.artillery.io) at the local

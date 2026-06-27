@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --grep-invert @load && playwright test --grep @load --project=chromium --workers=1",
     "loadtest:local": "node loadtest/local-concurrency.mjs",
     "deploy": "npx rayfin up"
   },
