@@ -1,22 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 64" width="48" height="64">
   <defs>
+    <radialGradient id="wcTrophyGlobe" cx="0.38" cy="0.34" r="0.75">
+      <stop offset="0" stop-color="#fdf3b8"/>
+      <stop offset="1" stop-color="#c5941c"/>
+    </radialGradient>
     <linearGradient id="wcTrophyGold" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fbeaa0"/>
       <stop offset="0.45" stop-color="#e7c14e"/>
       <stop offset="1" stop-color="#a9760f"/>
     </linearGradient>
-    <linearGradient id="wcTrophyShine" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
   </defs>
-  <path d="M12 17 C2 17 1 33 14 33 L14 29 C8 29 8 21 13 21 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <path d="M36 17 C46 17 47 33 34 33 L34 29 C40 29 40 21 35 21 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <path d="M11 16 H37 C37 28 31 36 24 36 C17 36 11 28 11 16 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <rect x="9" y="11" width="30" height="6" rx="3" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <path d="M16 18 C16 26 19 31 23 33 C19 31 17 25 17 18 Z" fill="url(#wcTrophyShine)"/>
-  <path d="M21 36 H27 L26 43 H22 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <ellipse cx="24" cy="44" rx="4.5" ry="2.2" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <path d="M18 46 H30 L28 52 H20 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
-  <rect x="13" y="52" width="22" height="7" rx="2.5" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
+  <!-- globe -->
+  <circle cx="24" cy="15" r="13" fill="url(#wcTrophyGlobe)" stroke="#7a5310" stroke-width="1.2"/>
+  <!-- abstract continents (original blobs, not a real map) -->
+  <g fill="#a9760f" opacity="0.55">
+    <path d="M14 11 C17 9 20 11 19 14 C18 17 14 17 13 14 Z"/>
+    <path d="M26 8 C30 8 33 11 31 14 C29 16 27 14 27 12 C25 12 24 10 26 8 Z"/>
+    <path d="M22 19 C26 18 30 20 29 23 C27 26 21 25 21 22 Z"/>
+  </g>
+  <!-- cradle / cup holding the globe -->
+  <path d="M13 24 C13 31 18 35 24 35 C30 35 35 31 35 24 C32 28 28 30 24 30 C20 30 16 28 13 24 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
+  <!-- stem -->
+  <path d="M21 35 H27 L26 44 H22 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
+  <ellipse cx="24" cy="45" rx="5" ry="2.3" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
+  <!-- plinth -->
+  <path d="M17 47 H31 L29 53 H19 Z" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
+  <rect x="13" y="53" width="22" height="7" rx="2.5" fill="url(#wcTrophyGold)" stroke="#7a5310" stroke-width="1"/>
 </svg>
