@@ -12,6 +12,57 @@ interface Props {
 // and only switches to a compact min-content wrap (e.g. "Bosnia and" /
 // "Herzegovina") when a single line would overflow. This avoids needlessly
 // splitting shorter names like "Korea Republic" onto two lines.
+//
+// Measurement is BATCHED across all TeamName instances. A schedule with 100+
+// match cards renders 200+ names; if each one read+wrote layout in its own rAF,
+// every scrollWidth read after a style write would force a full-document
+// reflow (200+ reflows/frame => the "Forced reflow" violations). Instead we
+// collect every pending measurement into one shared rAF and strictly separate
+// the read and write phases so the browser reflows only once per frame.
+interface MeasureJob {
+  team: HTMLElement;
+  el: HTMLElement;
+  apply: (multi: boolean) => void;
+}
+
+const pendingJobs = new Set<MeasureJob>();
+let measureRaf = 0;
+
+function flushMeasurements() {
+  measureRaf = 0;
+  const jobs = Array.from(pendingJobs);
+  pendingJobs.clear();
+  if (jobs.length === 0) return;
+
+  // Phase 1 — READ: available width per element (layout is clean from last frame).
+  const avail = jobs.map((j) => {
+    const flag = j.team.querySelector('.flag-img, .flag-placeholder') as HTMLElement | null;
+    return j.team.clientWidth - (flag ? flag.offsetWidth : 0) - 10;
+  });
+
+  // Phase 2 — WRITE: force single-line measuring styles on every element.
+  const prev = jobs.map((j) => ({ w: j.el.style.width, ws: j.el.style.whiteSpace }));
+  jobs.forEach((j) => {
+    j.el.style.width = 'max-content';
+    j.el.style.whiteSpace = 'nowrap';
+  });
+
+  // Phase 3 — READ: a single reflow for the whole batch, then read all widths.
+  const oneLine = jobs.map((j) => j.el.scrollWidth);
+
+  // Phase 4 — WRITE: restore styles and apply results.
+  jobs.forEach((j, i) => {
+    j.el.style.width = prev[i].w;
+    j.el.style.whiteSpace = prev[i].ws;
+    j.apply(oneLine[i] > avail[i] + 4);
+  });
+}
+
+function scheduleMeasurement(job: MeasureJob) {
+  pendingJobs.add(job);
+  if (!measureRaf) measureRaf = requestAnimationFrame(flushMeasurements);
+}
+
 const TeamName: React.FC<{ name: string }> = ({ name }) => {
   const ref = React.useRef<HTMLSpanElement>(null);
   const [multi, setMulti] = React.useState(false);
@@ -21,34 +72,23 @@ const TeamName: React.FC<{ name: string }> = ({ name }) => {
     const team = el?.closest('.team') as HTMLElement | null;
     if (!el || !team) return;
 
-    let raf = 0;
-    const measure = () => {
-      const flag = team.querySelector('.flag-img, .flag-placeholder') as HTMLElement | null;
-      const avail = team.clientWidth - (flag ? flag.offsetWidth : 0) - 10;
-      const prevW = el.style.width;
-      const prevWS = el.style.whiteSpace;
-      el.style.width = 'max-content';
-      el.style.whiteSpace = 'nowrap';
-      const oneLine = el.scrollWidth;
-      el.style.width = prevW;
-      el.style.whiteSpace = prevWS;
-      const next = oneLine > avail + 4;
-      setMulti((prev) => (prev === next ? prev : next));
+    const job: MeasureJob = {
+      team,
+      el,
+      apply: (next) => setMulti((prev) => (prev === next ? prev : next)),
     };
 
-    // Defer measurement with rAF so DOM reads/writes never happen synchronously
-    // inside the ResizeObserver callback (which would raise the benign
-    // "ResizeObserver loop" warning that our smoke test treats as an error).
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
+    // Defer measurement into the shared batched scheduler so DOM reads/writes
+    // never happen synchronously inside the ResizeObserver callback (which would
+    // raise the benign "ResizeObserver loop" warning our smoke test treats as an
+    // error) and never thrash layout one element at a time.
+    const schedule = () => scheduleMeasurement(job);
 
     schedule();
     const ro = new ResizeObserver(schedule);
     ro.observe(team);
     return () => {
-      cancelAnimationFrame(raf);
+      pendingJobs.delete(job);
       ro.disconnect();
     };
   }, [name]);
