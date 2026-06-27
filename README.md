@@ -13,8 +13,14 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 
 - 🕐 **Live Israel Time Clock** — Real-time clock updating every second (Asia/Jerusalem timezone)
 - 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
+- ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by Israel date
+- 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score; multiple simultaneous finishes each get their own toast
 - 🏆 **Group Standings** — Real-time group tables with all stats
+- 🥇 **Qualification Tracking** — Group/3rd-place teams that reach the Round of 32 show a "✓ Through" badge instead of a probability %
+- 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
+- ⭐ **Favorites** — Follow players and teams; followed players are listed before favorite teams
+- 📈 **Player Stats** — Top scorers and assists
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
 - ⏰ **All Times in Israel Timezone** — GMT+3 (IDT) for all match kickoff times
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores

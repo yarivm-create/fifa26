@@ -103,6 +103,47 @@ test('share button is mobile-only and fires the native share sheet', async ({ pa
   expect(shared?.url).toContain('/fifa26/');
 });
 
+test('Live tab shows a Next Up section (max 2 fixtures) before Today', async ({ page }) => {
+  const errors = trackAppErrors(page);
+  await page.goto('');
+  // Live is the default tab.
+  const nextUp = page.locator('.upcoming-section');
+  await expect(nextUp).toBeVisible();
+  await expect(nextUp.locator('.section-title')).toContainText('Next Up');
+
+  // Highlights at most the two soonest fixtures.
+  const cards = nextUp.locator('.matches-grid > *');
+  const count = await cards.count();
+  expect(count).toBeGreaterThan(0);
+  expect(count).toBeLessThanOrEqual(2);
+
+  // Next Up must appear above Today in document order.
+  const titles = await page.locator('#tab-panel .section-title').allInnerTexts();
+  const upIdx = titles.findIndex((t) => /Next Up/.test(t));
+  const todayIdx = titles.findIndex((t) => /Today$/.test(t.trim()));
+  expect(upIdx).toBeGreaterThanOrEqual(0);
+  if (todayIdx >= 0) expect(upIdx).toBeLessThan(todayIdx);
+
+  expect(errors, errors.join('\n')).toEqual([]);
+});
+
+test('Favorites lists followed players before favorite teams', async ({ page }) => {
+  // Seed one followed player + one followed team before the app boots.
+  await page.addInitScript(() => {
+    localStorage.setItem('wc2026:followed-players', JSON.stringify(['1']));
+    localStorage.setItem('wc2026:followed-teams', JSON.stringify(['BRA']));
+  });
+  await page.goto('');
+  await page.locator('#tab-favorites').click({ force: true });
+  await expect(page.locator('#tab-favorites')).toHaveAttribute('aria-selected', 'true');
+
+  // Both blocks render their heading; players must come first.
+  const headings = page.locator('#tab-panel .favorites-heading');
+  await expect(headings).toHaveCount(2);
+  await expect(headings.nth(0)).toContainText(/Players/i);
+  await expect(headings.nth(1)).toContainText(/Teams/i);
+});
+
 test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({ page }) => {
   await page.goto('');
 
