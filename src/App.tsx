@@ -8,7 +8,6 @@ import { LocalClock } from './utils/localTime';
 import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
 import { Trophy } from './components/Trophy';
-import { Ball } from './components/Ball';
 import { useI18n } from './i18n';
 import { useLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
@@ -100,7 +99,7 @@ const App: React.FC = () => {
       <OfflineBanner />
       <header className="header">
         <h1>
-          <span className="title-ball" aria-hidden="true"><Ball size={34} /></span>{' '}
+          <span className="title-ball" aria-hidden="true">⚽</span>{' '}
           <span className="title-grad">{t('app.title')}</span>
         </h1>
         <p className="subtitle">

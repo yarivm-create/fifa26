@@ -67,7 +67,7 @@ ESLint (flat config: TypeScript + React Hooks rules) also runs in CI on every pu
 - **Frontend**: React 19 + TypeScript + Vite
 - **Data**: 104 matches sourced from FIFA.com (UTC timestamps)
 - **Timezone**: Every displayed time across the site auto-converts to the visitor's own browser timezone (Intl-detected), with their country flag shown by the clock
-- **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations, an original generic gold champion's cup mark (header, favicon, standings, knockout placeholders) and an original modern soccer-ball mark recolored in the host-nation palette (header title)
+- **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations, and an original generic gold champion's cup mark (header, favicon, standings, knockout placeholders)
 - **Deployment**: GitHub Pages at `/fifa26/`
 
 ## Data Source
