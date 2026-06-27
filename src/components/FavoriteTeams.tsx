@@ -6,6 +6,7 @@ import { QualChance } from '../api/qualification';
 import { FormResult } from '../api/mockData';
 import { PlayerAgg } from '../api/liveData';
 import { Flag } from '../utils/flags';
+import { Trophy } from './Trophy';
 import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useI18n } from '../i18n';
@@ -162,7 +163,7 @@ function TeamCard({
                 {isReal ? (
                   <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
                 ) : (
-                  <>🏆 {m.stage_name || t('card.knockout')} · {t('card.tbd')}</>
+                  <>{t('card.vs')} <Trophy size={14} /> {m.stage_name || t('card.knockout')} · {t('card.tbd')}</>
                 )}
               </span>
               <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>

@@ -144,6 +144,25 @@ test('Favorites lists followed players before favorite teams', async ({ page }) 
   await expect(headings.nth(1)).toContainText(/Teams/i);
 });
 
+test('branding uses the World Cup trophy SVG (favicon + standings title)', async ({ page }) => {
+  await page.goto('');
+
+  // Favicon points at the trophy asset, not the old emoji data-URI.
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /trophy\.svg/);
+
+  // The header hero trophy is a CSS background pointing at the same asset.
+  const headerBg = await page.locator('.header').evaluate(
+    (el) => getComputedStyle(el, '::before').backgroundImage
+  );
+  expect(headerBg).toContain('trophy.svg');
+
+  // Standings title renders the inline trophy SVG (no 🏆 emoji fallback).
+  await page.locator('#tab-standings').click({ force: true });
+  await expect(
+    page.locator('#tab-panel h2 svg[aria-label="World Cup trophy"]').first()
+  ).toBeVisible();
+});
+
 test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({ page }) => {
   await page.goto('');
 

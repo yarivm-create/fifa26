@@ -80,10 +80,12 @@ body {
 
 /* Trophy animation */
 .header::before {
-  content: '🏆';
+  content: '';
   display: block;
-  font-size: 2.2rem;
-  margin-bottom: 4px;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 4px;
+  background: url('/fifa26/trophy.svg') center / contain no-repeat;
   filter: drop-shadow(0 0 12px rgba(212,175,55,.45));
   animation: trophyFloat 4s ease-in-out infinite, trophyShine 6s ease-in-out infinite;
 }

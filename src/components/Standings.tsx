@@ -7,6 +7,7 @@ import { FormResult } from '../api/mockData';
 import { QualChance } from '../api/qualification';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useI18n } from '../i18n';
+import { Trophy } from './Trophy';
 
 export const Standings: React.FC = () => {
   const { t } = useI18n();
@@ -44,7 +45,7 @@ export const Standings: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 8 }}>{t('standings.title')}</h2>
+      <h2 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={22} /> {t('standings.title')}</h2>
       <p className="qual-legend">
         {t('standings.legend')}
         <span className="qual-badge qual-q">{t('standings.through')}</span>

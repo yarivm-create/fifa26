@@ -4,10 +4,11 @@ import { Following } from './Following';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 import { useI18n } from '../i18n';
+import { Trophy } from './Trophy';
 
 // Compact discovery prompt shown for whichever section is still empty, so a
 // user who has only teams (or only players) still learns how to add the other.
-const SectionPrompt: React.FC<{ heading: string; icon: string; children: React.ReactNode }> = ({
+const SectionPrompt: React.FC<{ heading: string; icon: React.ReactNode; children: React.ReactNode }> = ({
   heading,
   icon,
   children,
@@ -58,7 +59,7 @@ export const Favorites: React.FC = () => {
       {hasTeams ? (
         <FavoriteTeams />
       ) : (
-        <SectionPrompt heading={t('fav.teams')} icon="🏆">
+        <SectionPrompt heading={t('fav.teams')} icon={<Trophy size={28} />}>
           {t('fav.teamsPrompt')}
         </SectionPrompt>
       )}

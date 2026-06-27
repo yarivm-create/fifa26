@@ -54,12 +54,20 @@ Open http://localhost:3000/fifa26/ in your browser (the app is served under the 
 npm run build
 ```
 
+### Lint
+
+```bash
+npm run lint
+```
+
+ESLint (flat config: TypeScript + React Hooks rules) also runs in CI on every push.
+
 ## Tech Stack
 
 - **Frontend**: React 19 + TypeScript + Vite
 - **Data**: 104 matches sourced from FIFA.com (UTC timestamps)
 - **Timezone**: Every displayed time across the site auto-converts to the visitor's own browser timezone (Intl-detected), with their country flag shown by the clock
-- **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations
+- **Styling**: Custom CSS with FIFA 2026 theming — dark mode, gradient borders, animations, and an original gold World Cup trophy mark (header, favicon, standings, knockout placeholders)
 - **Deployment**: GitHub Pages at `/fifa26/`
 
 ## Data Source

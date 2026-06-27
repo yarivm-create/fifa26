@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trophy } from '../components/Trophy';
 
 // Maps FIFA 3-letter team codes to ISO 3166-1 alpha-2 codes used by flagcdn.com.
 // England/Scotland use the special gb-eng / gb-sct subdivision codes.
@@ -75,7 +76,7 @@ const FLAG_FALLBACK =
 export const Flag: React.FC<FlagProps> = ({ code, name, className }) => {
   const url = getFlagUrl(code);
   if (!url) {
-    return <span className={`team-flag flag-placeholder ${className || ''}`}>🏆</span>;
+    return <span className={`team-flag flag-placeholder ${className || ''}`}><Trophy size={16} /></span>;
   }
   return (
     <img
