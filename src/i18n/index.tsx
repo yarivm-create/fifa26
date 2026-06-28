@@ -39,7 +39,7 @@ const en: Dict = {
   'tab.favorites': '⭐ My Favorites',
   'nav.aria': 'Dashboard sections',
   // Language toggle
-  'lang.toggle': 'עברית',
+  'lang.toggle': 'HE',
   'lang.toggleAria': 'Switch language to Hebrew',
   // Loading
   'loading.generic': 'Loading…',
