@@ -76,6 +76,33 @@ function rankKey(t: TeamState): number {
   return t.pts * 1e6 + (t.gd + 100) * 1e3 + t.gf + Math.random() * 0.5;
 }
 
+// Deterministic FIFA ranking comparator: points, then goal difference, then
+// goals for. Sorts strongest-first.
+function fifaCmp(a: TeamState, b: TeamState): number {
+  return b.pts !== a.pts ? b.pts - a.pts : b.gd !== a.gd ? b.gd - a.gd : b.gf - a.gf;
+}
+
+// Given FINAL group standings, return the 32 advancers: top 2 of every group
+// plus the 8 best third-placed teams. Used once the group stage is complete so
+// non-advancing teams read "Eliminated" rather than a residual percentage.
+function finalGroupAdvancers(states: TeamState[]): Set<string> {
+  const byGroup: Record<string, TeamState[]> = {};
+  for (const t of states) (byGroup[t.group] ||= []).push(t);
+  const advancers = new Set<string>();
+  const thirds: TeamState[] = [];
+  for (const letter of Object.keys(byGroup)) {
+    const teams = byGroup[letter].slice().sort(fifaCmp);
+    if (teams[0]) advancers.add(teams[0].code);
+    if (teams[1]) advancers.add(teams[1].code);
+    if (teams[2]) thirds.push(teams[2]);
+  }
+  thirds.sort(fifaCmp);
+  for (let i = 0; i < Math.min(THIRD_PLACE_SLOTS, thirds.length); i++) {
+    advancers.add(thirds[i].code);
+  }
+  return advancers;
+}
+
 // Codes that are still placeholders in the knockout schedule (e.g. "2A", "1C",
 // "W73", "3ABCDF"). A real country code in a Round-of-32 slot means the team has
 // actually reached the knockouts — including via a best-third-place finish.
@@ -138,6 +165,17 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
   }
 
   const groupLetters = [...new Set(baseStates.map((t) => t.group))];
+
+  // Once the group stage is over, advancement is decided — no team should still
+  // show a probability. Prefer FIFA's real Round-of-32 assignments; if those
+  // aren't populated yet, derive the 32 advancers from the final standings.
+  const groupStageComplete = remaining.length === 0;
+  const koFieldFinal = advancedReal.size >= 32;
+  const finalAdvancers: Set<string> | null = koFieldFinal
+    ? advancedReal
+    : groupStageComplete
+      ? finalGroupAdvancers(baseStates)
+      : null;
 
   for (let sim = 0; sim < SIMS; sim++) {
     // Clone base states.
@@ -208,7 +246,10 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
     }).length;
 
     let status: QualStatus = 'Contention';
-    if (advancedReal.has(t.code)) {
+    if (finalAdvancers) {
+      // Group stage decided: definitively Qualified or Eliminated, never a %.
+      status = finalAdvancers.has(t.code) ? 'Qualified' : 'Eliminated';
+    } else if (advancedReal.has(t.code)) {
       status = 'Qualified'; // already placed into the Round of 32 (incl. 3rd place)
     } else if (couldBeAbove <= 1) {
       status = 'Qualified'; // guaranteed top 2 of the group
@@ -216,9 +257,14 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
       status = 'Eliminated'; // cannot even finish 3rd
     }
 
+    // When advancement is settled, reflect it in the numbers too so nothing
+    // downstream renders a stale "<1%"/">99%".
+    const settled = finalAdvancers != null;
+    const finalPAdvance = settled ? (status === 'Qualified' ? 100 : 0) : Math.round(pAdvance);
+
     out[t.code] = {
       code: t.code,
-      pAdvance: Math.round(pAdvance),
+      pAdvance: finalPAdvance,
       pTop2: Math.round(pTop2),
       status,
     };
