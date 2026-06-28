@@ -9,6 +9,19 @@ import { Match } from '../api/types';
 // distinct full-time celebration for EVERY game that just ended in the same
 // poll — not only the first — including who won and the final score.
 
+export interface GoalEvent {
+  key: number; // incrementing, used to (re)trigger the overlay
+  matchId: number;
+  scorerName: string; // team that just scored
+  scorerCode: string;
+  homeName: string;
+  homeCode: string;
+  homeGoals: number;
+  awayName: string;
+  awayCode: string;
+  awayGoals: number;
+}
+
 export interface MatchEndEvent {
   key: number; // globally unique, stable per detected end
   matchId: number;
@@ -41,22 +54,47 @@ function buildEndEvent(m: Match, key: number): MatchEndEvent {
 }
 
 export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] | null) {
-  const prevScores = useRef<Map<number, number> | null>(null);
+  // Track each live match's per-team goals so we can tell WHICH side scored,
+  // not just that the total changed.
+  const prevScores = useRef<Map<number, { home: number; away: number }> | null>(null);
   const prevStatus = useRef<Map<number, string> | null>(null);
+  const goalCounter = useRef(0);
   const endCounter = useRef(0);
-  const [goalKey, setGoalKey] = useState(0);
+  const [goalEvent, setGoalEvent] = useState<GoalEvent | null>(null);
   const [endEvents, setEndEvents] = useState<MatchEndEvent[]>([]);
 
   useEffect(() => {
     if (!liveMatches) return;
-    const cur = new Map<number, number>(
-      liveMatches.map((m) => [m.id, (m.home_team.goals ?? 0) + (m.away_team.goals ?? 0)])
+    const cur = new Map<number, { home: number; away: number }>(
+      liveMatches.map((m) => [
+        m.id,
+        { home: m.home_team.goals ?? 0, away: m.away_team.goals ?? 0 },
+      ])
     );
     if (prevScores.current) {
-      for (const [id, total] of cur) {
-        const prev = prevScores.current.get(id);
-        if (prev !== undefined && total > prev) {
-          setGoalKey((k) => k + 1);
+      for (const m of liveMatches) {
+        const prev = prevScores.current.get(m.id);
+        if (!prev) continue;
+        const homeGoals = m.home_team.goals ?? 0;
+        const awayGoals = m.away_team.goals ?? 0;
+        const homeScored = homeGoals > prev.home;
+        const awayScored = awayGoals > prev.away;
+        if (homeScored || awayScored) {
+          // If both somehow changed in one poll, credit the bigger jump.
+          const scorerIsHome =
+            homeScored && (!awayScored || homeGoals - prev.home >= awayGoals - prev.away);
+          setGoalEvent({
+            key: ++goalCounter.current,
+            matchId: m.id,
+            scorerName: scorerIsHome ? m.home_team.name : m.away_team.name,
+            scorerCode: scorerIsHome ? m.home_team.code : m.away_team.code,
+            homeName: m.home_team.name,
+            homeCode: m.home_team.code,
+            homeGoals,
+            awayName: m.away_team.name,
+            awayCode: m.away_team.code,
+            awayGoals,
+          });
           break;
         }
       }
@@ -81,5 +119,5 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
     prevStatus.current = cur;
   }, [allMatches]);
 
-  return { goalKey, endEvents };
+  return { goalEvent, endEvents };
 }

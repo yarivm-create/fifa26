@@ -57,13 +57,19 @@ const App: React.FC = () => {
   const allFetcher = useCallback(() => fetchAllMatches(), []);
   const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000);
   const { data: allMatches } = useLiveData<Match[]>(allFetcher, 60000);
-  const { goalKey, endEvents } = useMatchAlerts(liveMatches, allMatches);
+  const { goalEvent, endEvents } = useMatchAlerts(liveMatches, allMatches);
 
   // Keep a live list of full-time toasts so several games ending together each
   // get their own celebration; each toast removes itself when it finishes.
   const [endToasts, setEndToasts] = useState<MatchEndEvent[]>([]);
+  // A centered, unmissable full-time burst (like a goal) accompanies the
+  // detailed bottom toasts so the end of a match isn't easy to miss.
+  const [endBurstKey, setEndBurstKey] = useState(0);
   useEffect(() => {
-    if (endEvents.length > 0) setEndToasts((prev) => [...prev, ...endEvents]);
+    if (endEvents.length > 0) {
+      setEndToasts((prev) => [...prev, ...endEvents]);
+      setEndBurstKey((k) => k + 1);
+    }
   }, [endEvents]);
   const dismissToast = useCallback(
     (key: number) => setEndToasts((prev) => prev.filter((e) => e.key !== key)),
@@ -154,7 +160,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {goalKey > 0 && <Fireworks key={`goal-${goalKey}`} />}
+      {goalEvent && <Fireworks key={`goal-${goalEvent.key}`} goal={goalEvent} />}
+      {endBurstKey > 0 && <Fireworks key={`end-${endBurstKey}`} label={t('fx.fullTime')} />}
       <WhistleStack events={endToasts} onDone={dismissToast} />
     </div>
   );

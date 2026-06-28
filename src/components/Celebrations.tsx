@@ -2,31 +2,54 @@ import React, { useEffect, useState } from 'react';
 import { playWhistle } from '../utils/sound';
 import { useI18n } from '../i18n';
 import { Flag } from '../utils/flags';
-import type { MatchEndEvent } from '../hooks/useMatchAlerts';
+import type { MatchEndEvent, GoalEvent } from '../hooks/useMatchAlerts';
 
 // ---- Goal fireworks -------------------------------------------------------
 // A brief, non-interactive burst overlay shown right after a goal is confirmed.
 // Auto-removes after the animation so it never lingers or blocks the UI.
 
+// Staggered bursts spread across ~2.4s so the confetti keeps popping for the
+// whole celebration instead of firing once and leaving dead air.
 const BURSTS = [
-  { left: '24%', top: '32%', hue: 45, delay: 0 },
-  { left: '70%', top: '28%', hue: 0, delay: 180 },
-  { left: '48%', top: '46%', hue: 150, delay: 340 },
+  { left: '24%', top: '34%', hue: 45, delay: 0 },
+  { left: '70%', top: '28%', hue: 0, delay: 220 },
+  { left: '48%', top: '22%', hue: 150, delay: 440 },
+  { left: '34%', top: '54%', hue: 280, delay: 900 },
+  { left: '64%', top: '56%', hue: 200, delay: 1150 },
+  { left: '50%', top: '40%', hue: 45, delay: 1700 },
+  { left: '30%', top: '30%', hue: 330, delay: 2100 },
+  { left: '72%', top: '48%', hue: 90, delay: 2350 },
 ];
-const PARTICLES = 18;
+const PARTICLES = 20;
 
-export const Fireworks: React.FC = () => {
+// Shared celebratory burst overlay. Used for goals (default) and, with a
+// distinct label, for full-time so the end of a match is just as unmissable as
+// a goal instead of only a small toast tucked into the corner.
+export const Fireworks: React.FC<{ label?: string; durationMs?: number; goal?: GoalEvent }> = ({
+  label,
+  durationMs = 5500,
+  goal,
+}) => {
   const { t } = useI18n();
   const [show, setShow] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => setShow(false), 3200);
+    const timer = setTimeout(() => setShow(false), durationMs);
     return () => clearTimeout(timer);
-  }, []);
+  }, [durationMs]);
   if (!show) return null;
 
   return (
     <div className="fx-overlay" aria-hidden="true">
-      <div className="fx-goal-banner">{t('fx.goal')}</div>
+      <div className="fx-goal-banner">{label ?? t('fx.goal')}</div>
+      {goal && (
+        <div className="fx-goal-team">
+          <Flag code={goal.scorerCode} name={goal.scorerName} className="fx-goal-flag" />
+          <span className="fx-goal-team-name">{goal.scorerName}</span>
+          <span className="fx-goal-team-score">
+            {goal.homeGoals}<span className="fx-goal-dash"> – </span>{goal.awayGoals}
+          </span>
+        </div>
+      )}
       {BURSTS.map((b, bi) => (
         <div
           key={bi}

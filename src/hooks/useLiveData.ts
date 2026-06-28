@@ -39,15 +39,29 @@ export function useLiveData<T>(
       if (Date.now() - lastRunRef.current < 5000) return;
       refresh();
     };
+    // Mobile app-switching and back/forward navigation often restore the page
+    // from the bfcache (frozen) WITHOUT firing visibilitychange or focus, so a
+    // dedicated pageshow handler is what actually catches "returned from
+    // background". A persisted restore is always stale, so refresh regardless
+    // of the short guard.
+    const refreshOnPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        refresh();
+      } else {
+        refreshOnReturn();
+      }
+    };
     document.addEventListener('visibilitychange', refreshOnReturn);
     window.addEventListener('focus', refreshOnReturn);
     window.addEventListener('online', refreshOnReturn);
+    window.addEventListener('pageshow', refreshOnPageShow);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', refreshOnReturn);
       window.removeEventListener('focus', refreshOnReturn);
       window.removeEventListener('online', refreshOnReturn);
+      window.removeEventListener('pageshow', refreshOnPageShow);
     };
   }, [refresh, intervalMs]);
 
