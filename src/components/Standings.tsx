@@ -43,11 +43,23 @@ export const Standings: React.FC = () => {
     );
   }
 
+  const allDecided =
+    qual && groups.length > 0 &&
+    groups.every((g) => g.teams.every((s) => qual[s.team.code] && qual[s.team.code].status !== 'Contention'));
+
   return (
     <div>
       <h2 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={22} /> {t('standings.title')}</h2>
       <p className="qual-legend">
-        <span className="qual-swatch" /> {t('standings.legend')}
+        {allDecided ? (
+          <><span className="qual-swatch" /> {t('standings.legend')}</>
+        ) : (
+          <>
+            <span className="qual-badge qual-q">✓</span>{t('standings.through')}
+            <span className="qual-badge qual-pct">%</span>{t('standings.pctChance')}
+            <span className="qual-badge qual-out">✕</span>{t('standings.out')}
+          </>
+        )}
       </p>
       <div className="groups-grid">
         {groups.map((group) => (

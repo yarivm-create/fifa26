@@ -71,18 +71,27 @@ function PlayerCard({
         {upcoming.length === 0 ? (
           <div className="follow-fixture-empty">{t('card.noUpcoming')}</div>
         ) : (
-          upcoming.map((m) => {
-            const oppHome = m.home_team.code !== player.code;
-            const opp = oppHome ? m.home_team : m.away_team;
-            return (
-              <div className="follow-fixture" key={m.id}>
-                <span className="follow-fixture-opp">
-                  {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
-                </span>
-                <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
-              </div>
-            );
-          })
+          (() => {
+            let lastStage = '';
+            return upcoming.map((m) => {
+              const oppHome = m.home_team.code !== player.code;
+              const opp = oppHome ? m.home_team : m.away_team;
+              const stage = m.stage_name ? m.stage_name.split(' - ')[0] : '';
+              const header = stage && stage !== lastStage;
+              lastStage = stage;
+              return (
+                <React.Fragment key={m.id}>
+                  {header && <div className="fixture-stage-head">{stage}</div>}
+                  <div className="follow-fixture">
+                    <span className="follow-fixture-opp">
+                      {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
+                    </span>
+                    <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
+                  </div>
+                </React.Fragment>
+              );
+            });
+          })()
         )}
       </div>
     </div>

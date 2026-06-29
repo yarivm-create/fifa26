@@ -17,6 +17,26 @@ interface Props {
   teamFollow?: TeamFollowApi;
 }
 
+const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
+  const { t } = useI18n();
+  if (!chance) return null;
+  if (chance.status === 'Qualified') {
+    return <span className="qual-badge qual-q" title={t('group.qualifiedTitle')}>✓</span>;
+  }
+  if (chance.status === 'Eliminated') {
+    return <span className="qual-badge qual-out" title={t('group.eliminatedTitle')}>✕</span>;
+  }
+  const pct = chance.pAdvance <= 0 ? '<1%' : chance.pAdvance >= 100 ? '>99%' : `${chance.pAdvance}%`;
+  return (
+    <span
+      className="qual-badge qual-pct"
+      title={t('group.advanceTitle', { pct: `${chance.pAdvance}%`, top2: `${chance.pTop2}%` })}
+    >
+      {pct}
+    </span>
+  );
+};
+
 const FormDots: React.FC<{ results?: FormResult[] }> = ({ results }) => {
   if (!results || results.length === 0) return <span className="form-empty">—</span>;
   return (
@@ -32,6 +52,11 @@ const FormDots: React.FC<{ results?: FormResult[] }> = ({ results }) => {
 
 export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) => {
   const { t } = useI18n();
+  // Show live % predictions + ✓/✕ while the group is in progress; once the
+  // whole group is decided, switch to the clean qualified-row highlight design.
+  const groupDecided = group.teams.every(
+    (s) => qual?.[s.team.code]?.status && qual[s.team.code].status !== 'Contention'
+  );
   return (
     <div className="card group-section">
       <h3>{t('group.label', { letter: group.letter })}</h3>
@@ -56,7 +81,7 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
             {group.teams.map((standing, idx) => {
               const code = standing.team.code;
               const fav = teamFollow?.isFavorite(code) ?? false;
-              const passed = idx < 2 || qual?.[code]?.status === 'Qualified';
+              const passed = groupDecided && qual?.[code]?.status === 'Qualified';
               return (
                 <tr key={code} className={passed ? 'qualified' : ''}>
                   <td>{idx + 1}</td>
@@ -72,6 +97,7 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
                       </button>
                     )}
                     <Flag code={code} name={standing.team.name} /> {standing.team.name}
+                    {!groupDecided && <QualBadge chance={qual?.[code]} />}
                   </td>
                   <td>{standing.played}</td>
                   <td>{standing.won}</td>
