@@ -1700,6 +1700,10 @@ body {
 .fx-w { color: #2fbf6f; }
 .fx-l { color: #e8643a; }
 .fx-d { color: var(--wc-text-muted); }
+.team-stat-caption {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--wc-text-muted); margin-bottom: 6px;
+}
 .team-fixture-live .follow-fixture-opp { color: var(--wc-live-pulse); font-weight: 600; }
 .team-fixture-live .follow-fixture-time { color: var(--wc-live-pulse); font-weight: 700; }
 

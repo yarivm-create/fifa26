@@ -143,6 +143,7 @@ const en: Dict = {
   'fav.playersNoStats': "Your followed players haven't recorded goals or assists yet — check back after their next match.",
   // Team / player cards
   'card.topPlayers': 'Top players',
+  'card.groupStageRecord': 'Group stage record',
   'card.fixtures': 'Fixtures',
   'card.noFixtures': 'No fixtures available.',
   'card.vs': 'vs',
@@ -293,6 +294,7 @@ const he: Dict = {
   'fav.playersNoStats': 'השחקנים שאתה עוקב אחריהם עדיין לא רשמו שערים או בישולים — בדקו שוב אחרי המשחק הבא שלהם.',
   // Team / player cards
   'card.topPlayers': 'שחקנים מובילים',
+  'card.groupStageRecord': 'מאזן שלב הבתים',
   'card.fixtures': 'משחקים',
   'card.noFixtures': 'אין משחקים זמינים.',
   'card.vs': 'נגד',

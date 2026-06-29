@@ -145,6 +145,7 @@ function TeamCard({
         <QualLine chance={data.qual[code]} ko={knockoutState(code, data.matches)} />
       </div>
 
+      <div className="team-stat-caption">{t('card.groupStageRecord')}</div>
       <div className="team-stat-grid">
         <div className="team-stat"><span className="team-stat-value">{standing.points}</span><span className="team-stat-label">{t('card.pts')}</span></div>
         <div className="team-stat"><span className="team-stat-value">{standing.played}</span><span className="team-stat-label">{t('card.played')}</span></div>
