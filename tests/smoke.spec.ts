@@ -192,3 +192,43 @@ test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({
   await page.locator('.lang-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 });
+
+// Gap 1: knockout bracket renders with results, not just group fallback.
+test('bracket renders knockout matches with scores', async ({ page }) => {
+  const errors = trackAppErrors(page);
+  await page.goto('');
+  await page.locator('#tab-bracket').click({ force: true });
+  await expect(page.locator('#tab-bracket')).toHaveAttribute('aria-selected', 'true');
+  const matches = page.locator('#tab-panel .bracket-match');
+  await expect(matches.first()).toBeVisible({ timeout: 15000 });
+  expect(await matches.count()).toBeGreaterThan(8); // R32+R16+QF+SF+F feeders
+  // Completed knockout games expose real scores.
+  expect(await page.locator('#tab-panel .bracket-score').count()).toBeGreaterThan(0);
+  expect(errors, errors.join('\n')).toEqual([]);
+});
+
+// Gap 3: Stats leaderboards render rows from the bundled fallback dataset.
+test('stats leaderboards render player rows', async ({ page }) => {
+  const errors = trackAppErrors(page);
+  await page.goto('');
+  await page.locator('#tab-stats').click({ force: true });
+  await expect(page.locator('#tab-stats')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#tab-panel .stat-board-row').first()).toBeVisible({ timeout: 15000 });
+  expect(await page.locator('#tab-panel .stat-board-row').count()).toBeGreaterThan(0);
+  expect(errors, errors.join('\n')).toEqual([]);
+});
+
+// Gap 4: once groups are decided, qualifiers are highlighted (no per-team badge),
+// and a favorited team's stat grid is labelled a group-stage record.
+test('standings highlight qualifiers + favorites label group-stage record', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('wc2026:followed-teams', JSON.stringify(['CAN']));
+  });
+  await page.goto('');
+  await page.locator('#tab-standings').click({ force: true });
+  await expect(page.locator('#tab-panel tr.qualified').first()).toBeVisible({ timeout: 15000 });
+  expect(await page.locator('#tab-panel tr.qualified').count()).toBeGreaterThanOrEqual(2);
+  await page.locator('#tab-favorites').click({ force: true });
+  await expect(page.locator('#tab-panel .team-stat-caption').first()).toContainText(/Group stage/i, { timeout: 15000 });
+});
+

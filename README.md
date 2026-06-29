@@ -123,7 +123,7 @@ worldcup2026-app/
 
 ## Testing
 
-End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects:
+End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects, including an automated accessibility gate (`tests/a11y.spec.ts`, axe-core WCAG 2.0/2.1 A & AA scan on every tab):
 
 ```bash
 npm run test:e2e
