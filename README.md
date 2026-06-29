@@ -17,10 +17,9 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
 - 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score, plus a whistle sound (first game); multiple simultaneous finishes each get their own toast
-- 🏆 **Group Standings** — Real-time group tables with all stats
-- 🥇 **Qualification Tracking** — Group/3rd-place teams that reach the Round of 32 show a "✓ Through" badge instead of a probability %
+- 🏆 **Group Standings** — Real-time group tables with all stats. During the group stage each team shows a live "✓ qualified / % chance / ✕ out" prediction; once a group is mathematically decided the predictions drop and qualifiers (top 2 + best thirds) are simply highlighted
 - 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
-- ⭐ **Favorites** — Follow players and teams (star toggle on the standings table and the stats leaderboards); favorite team cards show live knockout state (Round of 16 → Final / Eliminated / 🏆) and each upcoming fixture is labelled with its stage; followed players are listed before favorite teams with their next/recent fixtures and key stats
+- ⭐ **Favorites** — Follow players and teams (star toggle on standings, stats leaderboards, and each team card's Top Players list); favorite team cards show live knockout state (Round of 16 → Final / Eliminated / 🏆), every fixture listed in play order grouped under one stage header (Group / Round of 32 / Round of 16…) with ✓ win / ✕ loss results; followed players appear first with their next fixture labelled by stage
 - 📈 **Player Stats** — Top scorers, assists, and goals broken down by every round (group through final, with upcoming counts)
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
 - ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
