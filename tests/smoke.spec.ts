@@ -122,7 +122,19 @@ test('Live tab shows a Next Up section (max 2 fixtures) before Today', async ({ 
   const upIdx = titles.findIndex((t) => /Next Up/.test(t));
   const todayIdx = titles.findIndex((t) => /Today$/.test(t.trim()));
   expect(upIdx).toBeGreaterThanOrEqual(0);
-  if (todayIdx >= 0) expect(upIdx).toBeLessThan(todayIdx);
+  if (todayIdx >= 0) {
+    expect(upIdx).toBeLessThan(todayIdx);
+    // Today section carries a TODAY badge highlight, like Schedule.
+    expect(await page.locator('.today-section .today-badge').count()).toBeGreaterThan(0);
+  }
+
+  // Next Up fixtures must NOT be repeated in the day sections below.
+  const upTeams = await nextUp.locator('.team-name').allInnerTexts();
+  const dayMatchups = await page.locator('.day-section:not(.upcoming-section) .match-card').allInnerTexts();
+  for (let p = 0; p + 1 < upTeams.length; p += 2) {
+    const dup = dayMatchups.some((m) => m.includes(upTeams[p]) && m.includes(upTeams[p + 1]));
+    expect(dup, `Next Up fixture ${upTeams[p]} vs ${upTeams[p + 1]} repeated below`).toBeFalsy();
+  }
 
   expect(errors, errors.join('\n')).toEqual([]);
 });

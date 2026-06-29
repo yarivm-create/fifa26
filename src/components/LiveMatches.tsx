@@ -46,16 +46,17 @@ export const LiveMatches: React.FC = () => {
   const liveIds = new Set((liveMatches || []).map((m) => m.id));
 
   // The next two fixtures still to be played (soonest kickoff), highlighted as
-  // their own "Next Up" cards above Today. They also remain in their normal
-  // day sections (Today/Tomorrow/…) — this is purely an extra heads-up.
+  // their own "Next Up" cards above Today. They are excluded from their normal
+  // day sections below so matches are never listed twice.
   const upcomingMatches = sortMatches(
     (allMatches || []).filter((m) => m.status === 'future_scheduled')
   ).slice(0, 2);
+  const upcomingIds = new Set(upcomingMatches.map((m) => m.id));
 
   const yesterdayMatches = matchesByDate[yesterdayKey]?.filter(m => m.status === 'completed') || [];
-  const todayMatches = sortMatches((matchesByDate[todayKey] || []).filter(m => !liveIds.has(m.id)));
-  const tomorrowMatches = sortMatches(matchesByDate[tomorrowKey] || []);
-  const dayAfterMatches = sortMatches(matchesByDate[dayAfterKey] || []);
+  const todayMatches = sortMatches((matchesByDate[todayKey] || []).filter(m => !liveIds.has(m.id) && !upcomingIds.has(m.id)));
+  const tomorrowMatches = sortMatches((matchesByDate[tomorrowKey] || []).filter(m => !upcomingIds.has(m.id)));
+  const dayAfterMatches = sortMatches((matchesByDate[dayAfterKey] || []).filter(m => !upcomingIds.has(m.id)));
 
   const hasAnything =
     hasLive ||
@@ -97,7 +98,10 @@ export const LiveMatches: React.FC = () => {
       {/* Today */}
       {todayMatches.length > 0 && (
         <section className="day-section today-section">
-          <h2 className="section-title">{t('live.today')}</h2>
+          <h2 className="section-title">
+            <span className="today-badge" style={{ marginRight: 8 }}>{t('schedule.today')}</span>
+            {t('live.today')}
+          </h2>
           <div className="matches-grid">
             {todayMatches.map((match) => (
               <MatchCard key={match.id} match={match} />
