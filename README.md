@@ -12,7 +12,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 ## Features
 
 - 🕐 **Live Local Time Clock** — Real-time clock updating every second in the visitor's own timezone, shown with their country flag
-- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators
+- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators, plus an instant refresh when you return to the tab (bfcache `pageshow`) so scores are never stale
 - 📺 **Kan 11 Broadcast Links** — Live and completed match cards link out to Kan's World Cup hub ("Live Match Center" while live, "Match Recap & Highlights" once finished)
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
@@ -26,7 +26,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
 - ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min
 - 🌙 **Dark Theme** — Rich maroon, gold, and navy with FIFA 2026 branding
-- 🌐 **Bilingual (English / עברית)** — One-tap language toggle with full right-to-left (RTL) layout for Hebrew; choice persists across reloads
+- 🌐 **Bilingual (English / Hebrew)** — One-tap EN ⇄ HE language toggle with full right-to-left (RTL) layout for Hebrew; choice persists across reloads
 - 📤 **Share** — On mobile, a Share button opens the native share sheet with the site link
 - 📴 **Offline Aware** — A banner appears when the device goes offline so users know why live data paused
 - 👀 **Live Viewer Count** — "Watching now" counter via the whos.amung.us JSONP presence ping (no third-party tracker, CSP-safe)
@@ -91,7 +91,7 @@ worldcup2026-app/
 │   │   ├── liveData.ts         # Live FIFA data fetch + player stats
 │   │   ├── mockData.ts         # 104-match fallback dataset (UTC)
 │   │   ├── worldcup.ts         # fetchGroups/Matches/Qualification/Form/Stats
-│   │   ├── qualification.ts    # Group + 3rd-place "Through" logic
+│   │   ├── qualification.ts    # Top-2 + best-third advance %/decided logic
 │   │   ├── stats.ts            # Top scorers / assists
 │   │   └── types.ts            # Shared types
 │   ├── components/             # React UI components
