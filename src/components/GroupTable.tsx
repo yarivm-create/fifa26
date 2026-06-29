@@ -21,9 +21,6 @@ const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
   const { t } = useI18n();
   if (!chance) return null;
   if (chance.status === 'Qualified') {
-    if (chance.round) {
-      return <span className="qual-badge qual-q" title={t('group.qualifiedTitle')}>{chance.round}</span>;
-    }
     return <span className="qual-badge qual-q" title={t('group.qualifiedTitle')}>✓</span>;
   }
   if (chance.status === 'Eliminated') {

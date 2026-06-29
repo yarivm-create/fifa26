@@ -18,7 +18,6 @@ export interface QualChance {
   pAdvance: number; // 0..100, chance of reaching the Round of 32
   pTop2: number; // 0..100, chance of finishing in the top 2
   status: QualStatus;
-  round?: string; // furthest knockout round still alive in: 'R16'|'QF'|'SF'|'F'|'🏆'
 }
 
 interface TeamState {
@@ -270,61 +269,5 @@ export function computeQualification(groups: Group[], matches: Match[]): Record<
       status,
     };
   }
-
-  // Group status only tells us who reached the Round of 32. Once knockout games
-  // are played, overlay real results: a team that LOST a completed knockout
-  // match is out (even if it had qualified), and a team that keeps winning is
-  // shown at the furthest round it has reached so it reads "R16/QF/SF/F/🏆"
-  // instead of a stale group ✓. Without this, eliminated teams (e.g. a beaten
-  // host) keep a green qualified badge and advancers never move past 32.
-  applyKnockoutProgress(out, matches);
   return out;
-}
-
-// Knockout rounds in order; teams appearing later have advanced further.
-const KO_ORDER = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
-const KO_LABEL: Record<string, string> = {
-  'Round of 16': 'R16',
-  'Quarter-final': 'QF',
-  'Semi-final': 'SF',
-  Final: 'F',
-};
-
-function applyKnockoutProgress(out: Record<string, QualChance>, matches: Match[]): void {
-  const reached: Record<string, number> = {}; // furthest KO round index reached
-  const eliminated = new Set<string>();
-  let champion: string | null = null;
-
-  for (const m of matches) {
-    const idx = KO_ORDER.indexOf(m.stage_name);
-    if (idx < 0) continue;
-    const home = m.home_team.code;
-    const away = m.away_team.code;
-    for (const code of [home, away]) {
-      if (code && !KO_PLACEHOLDER.test(code)) reached[code] = Math.max(reached[code] ?? -1, idx);
-    }
-    if (m.status !== 'completed') continue;
-    const hg = m.home_team.goals ?? 0;
-    const ag = m.away_team.goals ?? 0;
-    if (hg === ag) continue; // KO ties resolve on pens; without a decider, leave both alive
-    const loser = hg > ag ? away : home;
-    const winner = hg > ag ? home : away;
-    if (loser && !KO_PLACEHOLDER.test(loser)) eliminated.add(loser);
-    if (m.stage_name === 'Final' && winner && !KO_PLACEHOLDER.test(winner)) champion = winner;
-  }
-
-  for (const [code, q] of Object.entries(out)) {
-    if (eliminated.has(code)) {
-      q.status = 'Eliminated';
-      q.pAdvance = 0;
-      delete q.round;
-    } else if (champion === code) {
-      q.status = 'Qualified';
-      q.round = '🏆';
-    } else if (reached[code] >= 1) {
-      // Won their R32 game (or beyond) and still alive: show the current round.
-      q.status = 'Qualified';
-      q.round = KO_LABEL[KO_ORDER[reached[code]]];
-    }
-  }
 }
