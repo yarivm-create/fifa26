@@ -126,7 +126,7 @@ async function fetchLiveMap(): Promise<LiveMaps> {
 }
 
 let cache: { at: number; maps: LiveMaps } | null = null;
-const CACHE_TTL_MS = 25000;
+const CACHE_TTL_MS = 12000;
 
 async function getLiveMap(): Promise<LiveMaps> {
   const now = Date.now();

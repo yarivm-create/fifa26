@@ -24,7 +24,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, split into accurate stage sections (each match sits under its true stage header even when a single day spans two stages)
 - ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
-- ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min
+- ⚡ **Auto-Updating Sections** — Live + Today/Tomorrow=15s (so full-time results & celebrations appear right when a game ends), Schedule=5min
 - 🌙 **Dark Theme** — Rich maroon, gold, and navy with FIFA 2026 branding
 - 🌐 **Bilingual (English / Hebrew)** — One-tap EN ⇄ HE language toggle with full right-to-left (RTL) layout for Hebrew; choice persists across reloads
 - 📤 **Share** — On mobile, a Share button opens the native share sheet with the site link
@@ -78,7 +78,7 @@ Times are stored in UTC and every time shown on the site is displayed in each vi
 | Section | Data | Refresh Rate |
 |---------|------|-------------|
 | Live Now | Matches in progress | 15s |
-| Today/Tomorrow/Day After | Scheduled + completed | 60s |
+| Today/Tomorrow/Day After | Scheduled + completed | 15s |
 | Full Schedule | All 104 matches | 5min |
 | Standings | Group tables | 2min |
 

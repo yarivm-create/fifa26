@@ -56,7 +56,7 @@ const App: React.FC = () => {
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
   const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000);
-  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 60000);
+  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 15000);
   const { goalEvent, endEvents } = useMatchAlerts(liveMatches, allMatches);
 
   // Keep a live list of full-time toasts so several games ending together each
