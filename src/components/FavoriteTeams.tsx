@@ -17,6 +17,40 @@ function formatKickoff(datetime: string): string {
 
 const ORDINAL = ['1st', '2nd', '3rd', '4th'];
 
+// Live knockout progress for a favorite team, computed from the schedule so the
+// Favorites card shows the CURRENT state (Round of 16 / Eliminated / 🏆) while
+// the group tables stay as group-stage tables.
+const KO_ORDER = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
+const KO_LABEL = ['stage.r32', 'stage.r16', 'stage.qf', 'stage.sf', 'stage.final'];
+
+interface KnockoutState {
+  reached: number; // index into KO_ORDER
+  eliminated: boolean;
+  champion: boolean;
+}
+
+function knockoutState(code: string, matches: Match[]): KnockoutState | null {
+  let reached = -1;
+  let eliminated = false;
+  let champion = false;
+  for (const m of matches) {
+    const idx = KO_ORDER.indexOf(m.stage_name);
+    if (idx < 0) continue;
+    const isHome = m.home_team.code === code;
+    const isAway = m.away_team.code === code;
+    if (!isHome && !isAway) continue;
+    reached = Math.max(reached, idx);
+    if (m.status !== 'completed') continue;
+    const hg = m.home_team.goals ?? 0;
+    const ag = m.away_team.goals ?? 0;
+    if (hg === ag) continue;
+    const won = isHome ? hg > ag : ag > hg;
+    if (!won) eliminated = true;
+    else if (m.stage_name === 'Final') champion = true;
+  }
+  return reached < 0 ? null : { reached, eliminated, champion };
+}
+
 interface TeamInfo {
   code: string;
   name: string;
@@ -33,8 +67,16 @@ interface Data {
   players: PlayerAgg[];
 }
 
-function QualLine({ chance }: { chance?: QualChance }) {
+function QualLine({ chance, ko }: { chance?: QualChance; ko?: KnockoutState | null }) {
   const { t } = useI18n();
+  // Once a team reaches the knockouts, show its live state instead of the
+  // group-stage chance: eliminated, the round it's in, or champion.
+  if (ko) {
+    if (ko.champion) return <span className="qual-badge qual-q">🏆 {t('stage.final')}</span>;
+    if (ko.eliminated)
+      return <span className="qual-badge qual-out">{t('group.eliminated')} · {t(KO_LABEL[ko.reached])}</span>;
+    return <span className="qual-badge qual-q">{t(KO_LABEL[ko.reached])}</span>;
+  }
   if (!chance) return null;
   if (chance.status === 'Qualified') {
     return <span className="qual-badge qual-q">{t('group.qualified')}</span>;
@@ -104,7 +146,7 @@ function TeamCard({
       </div>
 
       <div className="team-card-qual">
-        <QualLine chance={data.qual[code]} />
+        <QualLine chance={data.qual[code]} ko={knockoutState(code, data.matches)} />
       </div>
 
       <div className="team-stat-grid">

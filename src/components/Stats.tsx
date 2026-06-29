@@ -189,7 +189,11 @@ export const Stats: React.FC = () => {
             <div className="stat-board-row" key={s.stage}>
               <span className="stat-board-team">{s.stage}</span>
               <span className="stat-board-value">
-                {s.goals}<span className="stat-board-suffix"> {t('stats.stageSuffix', { matches: s.matches, avg: (s.goals / s.matches).toFixed(1) })}</span>
+                {s.matches > 0 ? (
+                  <>{s.goals}<span className="stat-board-suffix"> {t('stats.stageSuffix', { matches: `${s.matches}/${s.scheduled}`, avg: (s.goals / s.matches).toFixed(1) })}</span></>
+                ) : (
+                  <span className="stat-board-suffix">{t('stats.stageUpcoming', { matches: s.scheduled })}</span>
+                )}
               </span>
             </div>
           ))}

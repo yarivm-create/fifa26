@@ -109,6 +109,7 @@ const en: Dict = {
   'stats.goalsByStage': '⚡ Goals by Stage',
   'stats.willAppear': 'Statistics will appear once matches are played.',
   'stats.stageSuffix': 'goals · {matches} matches · {avg}/match',
+  'stats.stageUpcoming': 'upcoming · {matches} matches',
   'stats.followPlayer': 'Follow player',
   'stats.unfollowPlayer': 'Unfollow player',
   // Schedule
@@ -258,6 +259,7 @@ const he: Dict = {
   'stats.goalsByStage': '⚡ שערים לפי שלב',
   'stats.willAppear': 'הסטטיסטיקות יופיעו לאחר שיתחילו המשחקים.',
   'stats.stageSuffix': 'שערים · {matches} משחקים · {avg}/משחק',
+  'stats.stageUpcoming': 'בקרוב · {matches} משחקים',
   'stats.followPlayer': 'עקוב אחר השחקן',
   'stats.unfollowPlayer': 'הפסק לעקוב',
   // Schedule

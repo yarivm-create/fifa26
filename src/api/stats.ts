@@ -29,7 +29,7 @@ export interface TournamentStats {
   bestDefenses: TeamStat[];
   topScorers: Scorer[];
   topAssists: PlayerAgg[];
-  goalsByStage: { stage: string; goals: number; matches: number }[];
+  goalsByStage: { stage: string; goals: number; matches: number; scheduled: number }[];
 }
 
 function isPlayed(m: Match): boolean {
@@ -71,7 +71,16 @@ export function computeStats(
   let bothTeamsScored = 0;
   let biggestWin: MatchHighlight | null = null;
   let highestScoring: MatchHighlight | null = null;
-  const stageMap = new Map<string, { goals: number; matches: number }>();
+  const stageMap = new Map<string, { goals: number; matches: number; scheduled: number }>();
+
+  // Seed every round that exists in the schedule (even fully upcoming ones) so
+  // the breakdown lists ALL rounds, not only those already played.
+  for (const m of matches) {
+    const stage = coarseStage(m.stage_name);
+    const e = stageMap.get(stage) || { goals: 0, matches: 0, scheduled: 0 };
+    e.scheduled += 1;
+    stageMap.set(stage, e);
+  }
 
   for (const m of played) {
     const hg = m.home_team.goals ?? 0;
@@ -87,7 +96,7 @@ export function computeStats(
     if (!highestScoring || total > highestScoring.value) highestScoring = { match: m, value: total };
 
     const stage = coarseStage(m.stage_name);
-    const entry = stageMap.get(stage) || { goals: 0, matches: 0 };
+    const entry = stageMap.get(stage) || { goals: 0, matches: 0, scheduled: 0 };
     entry.goals += total;
     entry.matches += 1;
     stageMap.set(stage, entry);
@@ -120,7 +129,7 @@ export function computeStats(
     .map((t) => ({ code: t.code, name: t.name, value: t.ga }));
 
   const goalsByStage = [...stageMap.entries()]
-    .map(([stage, v]) => ({ stage, goals: v.goals, matches: v.matches }))
+    .map(([stage, v]) => ({ stage, goals: v.goals, matches: v.matches, scheduled: v.scheduled }))
     .sort((a, b) => STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage));
 
   return {
