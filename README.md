@@ -21,7 +21,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
 - ⭐ **Favorites** — Follow players and teams (star toggle on standings, stats leaderboards, and each team card's Top Players list); favorite team cards show live knockout state (Round of 16 → Final / Eliminated / 🏆), every fixture listed in play order grouped under one stage header (Group / Round of 32 / Round of 16…) with ✓ win / ✕ loss results; followed players appear first with their next fixture labelled by stage
 - 📈 **Player Stats** — Top scorers, assists, and goals broken down by every round (group through final, with upcoming counts)
-- 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, grouped by stage
+- 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, split into accurate stage sections (each match sits under its true stage header even when a single day spans two stages)
 - ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
 - ⚡ **Auto-Updating Sections** — Live=15s, Today/Tomorrow=60s, Schedule=5min

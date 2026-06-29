@@ -125,7 +125,7 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
   const awayWon = finished && (ag as number) > (hg as number);
 
   return (
-    <div className="card">
+    <div className="card" data-stage={match.stage_name}>
       <div className="match-card">
         <div className={`team home${homeWon ? ' team-winner' : ''}`}>
           <span className="team-inner">

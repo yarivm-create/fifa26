@@ -28,6 +28,7 @@ function getStageBucketKey(stageName: string): string {
 }
 
 interface DateGroup {
+  key: string;
   dateKey: string;
   dateLabel: string;
   matches: Match[];
@@ -48,31 +49,34 @@ export const Schedule: React.FC = () => {
       (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
     );
 
-    const groups: Record<string, Match[]> = {};
-    const dateOrder: string[] = [];
+    // Group by (date + stage) so a single calendar day that spans two stages
+    // (e.g. the last Round of 32 game and the first Round of 16 game) splits
+    // into separate sections with correct stage headers, never mislabeled.
+    const dgs: DateGroup[] = [];
+    let current: DateGroup | null = null;
     for (const m of sorted) {
       const dk = localDateKey(m.datetime);
-      if (!groups[dk]) {
-        groups[dk] = [];
-        dateOrder.push(dk);
+      const bucket = getStageBucketKey(m.stage_name);
+      if (!current || current.dateKey !== dk || getStageBucketKey(current.matches[0].stage_name) !== bucket) {
+        current = {
+          key: `${dk}|${bucket}`,
+          dateKey: dk,
+          dateLabel: getLocalDateLabel(m.datetime),
+          matches: [],
+          isToday: dk === todayKey,
+        };
+        dgs.push(current);
       }
-      groups[dk].push(m);
+      current.matches.push(m);
     }
 
-    const dgs: DateGroup[] = dateOrder.map(dk => ({
-      dateKey: dk,
-      dateLabel: getLocalDateLabel(groups[dk][0].datetime),
-      matches: groups[dk],
-      isToday: dk === todayKey,
-    }));
-
-    // Determine which dateKeys start a new stage (stored as translation keys).
+    // Insert a stage header whenever the stage bucket changes.
     const transitions: Record<string, string> = {};
     let lastStage = '';
     for (const dg of dgs) {
       const bucket = getStageBucketKey(dg.matches[0].stage_name);
       if (bucket !== lastStage) {
-        transitions[dg.dateKey] = bucket;
+        transitions[dg.key] = bucket;
         lastStage = bucket;
       }
     }
@@ -99,13 +103,13 @@ export const Schedule: React.FC = () => {
     <div>
       <h2 className="section-title" style={{ marginBottom: 20 }}>{t('schedule.title')}</h2>
       {dateGroups.map((dg) => (
-        <div key={dg.dateKey}>
-          {stageTransitions[dg.dateKey] && (
+        <div key={dg.key}>
+          {stageTransitions[dg.key] && (
             <div className="stage-header">
-              <span className="stage-header-text">{t(stageTransitions[dg.dateKey])}</span>
+              <span className="stage-header-text">{t(stageTransitions[dg.key])}</span>
             </div>
           )}
-          <div className={`schedule-date-group ${dg.isToday ? 'schedule-today' : ''}`}>
+          <div className={`schedule-date-group ${dg.isToday ? 'schedule-today' : ''}`} data-stage={dg.matches[0].stage_name}>
             <h3 className="schedule-date-label">
               {dg.isToday && <span className="today-badge">{t('schedule.today')}</span>}
               {dg.dateLabel}

@@ -232,3 +232,47 @@ test('standings highlight qualifiers + favorites label group-stage record', asyn
   await expect(page.locator('#tab-panel .team-stat-caption').first()).toContainText(/Group stage/i, { timeout: 15000 });
 });
 
+// Regression: every Schedule match must sit under the correct stage header.
+// A single calendar day can span two stages (e.g. the final Round of 32 game
+// and the first Round of 16 game), so a Round of 16 fixture must never appear
+// in the Round of 32 section. Verify per-match stage alignment + monotonic order.
+test('schedule groups every match under its correct stage section', async ({ page }) => {
+  const errors = trackAppErrors(page);
+  await page.goto('');
+  await page.locator('#tab-schedule').click({ force: true });
+  await expect(page.locator('#tab-schedule')).toHaveAttribute('aria-selected', 'true');
+
+  const bucket = (s: string): string => {
+    if (s.startsWith('Group')) return 'group';
+    if (s === 'Round of 32') return 'r32';
+    if (s === 'Round of 16') return 'r16';
+    if (s === 'Quarter-final') return 'qf';
+    if (s === 'Semi-final') return 'sf';
+    if (s === 'Third place play-off') return 'third';
+    if (s === 'Final') return 'final';
+    return s;
+  };
+  const order = ['group', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
+
+  const groups = page.locator('#tab-panel .schedule-date-group');
+  await expect(groups.first()).toBeVisible({ timeout: 15000 });
+  const count = await groups.count();
+  expect(count).toBeGreaterThan(0);
+
+  let lastIdx = -1;
+  for (let i = 0; i < count; i++) {
+    const g = groups.nth(i);
+    const sectionStage = bucket(String(await g.getAttribute('data-stage')));
+    const idx = order.indexOf(sectionStage);
+    expect(idx, `unknown/out-of-order section stage at #${i}`).toBeGreaterThanOrEqual(lastIdx);
+    lastIdx = idx;
+    const cards = g.locator('.card[data-stage]');
+    const cc = await cards.count();
+    for (let j = 0; j < cc; j++) {
+      const matchStage = bucket(String(await cards.nth(j).getAttribute('data-stage')));
+      expect(matchStage, `match #${j} mislabeled under ${sectionStage}`).toBe(sectionStage);
+    }
+  }
+  expect(errors, errors.join('\n')).toEqual([]);
+});
+
