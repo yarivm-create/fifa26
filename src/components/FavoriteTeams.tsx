@@ -9,6 +9,7 @@ import { Flag } from '../utils/flags';
 import { Trophy } from './Trophy';
 import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
+import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
@@ -109,6 +110,7 @@ function TeamCard({
   onRemove: () => void;
 }) {
   const { t, lang } = useI18n();
+  const playerFollow = useFollowedPlayers();
   const { code, name, group, position, standing } = info;
   const teamMatches = data.matches.filter(
     (m) => m.home_team.code === code || m.away_team.code === code
@@ -155,15 +157,26 @@ function TeamCard({
       {topPlayers.length > 0 && (
         <div className="team-card-section">
           <div className="follow-fixtures-title">{t('card.topPlayers')}</div>
-          {topPlayers.map((p) => (
-            <div className="team-player-row" key={p.id}>
-              <span className="team-player-name">{p.name}</span>
-              <span className="team-player-stats">
-                {p.goals > 0 && <span>{p.goals} ⚽</span>}
-                {p.assists > 0 && <span>{p.assists} 🅰️</span>}
-              </span>
-            </div>
-          ))}
+          {topPlayers.map((p) => {
+            const followed = playerFollow.isFollowed(p.id);
+            return (
+              <div className="team-player-row" key={p.id}>
+                <button
+                  className={`follow-btn team-fav-btn${followed ? ' following' : ''}`}
+                  onClick={() => playerFollow.toggle(p.id)}
+                  title={followed ? t('stats.unfollowPlayer') : t('stats.followPlayer')}
+                  aria-label={followed ? t('stats.unfollowPlayer') : t('stats.followPlayer')}
+                >
+                  {followed ? '★' : '☆'}
+                </button>
+                <span className="team-player-name">{p.name}</span>
+                <span className="team-player-stats">
+                  {p.goals > 0 && <span>{p.goals} ⚽</span>}
+                  {p.assists > 0 && <span>{p.assists} 🅰️</span>}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 

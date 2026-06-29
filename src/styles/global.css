@@ -1692,7 +1692,8 @@ body {
   font-size: 0.86rem;
   padding: 3px 0;
 }
-.team-player-name { color: var(--wc-text); }
+.team-player-name { color: var(--wc-text); flex: 1; min-width: 0; }
+.team-player-row .team-fav-btn { font-size: 1rem; margin-right: 4px; }
 .team-player-stats { display: inline-flex; gap: 10px; color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }
 
 .team-result { color: var(--wc-text); font-weight: 700; }
