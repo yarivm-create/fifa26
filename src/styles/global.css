@@ -1485,8 +1485,11 @@ body {
   font-size: 0.84rem;
   padding: 4px 0;
 }
-.follow-fixture-opp { display: inline-flex; align-items: center; gap: 6px; color: var(--wc-text); }
+.follow-fixture-opp { display: inline-flex; align-items: center; gap: 6px; color: var(--wc-text); flex: 1; min-width: 0; }
+.follow-fixture-up { flex-wrap: wrap; }
+.follow-fixture-up .fixture-stage { flex-basis: 100%; align-self: flex-start; }
 .fixture-stage {
+  display: inline-block; width: fit-content;
   font-size: 0.68rem; font-weight: 700; letter-spacing: .02em;
   color: var(--wc-gold); background: rgba(212,175,55,.14);
   border: 1px solid rgba(212,175,55,.4); border-radius: 999px;

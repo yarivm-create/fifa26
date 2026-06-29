@@ -278,7 +278,7 @@ export async function getMergedGroups(): Promise<Group[]> {
 export async function getMergedForm(): Promise<Record<string, mock.FormResult[]>> {
   const merged = await getMergedMatches();
   const completed = merged
-    .filter((m) => m.status === 'completed' && m.home_team.goals !== null && m.away_team.goals !== null)
+    .filter((m) => m.stage_name.startsWith('Group') && m.status === 'completed' && m.home_team.goals !== null && m.away_team.goals !== null)
     .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
   const form: Record<string, mock.FormResult[]> = {};

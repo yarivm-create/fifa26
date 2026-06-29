@@ -188,7 +188,8 @@ function TeamCard({
           const opp = m.home_team.code === code ? m.away_team : m.home_team;
           const us = m.home_team.code === code ? m.home_team : m.away_team;
           return (
-            <div className="follow-fixture" key={`r-${m.id}`}>
+            <div className="follow-fixture follow-fixture-up" key={`r-${m.id}`}>
+              {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
               <span className="follow-fixture-opp">
                 {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
               </span>
@@ -200,13 +201,13 @@ function TeamCard({
           const opp = m.home_team.code === code ? m.away_team : m.home_team;
           const isReal = !!data.teams[opp.code];
           return (
-            <div className="follow-fixture" key={`u-${m.id}`}>
+            <div className="follow-fixture follow-fixture-up" key={`u-${m.id}`}>
+              {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
               <span className="follow-fixture-opp">
-                {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
                 {isReal ? (
                   <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
                 ) : (
-                  <>{t('card.vs')} <Trophy size={14} /> {m.stage_name || t('card.knockout')} · {t('card.tbd')}</>
+                  <>{t('card.vs')} <Trophy size={14} /> {t('card.tbd')}</>
                 )}
               </span>
               <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
