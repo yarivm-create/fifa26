@@ -1432,6 +1432,13 @@ body {
 .qual-q   { background: rgba(72, 187, 120, .18); color: var(--wc-green); border: 1px solid rgba(72,187,120,.45); }
 .qual-out { background: rgba(228, 0, 43, .14);  color: #ff6b81;        border: 1px solid rgba(228,0,43,.4); }
 .qual-pct { background: rgba(212, 175, 55, .15); color: var(--wc-gold); border: 1px solid rgba(212,175,55,.4); }
+.qual-swatch {
+  display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+  background: rgba(72,187,120,.22); border-left: 3px solid var(--wc-green);
+}
+.standings-table tr.qualified td { background: rgba(72,187,120,.10); }
+.standings-table tr.qualified td:first-child { box-shadow: inset 3px 0 0 var(--wc-green); }
+[dir="rtl"] .standings-table tr.qualified td:first-child { box-shadow: inset -3px 0 0 var(--wc-green); }
 
 /* ---- Followed players cards ---- */
 .follow-grid {
@@ -1692,6 +1699,9 @@ body {
 .team-player-stats { display: inline-flex; gap: 10px; color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }
 
 .team-result { color: var(--wc-text); font-weight: 700; }
+.fx-w { color: #2fbf6f; }
+.fx-l { color: #e8643a; }
+.fx-d { color: var(--wc-text-muted); }
 .team-fixture-live .follow-fixture-opp { color: var(--wc-live-pulse); font-weight: 600; }
 .team-fixture-live .follow-fixture-time { color: var(--wc-live-pulse); font-weight: 700; }
 

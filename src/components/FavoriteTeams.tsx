@@ -113,15 +113,9 @@ function TeamCard({
   const teamMatches = data.matches.filter(
     (m) => m.home_team.code === code || m.away_team.code === code
   );
-  const upcoming = teamMatches
-    .filter((m) => m.status === 'future_scheduled')
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
-    .slice(0, 2);
-  const recent = teamMatches
-    .filter((m) => m.status === 'completed')
-    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
-    .slice(0, 2);
-  const live = teamMatches.find((m) => m.status === 'in_progress' || m.status === 'half_time');
+  const allFixtures = [...teamMatches].sort(
+    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+  );
 
   const topPlayers = data.players
     .filter((p) => p.code === code && (p.goals > 0 || p.assists > 0))
@@ -175,46 +169,36 @@ function TeamCard({
 
       <div className="team-card-section">
         <div className="follow-fixtures-title">{t('card.fixtures')}</div>
-        {live && (
-          <div className="follow-fixture team-fixture-live">
-            <span className="follow-fixture-opp">
-              🔴 {t('card.vs')} <Flag code={live.home_team.code === code ? live.away_team.code : live.home_team.code} name="" />{' '}
-              {live.home_team.code === code ? live.away_team.name : live.home_team.name}
-            </span>
-            <span className="follow-fixture-time">{live.home_team.goals}-{live.away_team.goals} {live.time || t('status.live')}</span>
-          </div>
-        )}
-        {recent.map((m) => {
+        {allFixtures.map((m) => {
           const opp = m.home_team.code === code ? m.away_team : m.home_team;
           const us = m.home_team.code === code ? m.home_team : m.away_team;
-          return (
-            <div className="follow-fixture follow-fixture-up" key={`r-${m.id}`}>
-              {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
-              <span className="follow-fixture-opp">
-                {t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}
-              </span>
-              <span className="follow-fixture-time team-result">{us.goals}-{opp.goals}</span>
-            </div>
-          );
-        })}
-        {upcoming.map((m) => {
-          const opp = m.home_team.code === code ? m.away_team : m.home_team;
+          const isLive = m.status === 'in_progress' || m.status === 'half_time';
+          const isCompleted = m.status === 'completed' && us.goals !== null && opp.goals !== null;
           const isReal = !!data.teams[opp.code];
           return (
-            <div className="follow-fixture follow-fixture-up" key={`u-${m.id}`}>
-              {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
+            <div className={`follow-fixture follow-fixture-up${isLive ? ' team-fixture-live' : ''}`} key={`f-${m.id}`}>
+              {m.stage_name && <span className="fixture-stage">{m.stage_name.split(' - ')[0]}</span>}
               <span className="follow-fixture-opp">
+                {isLive && '🔴 '}
                 {isReal ? (
                   <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
                 ) : (
                   <>{t('card.vs')} <Trophy size={14} /> {t('card.tbd')}</>
                 )}
               </span>
-              <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
+              {isLive ? (
+                <span className="follow-fixture-time">{us.goals}-{opp.goals} {m.time || t('status.live')}</span>
+              ) : isCompleted ? (
+                <span className={`follow-fixture-time team-result fx-${us.goals! > opp.goals! ? 'w' : us.goals! < opp.goals! ? 'l' : 'd'}`}>
+                  {us.goals! > opp.goals! ? '✓' : us.goals! < opp.goals! ? '✕' : '–'} {us.goals}-{opp.goals}
+                </span>
+              ) : (
+                <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
+              )}
             </div>
           );
         })}
-        {!live && recent.length === 0 && upcoming.length === 0 && (
+        {allFixtures.length === 0 && (
           <div className="follow-fixture-empty">{t('card.noFixtures')}</div>
         )}
       </div>

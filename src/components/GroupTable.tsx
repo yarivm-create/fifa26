@@ -17,28 +17,6 @@ interface Props {
   teamFollow?: TeamFollowApi;
 }
 
-const QualBadge: React.FC<{ chance?: QualChance }> = ({ chance }) => {
-  const { t } = useI18n();
-  if (!chance) return null;
-  if (chance.status === 'Qualified') {
-    return <span className="qual-badge qual-q" title={t('group.qualifiedTitle')}>✓</span>;
-  }
-  if (chance.status === 'Eliminated') {
-    return <span className="qual-badge qual-out" title={t('group.eliminatedTitle')}>✕</span>;
-  }
-  // Still alive but not mathematically decided — never show a bare 0%/100%,
-  // which would read as "out"/"through". Clamp to <1% / >99%.
-  const pct = chance.pAdvance <= 0 ? '<1%' : chance.pAdvance >= 100 ? '>99%' : `${chance.pAdvance}%`;
-  return (
-    <span
-      className="qual-badge qual-pct"
-      title={t('group.advanceTitle', { pct: `${chance.pAdvance}%`, top2: `${chance.pTop2}%` })}
-    >
-      {pct}
-    </span>
-  );
-};
-
 const FormDots: React.FC<{ results?: FormResult[] }> = ({ results }) => {
   if (!results || results.length === 0) return <span className="form-empty">—</span>;
   return (
@@ -78,8 +56,9 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
             {group.teams.map((standing, idx) => {
               const code = standing.team.code;
               const fav = teamFollow?.isFavorite(code) ?? false;
+              const passed = idx < 2 || qual?.[code]?.status === 'Qualified';
               return (
-                <tr key={code} className={idx < 2 ? 'qualified' : ''}>
+                <tr key={code} className={passed ? 'qualified' : ''}>
                   <td>{idx + 1}</td>
                   <td className="team-name">
                     {teamFollow && (
@@ -93,7 +72,6 @@ export const GroupTable: React.FC<Props> = ({ group, form, qual, teamFollow }) =
                       </button>
                     )}
                     <Flag code={code} name={standing.team.name} /> {standing.team.name}
-                    <QualBadge chance={qual?.[code]} />
                   </td>
                   <td>{standing.played}</td>
                   <td>{standing.won}</td>

@@ -47,10 +47,7 @@ export const Standings: React.FC = () => {
     <div>
       <h2 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={22} /> {t('standings.title')}</h2>
       <p className="qual-legend">
-        {t('standings.legend')}
-        <span className="qual-badge qual-q">{t('standings.through')}</span>
-        <span className="qual-badge qual-pct">{t('standings.pctChance')}</span>
-        <span className="qual-badge qual-out">{t('standings.out')}</span>
+        <span className="qual-swatch" /> {t('standings.legend')}
       </p>
       <div className="groups-grid">
         {groups.map((group) => (
