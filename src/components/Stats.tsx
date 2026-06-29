@@ -3,6 +3,7 @@ import { useLiveData } from '../hooks/useLiveData';
 import { fetchStats, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
 import { Flag } from '../utils/flags';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
+import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useI18n } from '../i18n';
 
 interface PlayerRow {
@@ -15,6 +16,11 @@ interface PlayerRow {
 interface FollowApi {
   isFollowed: (id: string) => boolean;
   toggle: (id: string) => void;
+}
+
+interface TeamFollowApi {
+  isFavorite: (code: string) => boolean;
+  toggle: (code: string) => void;
 }
 
 function StatTile({ value, label, accent }: { value: string; label: string; accent?: string }) {
@@ -42,22 +48,34 @@ function HighlightCard({ title, highlight, suffix }: { title: string; highlight:
   );
 }
 
-function Leaderboard({ title, rows, suffix }: { title: string; rows: TeamStat[]; suffix: string }) {
+function Leaderboard({ title, rows, suffix, teamFollow }: { title: string; rows: TeamStat[]; suffix: string; teamFollow: TeamFollowApi }) {
+  const { t } = useI18n();
   if (rows.length === 0) return null;
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <div className="stat-board">
       <h3 className="stat-board-title">{title}</h3>
-      {rows.map((r, i) => (
-        <div className="stat-board-row" key={r.code + i}>
-          <span className="stat-board-rank">{i + 1}</span>
-          <span className="stat-board-team"><Flag code={r.code} name={r.name} /> {r.name}</span>
-          <span className="stat-board-bar">
-            <span className="stat-board-fill" style={{ width: `${Math.max((r.value / max) * 100, 6)}%` }} />
-          </span>
-          <span className="stat-board-value">{r.value}<span className="stat-board-suffix"> {suffix}</span></span>
-        </div>
-      ))}
+      {rows.map((r, i) => {
+        const fav = teamFollow.isFavorite(r.code);
+        return (
+          <div className="stat-board-row" key={r.code + i}>
+            <span className="stat-board-rank">{i + 1}</span>
+            <button
+              className={`follow-btn${fav ? ' following' : ''}`}
+              onClick={() => teamFollow.toggle(r.code)}
+              title={fav ? t('fav.remove') : t('fav.add')}
+              aria-label={fav ? t('fav.remove') : t('fav.add')}
+            >
+              {fav ? '★' : '☆'}
+            </button>
+            <span className="stat-board-team"><Flag code={r.code} name={r.name} /> {r.name}</span>
+            <span className="stat-board-bar">
+              <span className="stat-board-fill" style={{ width: `${Math.max((r.value / max) * 100, 6)}%` }} />
+            </span>
+            <span className="stat-board-value">{r.value}<span className="stat-board-suffix"> {suffix}</span></span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -109,6 +127,7 @@ export const Stats: React.FC = () => {
   const fetcher = useCallback(() => fetchStats(), []);
   const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000);
   const follow = useFollowedPlayers();
+  const teamFollow = useFollowedTeams();
 
   if (loading) {
     return (
@@ -178,8 +197,8 @@ export const Stats: React.FC = () => {
       </div>
 
       <div className="stat-boards">
-        <Leaderboard title={t('stats.topScoringTeams')} rows={stats.topScoringTeams} suffix="GF" />
-        <Leaderboard title={t('stats.bestDefenses')} rows={stats.bestDefenses} suffix="GA" />
+        <Leaderboard title={t('stats.topScoringTeams')} rows={stats.topScoringTeams} suffix="GF" teamFollow={teamFollow} />
+        <Leaderboard title={t('stats.bestDefenses')} rows={stats.bestDefenses} suffix="GA" teamFollow={teamFollow} />
       </div>
 
       {stats.goalsByStage.length > 0 && (

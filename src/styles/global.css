@@ -1486,6 +1486,12 @@ body {
   padding: 4px 0;
 }
 .follow-fixture-opp { display: inline-flex; align-items: center; gap: 6px; color: var(--wc-text); }
+.fixture-stage {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: .02em;
+  color: var(--wc-gold); background: rgba(212,175,55,.14);
+  border: 1px solid rgba(212,175,55,.4); border-radius: 999px;
+  padding: 1px 7px; white-space: nowrap;
+}
 .follow-fixture-opp .flag-img,
 .follow-fixture-opp img { width: 22px; height: 16px; }
 .follow-fixture-time { color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }

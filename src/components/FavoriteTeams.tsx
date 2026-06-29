@@ -202,6 +202,7 @@ function TeamCard({
           return (
             <div className="follow-fixture" key={`u-${m.id}`}>
               <span className="follow-fixture-opp">
+                {m.stage_name && <span className="fixture-stage">{m.stage_name}</span>}
                 {isReal ? (
                   <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
                 ) : (
