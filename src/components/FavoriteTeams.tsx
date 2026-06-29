@@ -169,35 +169,43 @@ function TeamCard({
 
       <div className="team-card-section">
         <div className="follow-fixtures-title">{t('card.fixtures')}</div>
-        {allFixtures.map((m) => {
-          const opp = m.home_team.code === code ? m.away_team : m.home_team;
-          const us = m.home_team.code === code ? m.home_team : m.away_team;
-          const isLive = m.status === 'in_progress' || m.status === 'half_time';
-          const isCompleted = m.status === 'completed' && us.goals !== null && opp.goals !== null;
-          const isReal = !!data.teams[opp.code];
-          return (
-            <div className={`follow-fixture follow-fixture-up${isLive ? ' team-fixture-live' : ''}`} key={`f-${m.id}`}>
-              {m.stage_name && <span className="fixture-stage">{m.stage_name.split(' - ')[0]}</span>}
-              <span className="follow-fixture-opp">
-                {isLive && '🔴 '}
-                {isReal ? (
-                  <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
-                ) : (
-                  <>{t('card.vs')} <Trophy size={14} /> {t('card.tbd')}</>
-                )}
-              </span>
-              {isLive ? (
-                <span className="follow-fixture-time">{us.goals}-{opp.goals} {m.time || t('status.live')}</span>
-              ) : isCompleted ? (
-                <span className={`follow-fixture-time team-result fx-${us.goals! > opp.goals! ? 'w' : us.goals! < opp.goals! ? 'l' : 'd'}`}>
-                  {us.goals! > opp.goals! ? '✓' : us.goals! < opp.goals! ? '✕' : '–'} {us.goals}-{opp.goals}
-                </span>
-              ) : (
-                <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
-              )}
-            </div>
-          );
-        })}
+        {(() => {
+          let lastStage = '';
+          return allFixtures.map((m) => {
+            const opp = m.home_team.code === code ? m.away_team : m.home_team;
+            const us = m.home_team.code === code ? m.home_team : m.away_team;
+            const isLive = m.status === 'in_progress' || m.status === 'half_time';
+            const isCompleted = m.status === 'completed' && us.goals !== null && opp.goals !== null;
+            const isReal = !!data.teams[opp.code];
+            const stage = m.stage_name ? m.stage_name.split(' - ')[0] : '';
+            const header = stage && stage !== lastStage;
+            lastStage = stage;
+            return (
+              <React.Fragment key={`f-${m.id}`}>
+                {header && <div className="fixture-stage-head">{stage}</div>}
+                <div className={`follow-fixture${isLive ? ' team-fixture-live' : ''}`}>
+                  <span className="follow-fixture-opp">
+                    {isLive && '🔴 '}
+                    {isReal ? (
+                      <>{t('card.vs')} <Flag code={opp.code} name={opp.name} /> {opp.name}</>
+                    ) : (
+                      <>{t('card.vs')} <Trophy size={14} /> {t('card.tbd')}</>
+                    )}
+                  </span>
+                  {isLive ? (
+                    <span className="follow-fixture-time">{us.goals}-{opp.goals} {m.time || t('status.live')}</span>
+                  ) : isCompleted ? (
+                    <span className={`follow-fixture-time team-result fx-${us.goals! > opp.goals! ? 'w' : us.goals! < opp.goals! ? 'l' : 'd'}`}>
+                      {us.goals! > opp.goals! ? '✓ ' : us.goals! < opp.goals! ? '✕ ' : ''}{us.goals}-{opp.goals}
+                    </span>
+                  ) : (
+                    <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          });
+        })()}
         {allFixtures.length === 0 && (
           <div className="follow-fixture-empty">{t('card.noFixtures')}</div>
         )}

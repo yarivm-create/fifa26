@@ -1493,15 +1493,12 @@ body {
   padding: 4px 0;
 }
 .follow-fixture-opp { display: inline-flex; align-items: center; gap: 6px; color: var(--wc-text); flex: 1; min-width: 0; }
-.follow-fixture-up { flex-wrap: wrap; }
-.follow-fixture-up .fixture-stage { flex-basis: 100%; align-self: flex-start; }
-.fixture-stage {
-  display: inline-block; width: fit-content;
-  font-size: 0.68rem; font-weight: 700; letter-spacing: .02em;
-  color: var(--wc-gold); background: rgba(212,175,55,.14);
-  border: 1px solid rgba(212,175,55,.4); border-radius: 999px;
-  padding: 1px 7px; white-space: nowrap;
+.fixture-stage-head {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--wc-gold); margin: 8px 0 2px; padding-bottom: 2px;
+  border-bottom: 1px solid rgba(212,175,55,.22);
 }
+.fixture-stage-head:first-child { margin-top: 0; }
 .follow-fixture-opp .flag-img,
 .follow-fixture-opp img { width: 22px; height: 16px; }
 .follow-fixture-time { color: var(--wc-text-muted); font-variant-numeric: tabular-nums; }
