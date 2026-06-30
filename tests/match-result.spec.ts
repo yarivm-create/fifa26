@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { getMatchResult, getPenaltyWinSummary } from '../src/utils/matchResult';
+import { getMatchResult, getPenaltyWinSummary, getResultSummary } from '../src/utils/matchResult';
 import { Match } from '../src/api/types';
 
 // Pins the SINGLE source of truth every tab (Live, Schedule, Bracket, Favorites,
@@ -112,4 +112,56 @@ test('penalty win summary is null for non-shootout results (no false text)', () 
   expect(getPenaltyWinSummary(ko(2, 1))).toBeNull(); // regulation
   expect(getPenaltyWinSummary(ko(2, 1, { decidedBy: 'extra_time' }))).toBeNull(); // AET, no pens
   expect(getPenaltyWinSummary(ko(1, 1, { status: 'in_progress', hp: 2, ap: 1 }))).toBeNull(); // live
+});
+
+// getResultSummary backs the "who won" line shown on EVERY finished card, so a
+// plain regulation win must get a note just like an ET/penalty result, and a
+// draw is announced as a draw. Live/unfinished matches get no note.
+test('result summary names the winner of a PLAIN regulation win (not only ET/pens)', () => {
+  const m = ko(2, 1);
+  m.home_team.name = 'Spain';
+  m.away_team.name = 'Japan';
+  expect(getResultSummary(m)).toEqual({
+    kind: 'regulation', winnerName: 'Spain', loserName: 'Japan', winnerGoals: 2, loserGoals: 1,
+  });
+});
+
+test('result summary orders goals winner-first when the AWAY side wins in regulation', () => {
+  const m = ko(0, 3);
+  m.home_team.name = 'Qatar';
+  m.away_team.name = 'Brazil';
+  expect(getResultSummary(m)).toEqual({
+    kind: 'regulation', winnerName: 'Brazil', loserName: 'Qatar', winnerGoals: 3, loserGoals: 0,
+  });
+});
+
+test('result summary labels an extra-time win and names the winner', () => {
+  const m = ko(2, 1, { decidedBy: 'extra_time' });
+  m.home_team.name = 'France';
+  m.away_team.name = 'Portugal';
+  expect(getResultSummary(m)).toEqual({
+    kind: 'extra_time', winnerName: 'France', loserName: 'Portugal', winnerGoals: 2, loserGoals: 1,
+  });
+});
+
+test('result summary carries the winner-first shootout score for a penalty win', () => {
+  const m = ko(1, 1, { hp: 2, ap: 4, decidedBy: 'penalties' });
+  m.home_team.name = 'Netherlands';
+  m.away_team.name = 'Morocco';
+  expect(getResultSummary(m)).toEqual({
+    kind: 'penalties', winnerName: 'Morocco', loserName: 'Netherlands',
+    winnerGoals: 1, loserGoals: 1, winnerPens: 4, loserPens: 2,
+  });
+});
+
+test('result summary announces a finished group-stage level score as a draw', () => {
+  const m = ko(1, 1, { stage_name: 'Group A' });
+  expect(getResultSummary(m)).toEqual({
+    kind: 'draw', winnerName: null, loserName: null, winnerGoals: 1, loserGoals: 1,
+  });
+});
+
+test('result summary is null while the match is unfinished (no winner to announce yet)', () => {
+  expect(getResultSummary(ko(2, 1, { status: 'in_progress' }))).toBeNull();
+  expect(getResultSummary(ko(null, null, { status: 'future_scheduled' }))).toBeNull();
 });

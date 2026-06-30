@@ -2,7 +2,7 @@ import React from 'react';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
-import { getMatchResult, getPenaltyWinSummary } from '../utils/matchResult';
+import { getMatchResult, getResultSummary } from '../utils/matchResult';
 import { useI18n, TFunc } from '../i18n';
 
 interface Props {
@@ -123,14 +123,20 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
   const ag = match.away_team.goals;
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
-  const { hasScore, finished, hasPens, homeWon, awayWon } = getMatchResult(match);
-  // "(AET)" / "<team> won x-y on penalties" note for knockouts decided after 90'.
-  const pen = getPenaltyWinSummary(match);
-  const decidedNote = pen
-    ? t('status.wonOnPens', { team: pen.winnerName, h: pen.winnerPens, a: pen.loserPens })
-    : finished && match.decidedBy === 'extra_time'
-      ? t('status.aet')
-      : '';
+  const { hasScore, hasPens, homeWon, awayWon } = getMatchResult(match);
+  // Every finished match shows a consistent "who won" line — a plain regulation
+  // win ("Spain won 2-1") just like an extra-time or penalty result, and a draw
+  // is announced as such. Unfinished/live matches get no note (no winner yet).
+  const rs = getResultSummary(match);
+  const decidedNote = !rs
+    ? ''
+    : rs.kind === 'penalties'
+      ? t('status.wonOnPens', { team: rs.winnerName ?? '', h: rs.winnerPens ?? 0, a: rs.loserPens ?? 0 })
+      : rs.kind === 'extra_time'
+        ? t('status.wonAetNote', { team: rs.winnerName ?? '', h: rs.winnerGoals, a: rs.loserGoals })
+        : rs.kind === 'draw'
+          ? t('status.drawNote', { h: rs.winnerGoals, a: rs.loserGoals })
+          : t('status.won', { team: rs.winnerName ?? '', h: rs.winnerGoals, a: rs.loserGoals });
 
   return (
     <div className="card" data-stage={match.stage_name}>

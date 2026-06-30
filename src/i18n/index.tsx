@@ -70,6 +70,9 @@ const en: Dict = {
   'status.aet': 'AET',
   'status.pens': 'pens',
   'status.wonOnPens': '{team} won {h}-{a} on penalties',
+  'status.won': '{team} won {h}-{a}',
+  'status.wonAetNote': '{team} won {h}-{a} after extra time',
+  'status.drawNote': 'Draw {h}-{a}',
   'match.liveCenter': 'Live Match Center →',
   'match.recap': 'Match Recap & Highlights →',
   // Standings
@@ -227,6 +230,9 @@ const he: Dict = {
   'status.aet': 'לאחר הארכה',
   'status.pens': 'פנדלים',
   'status.wonOnPens': '{team} ניצחה {h}-{a} בפנדלים',
+  'status.won': '{team} ניצחה {h}-{a}',
+  'status.wonAetNote': '{team} ניצחה {h}-{a} לאחר הארכה',
+  'status.drawNote': 'תיקו {h}-{a}',
   'match.liveCenter': '← מרכז המשחק החי',
   'match.recap': '← סיכום ותקצירים',
   // Standings
