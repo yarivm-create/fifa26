@@ -99,7 +99,6 @@ export const LiveMatches: React.FC = () => {
       {todayMatches.length > 0 && (
         <section className="day-section today-section">
           <h2 className="section-title">
-            <span className="today-badge" style={{ marginRight: 8 }}>{t('schedule.today')}</span>
             {t('live.today')}
           </h2>
           <div className="matches-grid">
