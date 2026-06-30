@@ -173,6 +173,8 @@ const en: Dict = {
   'fx.matchOver': 'Match over',
   'fx.won': '{team} win! 🎉',
   'fx.draw': 'Honours even — it ends level',
+  'fx.wonOnPens': '{team} win {h}-{a} on penalties! 🎉',
+  'fx.wonAet': '{team} win after extra time! 🎉',
   // Share
   'share.label': 'Share',
   'share.copied': 'Link copied!',
@@ -328,6 +330,8 @@ const he: Dict = {
   'fx.matchOver': 'המשחק הסתיים',
   'fx.won': '{team} ניצחה! 🎉',
   'fx.draw': 'המשחק הסתיים בתיקו',
+  'fx.wonOnPens': '{team} ניצחה {h}-{a} בפנדלים! 🎉',
+  'fx.wonAet': '{team} ניצחה לאחר הארכה! 🎉',
   // Share
   'share.label': 'שיתוף',
   'share.copied': 'הקישור הועתק!',

@@ -2,6 +2,7 @@ import React from 'react';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
+import { getMatchResult } from '../utils/matchResult';
 import { useI18n, TFunc } from '../i18n';
 
 interface Props {
@@ -122,19 +123,11 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
   const ag = match.away_team.goals;
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
-  const hasScore = hg !== null && ag !== null;
-  const hasPens = hp != null && ap != null;
-  const finished = match.status === 'completed' && hasScore;
-  // On level regulation goals (e.g. 1-1) the winner is decided by the shootout,
-  // so fall back to the penalty score to pick the winning side.
-  const homeWon =
-    finished && (hasPens ? (hp as number) > (ap as number) : (hg as number) > (ag as number));
-  const awayWon =
-    finished && (hasPens ? (ap as number) > (hp as number) : (ag as number) > (hg as number));
+  const { hasScore, finished, hasPens, homeWon, awayWon } = getMatchResult(match);
   // "(AET)" / "won x-y on penalties" note for knockouts decided after 90'.
   const decidedNote = finished
     ? match.decidedBy === 'penalties' && hasPens
-      ? t('status.wonOnPens', { h: homeWon ? hp : ap, a: homeWon ? ap : hp })
+      ? t('status.wonOnPens', { h: (homeWon ? hp : ap) ?? 0, a: (homeWon ? ap : hp) ?? 0 })
       : match.decidedBy === 'extra_time'
         ? t('status.aet')
         : ''

@@ -1663,6 +1663,7 @@ body {
   flex-wrap: wrap;
 }
 .whistle-dash { color: var(--wc-gold); font-weight: 800; }
+.whistle-pens { color: var(--wc-text-muted); font-weight: 700; font-size: .82em; }
 .whistle-result { display: flex; align-items: center; gap: 6px; color: var(--wc-gold) !important; font-weight: 700; }
 .whistle-flag { font-size: 1.05rem; line-height: 1; }
 .whistle-flag.flag-img { width: 20px; height: 14px; border-radius: 2px; object-fit: cover; }

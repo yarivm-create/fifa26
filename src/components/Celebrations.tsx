@@ -130,8 +130,19 @@ export const WhistleToast: React.FC<WhistleToastProps> = ({ event, onDone, withS
     event.winner === 'home' ? event.homeName : event.winner === 'away' ? event.awayName : '';
   const winnerCode =
     event.winner === 'home' ? event.homeCode : event.winner === 'away' ? event.awayCode : '';
+  const hasPens = event.homePen != null && event.awayPen != null;
+  const winnerPen =
+    event.winner === 'home' ? event.homePen : event.winner === 'away' ? event.awayPen : null;
+  const loserPen =
+    event.winner === 'home' ? event.awayPen : event.winner === 'away' ? event.homePen : null;
   const resultText =
-    event.winner === 'draw' ? t('fx.draw') : t('fx.won', { team: winnerName });
+    event.winner === 'draw'
+      ? t('fx.draw')
+      : event.decidedBy === 'penalties' && hasPens
+        ? t('fx.wonOnPens', { team: winnerName, h: winnerPen ?? 0, a: loserPen ?? 0 })
+        : event.decidedBy === 'extra_time'
+          ? t('fx.wonAet', { team: winnerName })
+          : t('fx.won', { team: winnerName });
 
   return (
     <div className={`whistle-toast${show ? ' show' : ''}`} role="status">
@@ -144,6 +155,7 @@ export const WhistleToast: React.FC<WhistleToastProps> = ({ event, onDone, withS
           <span className="whistle-dash"> – </span>
           {event.awayGoals} {event.awayName}
           <Flag code={event.awayCode} name={event.awayName} className="whistle-flag" />
+          {hasPens && <span className="whistle-pens"> ({event.homePen}-{event.awayPen} {t('status.pens')})</span>}
         </span>
         <span className="whistle-result">
           {event.winner !== 'draw' && (

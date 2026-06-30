@@ -4,6 +4,8 @@ import { fetchAllMatches } from '../api/worldcup';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalDate, formatLocalTime, LocalTimeFlag } from '../utils/localTime';
+import { getMatchResult } from '../utils/matchResult';
+import { sortBracketRound } from '../utils/bracketOrder';
 import { useI18n, TFunc } from '../i18n';
 
 const ROUNDS: { key: string; tkey: string }[] = [
@@ -13,40 +15,6 @@ const ROUNDS: { key: string; tkey: string }[] = [
   { key: 'Semi-final', tkey: 'stage.sf' },
   { key: 'Final', tkey: 'stage.final' },
 ];
-
-// Knockout feeder tree for WC2026, derived from the schedule's "W##" winner
-// placeholders (e.g. R16 match 89 = W73 vs W75 is fed by R32 matches 73 & 75).
-// Each match id maps to the two earlier match ids that feed it. This lets us
-// lay every round out so a match sits centered between its two feeder games —
-// making it clear at a glance which teams could meet in the next round.
-const FEEDERS: Record<number, [number, number]> = {
-  // Round of 16  <- Round of 32
-  89: [74, 77], 90: [73, 75], 91: [76, 78], 92: [79, 80],
-  93: [83, 84], 94: [81, 82], 95: [86, 88], 96: [85, 87],
-  // Quarter-finals <- Round of 16
-  97: [89, 90], 98: [93, 94], 99: [91, 92], 100: [95, 96],
-  // Semi-finals <- Quarter-finals
-  101: [97, 98], 102: [99, 100],
-  // Final <- Semi-finals
-  104: [101, 102],
-};
-const FINAL_ID = 104;
-
-// Pre-order depth-first walk (home feeder before away feeder) assigns every
-// knockout match a vertical rank. Sorting each round by this rank keeps the
-// tree planar, so feeders of the same next-round match are always adjacent.
-const BRACKET_RANK: Map<number, number> = (() => {
-  const rank = new Map<number, number>();
-  let n = 0;
-  const visit = (id: number) => {
-    const f = FEEDERS[id];
-    if (f) visit(f[0]);
-    rank.set(id, n++);
-    if (f) visit(f[1]);
-  };
-  visit(FINAL_ID);
-  return rank;
-})();
 
 // Real teams have a known flag; placeholders (2A, W73, RU101, 3ABCDF) get a readable label.
 function isPlaceholder(code: string): boolean {
@@ -89,10 +57,7 @@ const BracketMatch: React.FC<{ match: Match }> = ({ match }) => {
   const ag = match.away_team.goals;
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
-  const hasPens = hp != null && ap != null;
-  const finished = match.status === 'completed' && hg !== null && ag !== null;
-  const homeWon = finished && (hasPens ? (hp as number) > (ap as number) : (hg as number) > (ag as number));
-  const awayWon = finished && (hasPens ? (ap as number) > (hp as number) : (ag as number) > (hg as number));
+  const { finished, homeWon, awayWon } = getMatchResult(match);
   const note = finished
     ? match.decidedBy === 'penalties'
       ? t('status.pens')
@@ -125,20 +90,13 @@ export const Bracket: React.FC = () => {
   }
 
   const all = matches || [];
-  const byRound = (key: string) =>
-    all
-      .filter((m) => m.stage_name === key)
-      .sort((a, b) => {
-        const ra = BRACKET_RANK.get(a.id);
-        const rb = BRACKET_RANK.get(b.id);
-        if (ra !== undefined && rb !== undefined) return ra - rb;
-        return a.id - b.id;
-      });
+  // Within each round the cards are ordered so finished ties show first (results
+  // up top), then live, then upcoming — each group by kick-off time. The earliest
+  // completed Round-of-32 tie (e.g. Canada's) therefore sits first.
+  const byRound = (key: string) => sortBracketRound(all.filter((m) => m.stage_name === key));
 
   const thirdPlace = all.filter((m) => m.stage_name === 'Third place play-off');
 
-  // Only the rounds that actually have matches, so connector edges (has-prev /
-  // has-next) are computed against what is really rendered.
   const renderedRounds = ROUNDS.map((round) => ({ round, matches: byRound(round.key) })).filter(
     (r) => r.matches.length > 0
   );
@@ -148,30 +106,18 @@ export const Bracket: React.FC = () => {
       <h2 style={{ marginBottom: 20 }}>{t('bracket.title')}</h2>
       <div className="bracket-scroll">
         <div className="bracket-grid">
-          {renderedRounds.map(({ round, matches: roundMatches }, ri) => {
-            const hasPrev = ri > 0;
-            const hasNext = ri < renderedRounds.length - 1;
-            return (
-              <div className="bracket-column" key={round.key}>
-                <h3 className="bracket-round-title">{t(round.tkey)}</h3>
-                <div className="bracket-slots">
-                  {roundMatches.map((m, i) => (
-                    <div className="bracket-slot" key={m.id}>
-                      {hasPrev && <span className="bk-conn bk-in" aria-hidden="true" />}
-                      {hasNext && <span className="bk-conn bk-out" aria-hidden="true" />}
-                      {hasNext && (
-                        <span
-                          className={`bk-conn bk-vert ${i % 2 === 0 ? 'top' : 'bottom'}`}
-                          aria-hidden="true"
-                        />
-                      )}
-                      <BracketMatch match={m} />
-                    </div>
-                  ))}
-                </div>
+          {renderedRounds.map(({ round, matches: roundMatches }) => (
+            <div className="bracket-column" key={round.key}>
+              <h3 className="bracket-round-title">{t(round.tkey)}</h3>
+              <div className="bracket-slots">
+                {roundMatches.map((m) => (
+                  <div className="bracket-slot" key={m.id}>
+                    <BracketMatch match={m} />
+                  </div>
+                ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
 

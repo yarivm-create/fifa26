@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Match } from '../api/types';
+import { getMatchResult } from '../utils/matchResult';
 
 // Detects two live events from polled match data:
 //  - a goal: a live match's total score increases between polls
@@ -33,12 +34,20 @@ export interface MatchEndEvent {
   awayCode: string;
   awayGoals: number;
   winner: 'home' | 'away' | 'draw';
+  // Knockout shootout / extra-time context so the full-time toast names the real
+  // winner (a penalty win is level on goals) and shows the shootout score.
+  homePen: number | null;
+  awayPen: number | null;
+  decidedBy?: Match['decidedBy'];
 }
 
-function buildEndEvent(m: Match, key: number): MatchEndEvent {
+export function buildEndEvent(m: Match, key: number): MatchEndEvent {
   const homeGoals = m.home_team.goals ?? 0;
   const awayGoals = m.away_team.goals ?? 0;
-  const winner = homeGoals > awayGoals ? 'home' : awayGoals > homeGoals ? 'away' : 'draw';
+  // Use the shared penalty-aware result so a 1-1 (won on penalties) knockout
+  // names the shootout winner instead of being reported as a draw.
+  const r = getMatchResult(m);
+  const winner = r.homeWon ? 'home' : r.awayWon ? 'away' : 'draw';
   return {
     key,
     matchId: m.id,
@@ -50,6 +59,9 @@ function buildEndEvent(m: Match, key: number): MatchEndEvent {
     awayCode: m.away_team.code,
     awayGoals,
     winner,
+    homePen: m.home_team.penalties ?? null,
+    awayPen: m.away_team.penalties ?? null,
+    decidedBy: m.decidedBy,
   };
 }
 

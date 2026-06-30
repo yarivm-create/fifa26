@@ -10,6 +10,8 @@ import { Trophy } from './Trophy';
 import { formatLocalDate, formatLocalTime } from '../utils/localTime';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
+import { getMatchResult } from '../utils/matchResult';
+import { knockoutState, KnockoutState } from '../utils/knockoutState';
 import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
@@ -18,39 +20,11 @@ function formatKickoff(datetime: string): string {
 
 const ORDINAL = ['1st', '2nd', '3rd', '4th'];
 
-// Live knockout progress for a favorite team, computed from the schedule so the
-// Favorites card shows the CURRENT state (Round of 16 / Eliminated / 🏆) while
-// the group tables stay as group-stage tables.
-const KO_ORDER = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
+// Live knockout progress for a favorite team is computed by the shared
+// knockoutState helper (penalty-aware), so the Favorites card shows the CURRENT
+// state (Round of 16 / Eliminated / 🏆) while the group tables stay group tables.
 const KO_LABEL = ['stage.r32', 'stage.r16', 'stage.qf', 'stage.sf', 'stage.final'];
 
-interface KnockoutState {
-  reached: number; // index into KO_ORDER
-  eliminated: boolean;
-  champion: boolean;
-}
-
-function knockoutState(code: string, matches: Match[]): KnockoutState | null {
-  let reached = -1;
-  let eliminated = false;
-  let champion = false;
-  for (const m of matches) {
-    const idx = KO_ORDER.indexOf(m.stage_name);
-    if (idx < 0) continue;
-    const isHome = m.home_team.code === code;
-    const isAway = m.away_team.code === code;
-    if (!isHome && !isAway) continue;
-    reached = Math.max(reached, idx);
-    if (m.status !== 'completed') continue;
-    const hg = m.home_team.goals ?? 0;
-    const ag = m.away_team.goals ?? 0;
-    if (hg === ag) continue;
-    const won = isHome ? hg > ag : ag > hg;
-    if (!won) eliminated = true;
-    else if (m.stage_name === 'Final') champion = true;
-  }
-  return reached < 0 ? null : { reached, eliminated, champion };
-}
 
 interface TeamInfo {
   code: string;
@@ -194,6 +168,19 @@ function TeamCard({
             const stage = m.stage_name ? m.stage_name.split(' - ')[0] : '';
             const header = stage && stage !== lastStage;
             lastStage = stage;
+            // Penalty-aware result so a 1-1 (won/lost on penalties) knockout shows
+            // the right ✓/✕ and the shootout score, matching every other tab.
+            const r = getMatchResult(m);
+            const usWon = m.home_team.code === code ? r.homeWon : r.awayWon;
+            const usLost = m.home_team.code === code ? r.awayWon : r.homeWon;
+            const usPen = us.penalties;
+            const oppPen = opp.penalties;
+            const hasPens = usPen != null && oppPen != null;
+            const resultSuffix = hasPens
+              ? ` (${usPen}-${oppPen} ${t('status.pens')})`
+              : m.decidedBy === 'extra_time'
+                ? ` (${t('status.aet')})`
+                : '';
             return (
               <React.Fragment key={`f-${m.id}`}>
                 {header && <div className="fixture-stage-head">{stage}</div>}
@@ -207,10 +194,12 @@ function TeamCard({
                     )}
                   </span>
                   {isLive ? (
-                    <span className="follow-fixture-time">{us.goals}-{opp.goals} {m.time || t('status.live')}</span>
+                    <span className="follow-fixture-time">
+                      {us.goals}-{opp.goals}{hasPens ? ` (${usPen}-${oppPen})` : ''} {m.time || t('status.live')}
+                    </span>
                   ) : isCompleted ? (
-                    <span className={`follow-fixture-time team-result fx-${us.goals! > opp.goals! ? 'w' : us.goals! < opp.goals! ? 'l' : 'd'}`}>
-                      {us.goals! > opp.goals! ? '✓ ' : us.goals! < opp.goals! ? '✕ ' : ''}{us.goals}-{opp.goals}
+                    <span className={`follow-fixture-time team-result fx-${usWon ? 'w' : usLost ? 'l' : 'd'}`}>
+                      {usWon ? '✓ ' : usLost ? '✕ ' : ''}{us.goals}-{opp.goals}{resultSuffix}
                     </span>
                   ) : (
                     <span className="follow-fixture-time">{formatKickoff(m.datetime)}</span>

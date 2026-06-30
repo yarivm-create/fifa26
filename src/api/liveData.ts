@@ -15,7 +15,7 @@ interface FifaTeam {
   TeamName?: { Description: string }[];
 }
 
-interface FifaMatch {
+export interface FifaMatch {
   IdCompetition?: string;
   IdSeason?: string;
   IdStage?: string;
@@ -43,7 +43,7 @@ type LiveStatus = { status: Match['status']; time?: string };
 
 // FIFA MatchStatus: 0 finished, 1 not started, 3 live. Anything else (postponed,
 // abandoned, etc.) leaves the mock scheduled state untouched.
-function mapStatus(ev: FifaMatch): LiveStatus | null {
+export function mapStatus(ev: FifaMatch): LiveStatus | null {
   switch (ev.MatchStatus) {
     case 0:
       return { status: 'completed' }; // no live minute for finished games
@@ -98,7 +98,7 @@ async function fetchFifaMatches(): Promise<FifaMatch[]> {
 }
 
 // A knockout slot that has been filled with a real qualified team.
-interface ResolvedTeam {
+export interface ResolvedTeam {
   code: string;
   name: string;
 }
@@ -184,7 +184,7 @@ async function enrichLivePeriods(map: Record<string, FifaMatch>): Promise<void> 
   );
 }
 
-function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
+export function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   const mapped = mapStatus(ev);
   if (!mapped) return base;
 
@@ -216,15 +216,15 @@ function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   };
 }
 
-// Returns the full mock schedule with live scores/status overlaid from FIFA and
-// knockout placeholder slots ("2A", "W73", …) replaced by the real qualified
-// teams as soon as FIFA fills them in.
-export async function getMergedMatches(): Promise<Match[]> {
-  const base = await mock.fetchAllMatches();
-  const { map: liveMap, resolve } = await getLiveMap();
-  if (Object.keys(liveMap).length === 0 && Object.keys(resolve).length === 0) return base;
-
-  // Swap a placeholder team for its resolved real team when FIFA knows it.
+// Pure merge: overlays live FIFA scores/status onto the curated schedule and
+// replaces knockout placeholder slots ("2A", "W73", …) with the real qualified
+// teams once FIFA fills them in. Kept separate from the fetch so the resolution
+// (e.g. "W75" -> Morocco) and the live overlay can be tested without network.
+export function mergeMatches(
+  base: Match[],
+  liveMap: Record<string, FifaMatch>,
+  resolve: Record<string, ResolvedTeam>,
+): Match[] {
   const resolveTeam = (t: Match['home_team']): Match['home_team'] => {
     if (!PLACEHOLDER_CODE.test(t.code)) return t;
     const r = resolve[t.code];
@@ -247,6 +247,16 @@ export async function getMergedMatches(): Promise<Match[]> {
     }
     return ev ? applyOverlay(resolved, ev, swap) : resolved;
   });
+}
+
+// Returns the full mock schedule with live scores/status overlaid from FIFA and
+// knockout placeholder slots ("2A", "W73", …) replaced by the real qualified
+// teams as soon as FIFA fills them in.
+export async function getMergedMatches(): Promise<Match[]> {
+  const base = await mock.fetchAllMatches();
+  const { map: liveMap, resolve } = await getLiveMap();
+  if (Object.keys(liveMap).length === 0 && Object.keys(resolve).length === 0) return base;
+  return mergeMatches(base, liveMap, resolve);
 }
 
 // Recomputes group standings from the merged (live) completed group-stage matches.
