@@ -605,6 +605,13 @@ body {
   vertical-align: super;
 }
 
+/* The shootout score that actually WON the tie is highlighted in gold (the
+   regulation goals are level, so the penalty number is the deciding score). */
+.score-pen-winner {
+  color: var(--wc-gold);
+  text-shadow: 0 0 8px rgba(212,175,55,.4);
+}
+
 /* "(AET)" / "won 4-3 on penalties" note under a decided knockout. */
 .match-decided {
   text-align: center;
@@ -1048,8 +1055,15 @@ body {
 
 .bracket-score {
   font-weight: 800;
-  color: var(--wc-gold);
+  color: var(--wc-text);
   font-size: .9rem;
+}
+
+/* Only the winning side's goals are gold, and only when the tie was decided in
+   regulation / extra time. On a shootout the goals are level, so they stay
+   neutral and just the deciding penalty score (.bracket-pen-winner) is gold. */
+.bracket-score-winner {
+  color: var(--wc-gold);
 }
 
 .bracket-pen {
@@ -1057,6 +1071,11 @@ body {
   font-weight: 700;
   color: var(--wc-text-muted);
   vertical-align: super;
+}
+
+/* The shootout score of the side that went through is highlighted in gold. */
+.bracket-pen-winner {
+  color: var(--wc-gold);
 }
 
 /* Winning side of a decided knockout match is emphasised in gold. */

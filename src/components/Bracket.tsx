@@ -5,7 +5,7 @@ import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalDate, formatLocalTime, LocalTimeFlag } from '../utils/localTime';
 import { getMatchResult } from '../utils/matchResult';
-import { sortBracketRound } from '../utils/bracketOrder';
+import { bracketRanks, sortBracketRound } from '../utils/bracketOrder';
 import { useI18n, TFunc } from '../i18n';
 
 const ROUNDS: { key: string; tkey: string }[] = [
@@ -35,16 +35,16 @@ function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
 }
 
-const BracketTeam: React.FC<{ code: string; name: string; goals: number | null; penalties?: number | null; won: boolean }> = ({ code, name, goals, penalties, won }) => {
+const BracketTeam: React.FC<{ code: string; name: string; goals: number | null; penalties?: number | null; won: boolean; hasPens: boolean }> = ({ code, name, goals, penalties, won, hasPens }) => {
   const { t } = useI18n();
   return (
     <div className={`bracket-team${won ? ' bracket-team-winner' : ''}`}>
       <Flag code={code} name={name} className="bracket-flag" />
       <span className="bracket-name">{teamLabel(code, name, t)}</span>
       {goals !== null && (
-        <span className="bracket-score">
+        <span className={`bracket-score${won && !hasPens ? ' bracket-score-winner' : ''}`}>
           {goals}
-          {penalties != null && <span className="bracket-pen"> ({penalties})</span>}
+          {penalties != null && <span className={`bracket-pen${won ? ' bracket-pen-winner' : ''}`}> ({penalties})</span>}
         </span>
       )}
     </div>
@@ -57,7 +57,7 @@ const BracketMatch: React.FC<{ match: Match }> = ({ match }) => {
   const ag = match.away_team.goals;
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
-  const { finished, homeWon, awayWon } = getMatchResult(match);
+  const { finished, homeWon, awayWon, hasPens } = getMatchResult(match);
   const note = finished
     ? match.decidedBy === 'penalties'
       ? t('status.pens')
@@ -68,8 +68,8 @@ const BracketMatch: React.FC<{ match: Match }> = ({ match }) => {
   return (
     <div className="bracket-match">
       <div className="bracket-match-time">{formatKickoff(match.datetime)} <LocalTimeFlag size={16} /></div>
-      <BracketTeam code={match.home_team.code} name={match.home_team.name} goals={hg} penalties={hp} won={homeWon} />
-      <BracketTeam code={match.away_team.code} name={match.away_team.name} goals={ag} penalties={ap} won={awayWon} />
+      <BracketTeam code={match.home_team.code} name={match.home_team.name} goals={hg} penalties={hp} won={homeWon} hasPens={hasPens} />
+      <BracketTeam code={match.away_team.code} name={match.away_team.name} goals={ag} penalties={ap} won={awayWon} hasPens={hasPens} />
       <div className="bracket-venue">{match.venue}{note && <span className="bracket-decided"> • {note}</span>}</div>
     </div>
   );
@@ -90,10 +90,11 @@ export const Bracket: React.FC = () => {
   }
 
   const all = matches || [];
-  // Within each round the cards are ordered so finished ties show first (results
-  // up top), then live, then upcoming — each group by kick-off time. The earliest
-  // completed Round-of-32 tie (e.g. Canada's) therefore sits first.
-  const byRound = (key: string) => sortBracketRound(all.filter((m) => m.stage_name === key));
+  // Lay each round out as a planar feeder tree (so every card lines up with the
+  // two feeder cards it comes from, with connector lines between rounds), but
+  // order the branches so the earliest / already-played tie bubbles to the top.
+  const ranks = bracketRanks(all);
+  const byRound = (key: string) => sortBracketRound(all, key, ranks);
 
   const thirdPlace = all.filter((m) => m.stage_name === 'Third place play-off');
 
@@ -106,18 +107,30 @@ export const Bracket: React.FC = () => {
       <h2 style={{ marginBottom: 20 }}>{t('bracket.title')}</h2>
       <div className="bracket-scroll">
         <div className="bracket-grid">
-          {renderedRounds.map(({ round, matches: roundMatches }) => (
-            <div className="bracket-column" key={round.key}>
-              <h3 className="bracket-round-title">{t(round.tkey)}</h3>
-              <div className="bracket-slots">
-                {roundMatches.map((m) => (
-                  <div className="bracket-slot" key={m.id}>
-                    <BracketMatch match={m} />
-                  </div>
-                ))}
+          {renderedRounds.map(({ round, matches: roundMatches }, ri) => {
+            const hasPrev = ri > 0;
+            const hasNext = ri < renderedRounds.length - 1;
+            return (
+              <div className="bracket-column" key={round.key}>
+                <h3 className="bracket-round-title">{t(round.tkey)}</h3>
+                <div className="bracket-slots">
+                  {roundMatches.map((m, i) => (
+                    <div className="bracket-slot" key={m.id}>
+                      {hasPrev && <span className="bk-conn bk-in" aria-hidden="true" />}
+                      {hasNext && <span className="bk-conn bk-out" aria-hidden="true" />}
+                      {hasNext && (
+                        <span
+                          className={`bk-conn bk-vert ${i % 2 === 0 ? 'top' : 'bottom'}`}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <BracketMatch match={m} />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

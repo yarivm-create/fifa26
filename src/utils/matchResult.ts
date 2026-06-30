@@ -28,3 +28,19 @@ export function getMatchResult(m: Match): MatchResult {
     finished && (hasPens ? (ap as number) > (hp as number) : (ag as number) > (hg as number));
   return { hasScore, finished, hasPens, homeWon, awayWon, decidedBy: m.decidedBy };
 }
+
+// For a knockout decided by a penalty shootout, returns the WINNER's name and
+// the shootout score ordered winner-first (e.g. Morocco 3-2). Returns null for
+// any other result, so the UI only ever shows "<team> won 3-2 on penalties"
+// with the side that actually went through (never the level regulation goals).
+export function getPenaltyWinSummary(
+  m: Match
+): { winnerName: string; winnerPens: number; loserPens: number } | null {
+  const r = getMatchResult(m);
+  if (!r.finished || !r.hasPens || m.decidedBy !== 'penalties') return null;
+  const hp = m.home_team.penalties as number;
+  const ap = m.away_team.penalties as number;
+  if (r.homeWon) return { winnerName: m.home_team.name, winnerPens: hp, loserPens: ap };
+  if (r.awayWon) return { winnerName: m.away_team.name, winnerPens: ap, loserPens: hp };
+  return null;
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
-import { getMatchResult } from '../utils/matchResult';
+import { getMatchResult, getPenaltyWinSummary } from '../utils/matchResult';
 import { useI18n, TFunc } from '../i18n';
 
 interface Props {
@@ -124,14 +124,13 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
   const { hasScore, finished, hasPens, homeWon, awayWon } = getMatchResult(match);
-  // "(AET)" / "won x-y on penalties" note for knockouts decided after 90'.
-  const decidedNote = finished
-    ? match.decidedBy === 'penalties' && hasPens
-      ? t('status.wonOnPens', { h: (homeWon ? hp : ap) ?? 0, a: (homeWon ? ap : hp) ?? 0 })
-      : match.decidedBy === 'extra_time'
-        ? t('status.aet')
-        : ''
-    : '';
+  // "(AET)" / "<team> won x-y on penalties" note for knockouts decided after 90'.
+  const pen = getPenaltyWinSummary(match);
+  const decidedNote = pen
+    ? t('status.wonOnPens', { team: pen.winnerName, h: pen.winnerPens, a: pen.loserPens })
+    : finished && match.decidedBy === 'extra_time'
+      ? t('status.aet')
+      : '';
 
   return (
     <div className="card" data-stage={match.stage_name}>
@@ -146,14 +145,14 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         <div className="score-box">
           {hasScore ? (
             <>
-              <span className={`score${homeWon ? ' score-winner' : ''}`}>
+              <span className={`score${homeWon && !hasPens ? ' score-winner' : ''}`}>
                 {hg}
-                {hasPens && <span className="score-pen"> ({hp})</span>}
+                {hasPens && <span className={`score-pen${homeWon ? ' score-pen-winner' : ''}`}> ({hp})</span>}
               </span>
               <span className="score-divider">-</span>
-              <span className={`score${awayWon ? ' score-winner' : ''}`}>
+              <span className={`score${awayWon && !hasPens ? ' score-winner' : ''}`}>
                 {ag}
-                {hasPens && <span className="score-pen"> ({ap})</span>}
+                {hasPens && <span className={`score-pen${awayWon ? ' score-pen-winner' : ''}`}> ({ap})</span>}
               </span>
             </>
           ) : (

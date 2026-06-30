@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { getMatchResult } from '../src/utils/matchResult';
+import { getMatchResult, getPenaltyWinSummary } from '../src/utils/matchResult';
 import { Match } from '../src/api/types';
 
 // Pins the SINGLE source of truth every tab (Live, Schedule, Bracket, Favorites,
@@ -92,4 +92,24 @@ test('an unplayed knockout (no score) is neither finished nor won', () => {
   expect(r.finished).toBe(false);
   expect(r.homeWon).toBe(false);
   expect(r.awayWon).toBe(false);
+});
+
+test('penalty win summary names the winner with the shootout score winner-first', () => {
+  // Netherlands 1 (2) - 1 (3) Morocco -> "Morocco won 3-2 on penalties".
+  const m = ko(1, 1, { hp: 2, ap: 3, decidedBy: 'penalties' });
+  m.home_team.name = 'Netherlands';
+  m.away_team.name = 'Morocco';
+  expect(getPenaltyWinSummary(m)).toEqual({ winnerName: 'Morocco', winnerPens: 3, loserPens: 2 });
+});
+
+test('penalty win summary for a home win orders the winner score first', () => {
+  const m = ko(1, 1, { hp: 5, ap: 4, decidedBy: 'penalties' });
+  m.home_team.name = 'Spain';
+  expect(getPenaltyWinSummary(m)).toEqual({ winnerName: 'Spain', winnerPens: 5, loserPens: 4 });
+});
+
+test('penalty win summary is null for non-shootout results (no false text)', () => {
+  expect(getPenaltyWinSummary(ko(2, 1))).toBeNull(); // regulation
+  expect(getPenaltyWinSummary(ko(2, 1, { decidedBy: 'extra_time' }))).toBeNull(); // AET, no pens
+  expect(getPenaltyWinSummary(ko(1, 1, { status: 'in_progress', hp: 2, ap: 1 }))).toBeNull(); // live
 });

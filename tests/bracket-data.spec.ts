@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { fetchAllMatches } from '../src/api/mockData';
-import { sortBracketRound } from '../src/utils/bracketOrder';
+import { bracketRanks, sortBracketRound } from '../src/utils/bracketOrder';
 import { Match } from '../src/api/types';
 
 // These tests pin the knockout bracket DRAW so a wrong feeder/order regression
@@ -71,25 +71,18 @@ test('every knockout match sits in the expected round/stage', () => {
   expect(stageOf(104)).toBe('Final');
 });
 
-// Mirrors the EXACT comparator the Bracket component uses to order cards inside
-// a round, so the reported "wrong card order" regression is caught here.
+// Mirrors the EXACT ordering the Bracket component uses to lay out cards inside
+// a round (a planar feeder tree where the earliest tie bubbles up), so the
+// reported "wrong card order" regression is caught here.
 function byDate(round: string, all: Match[]): Match[] {
-  return sortBracketRound(all.filter((m) => m.stage_name === round));
+  return sortBracketRound(all, round, bracketRanks(all));
 }
 
-test('each round renders chronologically; the earliest Round-of-32 tie is first', async () => {
+test('the earliest Round-of-32 tie is first', async () => {
   const all = Array.from(byId.values());
-  for (const round of ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final']) {
-    const ordered = byDate(round, all);
-    for (let i = 1; i < ordered.length; i++) {
-      const prev = new Date(ordered[i - 1].datetime).getTime();
-      const cur = new Date(ordered[i].datetime).getTime();
-      expect(prev, `${round} card ${i} not before card ${i + 1}`).toBeLessThanOrEqual(cur);
-    }
-  }
   // The reported bug: a later tie showed before the first Round-of-32 game.
   // Match #73 (South Africa's tie in the live draw) is the earliest R32 kick-off,
-  // so date ordering must place it first.
+  // so it must bubble to the top of the bracket.
   const r32 = byDate('Round of 32', all);
   expect(r32[0].id).toBe(73);
   const minTime = Math.min(...all.filter((m) => m.stage_name === 'Round of 32').map((m) => new Date(m.datetime).getTime()));
