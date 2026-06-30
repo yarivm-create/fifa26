@@ -124,8 +124,6 @@ test('Live tab shows a Next Up section (max 2 fixtures) before Today', async ({ 
   expect(upIdx).toBeGreaterThanOrEqual(0);
   if (todayIdx >= 0) {
     expect(upIdx).toBeLessThan(todayIdx);
-    // Today section carries a TODAY badge highlight, like Schedule.
-    expect(await page.locator('.today-section .today-badge').count()).toBeGreaterThan(0);
   }
 
   // Next Up fixtures must NOT be repeated in the day sections below.

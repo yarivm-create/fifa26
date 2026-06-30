@@ -2,6 +2,7 @@ import { Match, Group } from './types';
 import * as mock from './mockData';
 import * as live from './liveData';
 import { computeQualification, QualChance } from './qualification';
+import { resolveFeederWinners } from '../utils/bracketOrder';
 
 // Live scores are overlaid on the curated schedule from TheSportsDB (CORS-enabled, free).
 // Every call falls back to mock data if the live fetch fails.
@@ -13,9 +14,11 @@ function getLocalDateString(date: Date): string {
 export async function fetchAllMatches(): Promise<Match[]> {
   try {
     const merged = await live.getMergedMatches();
-    return [...merged].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+    return resolveFeederWinners(merged).sort(
+      (a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+    );
   } catch {
-    return mock.fetchAllMatches();
+    return resolveFeederWinners(await mock.fetchAllMatches());
   }
 }
 

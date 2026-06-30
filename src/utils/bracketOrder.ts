@@ -1,4 +1,5 @@
 import { Match } from '../api/types';
+import { getMatchResult } from './matchResult';
 
 // Official WC2026 knockout feeder tree: each match id maps to the two earlier
 // match ids whose winners feed it (ids equal the FIFA MatchNumbers, e.g. R16
@@ -17,6 +18,42 @@ export const FEEDERS: Record<number, [number, number]> = {
   104: [101, 102],
 };
 export const FINAL_ID = 104;
+
+// Once a feeder match is finished we already know who advances, so fill the next
+// round's "Winner M##" slot with the real team locally instead of waiting for
+// the upstream feed to propagate it. Applied centrally so EVERY tab (Bracket,
+// Schedule, Favorites) shows the advanced team consistently. (Bug: a finished
+// R32 game left the next card showing "Winner M78" though Norway had won it.)
+export function resolveFeederWinners(matches: Match[]): Match[] {
+  const winner: Record<string, { code: string; name: string }> = {};
+  for (const m of matches) {
+    const r = getMatchResult(m);
+    if (r.finished && (r.homeWon || r.awayWon)) {
+      const w = r.homeWon ? m.home_team : m.away_team;
+      winner[`W${m.id}`] = { code: w.code, name: w.name };
+    }
+  }
+  const deref = (code: string, name: string): { code: string; name: string } => {
+    let c = code;
+    let nm = name;
+    let guard = 0;
+    while (/^W\d+$/.test(c) && winner[c] && guard++ < 8) {
+      nm = winner[c].name;
+      c = winner[c].code;
+    }
+    return { code: c, name: nm };
+  };
+  return matches.map((m) => {
+    const h = deref(m.home_team.code, m.home_team.name);
+    const a = deref(m.away_team.code, m.away_team.name);
+    if (h.code === m.home_team.code && a.code === m.away_team.code) return m;
+    return {
+      ...m,
+      home_team: { ...m.home_team, code: h.code, name: h.name },
+      away_team: { ...m.away_team, code: a.code, name: a.name },
+    };
+  });
+}
 
 // Computes a vertical rank for every knockout match by an IN-ORDER walk of the
 // feeder tree (one feeder subtree, the match itself, then the other feeder
