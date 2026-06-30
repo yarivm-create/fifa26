@@ -945,8 +945,13 @@ body {
   min-width: min-content;
   align-items: stretch;
   --bk-gap: 30px;
-  --bk-drift: 14px;
+  /* No drift by default: deeper rounds stay in the exact uniform layout so
+     their connectors are always 50% and can never break. */
+  --bk-drift: 0px;
 }
+
+/* Only the first (densest) round groups its feeder pairs. */
+.bracket-grid .bracket-column:first-child { --bk-drift: 12px; }
 
 .bracket-column {
   display: flex;
@@ -962,10 +967,12 @@ body {
 
 /* Each match lives in an equal-height slot and is vertically centered within
    it. Because every later round has half as many slots over the same total
-   height, a match always lands midway between the two feeder games below it. */
+   height, a match always lands midway between the two feeder games below it.
+   The slot is kept comfortably taller than the tallest card so the inward
+   pair-drift always leaves a positive gap (no overlap). */
 .bracket-slot {
   flex: 1 0 auto;
-  min-height: 128px;
+  min-height: 164px;
   display: flex;
   align-items: center;
   position: relative;
@@ -982,7 +989,11 @@ body {
   width: 100%;
 }
 
-/* Connector lines drawn into the gaps between rounds. Logical inset props flip
+/* Connector lines drawn into the gaps between rounds. They are positioned
+   against the SLOT (not the card), so a vertical always spans exactly half the
+   slot height back to the pair centre regardless of how tall the card is. The
+   drift offset keeps the horizontal stub on the (drifted) card centre and the
+   vertical reaching the (un-drifted) pair centre. Logical inset props flip
    automatically for the Hebrew (RTL) layout. */
 .bk-conn {
   position: absolute;
@@ -991,7 +1002,7 @@ body {
 }
 .bk-in,
 .bk-out {
-  top: 50%;
+  top: calc(50% + var(--bk-drift-y, 0px));
   height: 2px;
   width: calc(var(--bk-gap) / 2);
 }
@@ -1000,12 +1011,17 @@ body {
 .bk-vert {
   width: 2px;
   inset-inline-end: calc(-1 * var(--bk-gap) / 2);
-  /* From the (drifted) card centre back to the pair centre — the drift distance
-     closer than half the slot, for both the top and bottom card of a pair. */
-  height: calc(50% - var(--bk-drift, 0px));
 }
-.bk-vert.top { top: 50%; }
-.bk-vert.bottom { bottom: 50%; }
+/* Top card of a pair: from its (drifted) centre DOWN to the slot's bottom edge
+   (= the pair centre). Bottom card: from its centre UP to the slot's top edge. */
+.bk-vert.top {
+  top: calc(50% + var(--bk-drift-y, 0px));
+  height: calc(50% - var(--bk-drift-y, 0px));
+}
+.bk-vert.bottom {
+  bottom: calc(50% - var(--bk-drift-y, 0px));
+  height: calc(50% + var(--bk-drift-y, 0px));
+}
 
 .bracket-round-title {
   font-size: .9rem;
@@ -1114,9 +1130,10 @@ body {
 }
 
 @media (max-width: 640px) {
-  .bracket-grid { --bk-gap: 18px; --bk-drift: 8px; }
+  .bracket-grid { --bk-gap: 18px; }
+  .bracket-grid .bracket-column:first-child { --bk-drift: 8px; }
   .bracket-column { min-width: 168px; }
-  .bracket-slot { min-height: 118px; }
+  .bracket-slot { min-height: 156px; }
   .bracket-name { font-size: .76rem; }
 }
 

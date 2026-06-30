@@ -115,25 +115,27 @@ export const Bracket: React.FC = () => {
                 <h3 className="bracket-round-title">{t(round.tkey)}</h3>
                 <div className="bracket-slots">
                   {roundMatches.map((m, i) => {
-                    // Pull each feeder pair's two cards toward each other (top
-                    // card drifts down, bottom card up) so pairs read as groups
-                    // with bigger gaps between them. The drift is symmetric, so
-                    // each pair's CENTRE is unchanged and the connector tree to
-                    // the next round still lines up. Single-card rounds (Final)
-                    // don't pair, so they don't drift.
-                    const paired = roundMatches.length > 1;
+                    // Group feeder pairs ONLY in the first (densest) round by
+                    // pulling each pair's two cards toward each other (top card
+                    // drifts down, bottom card up) so pairs read as groups with
+                    // bigger gaps between them. The drift is symmetric, so the
+                    // pair CENTRE is unchanged and the connector to the next
+                    // round still lines up. Deeper rounds stay in the exact
+                    // uniform layout (no drift) so their connectors can never
+                    // accumulate offset and break.
+                    const paired = ri === 0 && roundMatches.length > 1;
                     const pairClass = paired ? (i % 2 === 0 ? ' pair-top' : ' pair-bottom') : '';
                     return (
                       <div className={`bracket-slot${pairClass}`} key={m.id}>
+                        {hasPrev && <span className="bk-conn bk-in" aria-hidden="true" />}
+                        {hasNext && <span className="bk-conn bk-out" aria-hidden="true" />}
+                        {hasNext && (
+                          <span
+                            className={`bk-conn bk-vert ${i % 2 === 0 ? 'top' : 'bottom'}`}
+                            aria-hidden="true"
+                          />
+                        )}
                         <div className="bracket-slot-inner">
-                          {hasPrev && <span className="bk-conn bk-in" aria-hidden="true" />}
-                          {hasNext && <span className="bk-conn bk-out" aria-hidden="true" />}
-                          {hasNext && (
-                            <span
-                              className={`bk-conn bk-vert ${i % 2 === 0 ? 'top' : 'bottom'}`}
-                              aria-hidden="true"
-                            />
-                          )}
                           <BracketMatch match={m} />
                         </div>
                       </div>
