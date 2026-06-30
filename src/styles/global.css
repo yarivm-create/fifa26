@@ -945,6 +945,7 @@ body {
   min-width: min-content;
   align-items: stretch;
   --bk-gap: 30px;
+  --bk-drift: 14px;
 }
 
 .bracket-column {
@@ -964,11 +965,19 @@ body {
    height, a match always lands midway between the two feeder games below it. */
 .bracket-slot {
   flex: 1 0 auto;
-  min-height: 84px;
+  min-height: 128px;
   display: flex;
   align-items: center;
   position: relative;
 }
+.bracket-slot-inner {
+  position: relative;
+  width: 100%;
+  /* Symmetric drift groups each feeder pair without moving its centre. */
+  transform: translateY(var(--bk-drift-y, 0));
+}
+.bracket-slot.pair-top { --bk-drift-y: var(--bk-drift); }
+.bracket-slot.pair-bottom { --bk-drift-y: calc(-1 * var(--bk-drift)); }
 .bracket-slot .bracket-match {
   width: 100%;
 }
@@ -991,7 +1000,9 @@ body {
 .bk-vert {
   width: 2px;
   inset-inline-end: calc(-1 * var(--bk-gap) / 2);
-  height: 50%;
+  /* From the (drifted) card centre back to the pair centre — the drift distance
+     closer than half the slot, for both the top and bottom card of a pair. */
+  height: calc(50% - var(--bk-drift, 0px));
 }
 .bk-vert.top { top: 50%; }
 .bk-vert.bottom { bottom: 50%; }
@@ -1103,9 +1114,9 @@ body {
 }
 
 @media (max-width: 640px) {
-  .bracket-grid { --bk-gap: 18px; }
+  .bracket-grid { --bk-gap: 18px; --bk-drift: 8px; }
   .bracket-column { min-width: 168px; }
-  .bracket-slot { min-height: 76px; }
+  .bracket-slot { min-height: 118px; }
   .bracket-name { font-size: .76rem; }
 }
 
