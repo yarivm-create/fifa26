@@ -12,13 +12,14 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 ## Features
 
 - 🕐 **Live Local Time Clock** — Real-time clock updating every second in the visitor's own timezone, shown with their country flag
-- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators, plus an instant refresh when you return to the tab (bfcache `pageshow`) so scores are never stale
+- 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators, plus an instant refresh when you return to the tab (bfcache `pageshow`) so scores are never stale. Returning from the background never replays a stale goal/full-time alert — the first post-resume refresh re-baselines silently
 - 📺 **Kan 11 Broadcast Links** — Live and completed match cards link out to Kan's World Cup hub ("Live Match Center" while live, "Match Recap & Highlights" once finished)
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
 - 🎉 **Full-Time Celebrations** — When matches finish, a toast per game shows the winner (or draw) with the final score, plus a whistle sound (first game); multiple simultaneous finishes each get their own toast
+- 🥅 **Knockout Decisions** — Tied knockouts resolve correctly: cards show the shootout score next to the goals (e.g. `1 (4) - 1 (3)`), label the result `AET` / "won x-y on penalties", and highlight the real winner even at level goals. A live shootout shows a **PENALTIES** status
 - 🏆 **Group Standings** — Real-time group tables with all stats. During the group stage each team shows a live "✓ qualified / % chance / ✕ out" prediction; once a group is mathematically decided the predictions drop and qualifiers (top 2 + best thirds) are simply highlighted
-- 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware)
+- 🌳 **Knockout Bracket** — Tree view where each Round-of-16 card sits centered between its two feeding Round-of-32 games, with connector lines (RTL-aware). Match ids are aligned to the official FIFA MatchNumbers so every `W##` winner placeholder, feeder line, date and venue lines up with the real draw
 - ⭐ **Favorites** — Follow players and teams (star toggle on standings, stats leaderboards, and each team card's Top Players list); favorite team cards show live knockout state (Round of 16 → Final / Eliminated / 🏆), every fixture listed in play order grouped under one stage header (Group / Round of 32 / Round of 16…) with ✓ win / ✕ loss results; followed players appear first with their next fixture labelled by stage
 - 📈 **Player Stats** — Top scorers, assists, and goals broken down by every round (group through final, with upcoming counts)
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, split into accurate stage sections (each match sits under its true stage header even when a single day spans two stages)
@@ -123,7 +124,7 @@ worldcup2026-app/
 
 ## Testing
 
-End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects, including an automated accessibility gate (`tests/a11y.spec.ts`, axe-core WCAG 2.0/2.1 A & AA scan on every tab):
+End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects, including an automated accessibility gate (`tests/a11y.spec.ts`, axe-core WCAG 2.0/2.1 A & AA scan on every tab) and a knockout-bracket draw gate (`tests/bracket-data.spec.ts`, which pins each card's two feeder matches to the official FIFA draw so a wrong bracket order can't regress):
 
 ```bash
 npm run test:e2e

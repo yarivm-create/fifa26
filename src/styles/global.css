@@ -597,6 +597,25 @@ body {
   animation: liveTextPulse 2s ease-in-out infinite;
 }
 
+/* Small "(3)" shootout score shown next to the regulation goals. */
+.score-pen {
+  font-size: .6em;
+  font-weight: 700;
+  color: var(--wc-text-muted);
+  vertical-align: super;
+}
+
+/* "(AET)" / "won 4-3 on penalties" note under a decided knockout. */
+.match-decided {
+  text-align: center;
+  margin-top: 3px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--wc-gold);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
 @keyframes liveTextPulse {
   0%, 100% { opacity: 1; }
   50%      { opacity: .6; }
@@ -1031,6 +1050,25 @@ body {
   font-weight: 800;
   color: var(--wc-gold);
   font-size: .9rem;
+}
+
+.bracket-pen {
+  font-size: .62em;
+  font-weight: 700;
+  color: var(--wc-text-muted);
+  vertical-align: super;
+}
+
+/* Winning side of a decided knockout match is emphasised in gold. */
+.bracket-team-winner .bracket-name {
+  color: var(--wc-gold);
+  font-weight: 800;
+}
+
+.bracket-decided {
+  color: var(--wc-gold);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .bracket-venue {

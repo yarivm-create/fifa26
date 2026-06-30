@@ -66,6 +66,10 @@ const en: Dict = {
   'status.halfTime': 'HALF TIME',
   'status.fullTime': 'FULL TIME',
   'status.upcoming': 'UPCOMING',
+  'status.penalties': 'PENALTIES',
+  'status.aet': 'AET',
+  'status.pens': 'pens',
+  'status.wonOnPens': 'won {h}-{a} on penalties',
   'match.liveCenter': 'Live Match Center →',
   'match.recap': 'Match Recap & Highlights →',
   // Standings
@@ -217,6 +221,10 @@ const he: Dict = {
   'status.halfTime': 'מחצית',
   'status.fullTime': 'סיום',
   'status.upcoming': 'עתידי',
+  'status.penalties': 'פנדלים',
+  'status.aet': 'לאחר הארכה',
+  'status.pens': 'פנדלים',
+  'status.wonOnPens': 'ניצחון {h}-{a} בפנדלים',
   'match.liveCenter': '← מרכז המשחק החי',
   'match.recap': '← סיכום ותקצירים',
   // Standings

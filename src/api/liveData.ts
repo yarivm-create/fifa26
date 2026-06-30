@@ -26,9 +26,17 @@ interface FifaMatch {
   PlaceHolderB?: string | null; // knockout slot label for Away
   HomeTeamScore: number | null;
   AwayTeamScore: number | null;
+  HomeTeamPenaltyScore?: number | null; // shootout score for Home (knockouts)
+  AwayTeamPenaltyScore?: number | null; // shootout score for Away (knockouts)
+  ResultType?: number | null; // 1 = decided in 90', 2 = decided in ET/penalties
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
   MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
-  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET half-time
+  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET half-time, 11 = penalty shootout
+}
+
+// True when FIFA has recorded a penalty-shootout score for the match.
+function hasPenalties(ev: FifaMatch): boolean {
+  return ev.HomeTeamPenaltyScore != null && ev.AwayTeamPenaltyScore != null;
 }
 
 type LiveStatus = { status: Match['status']; time?: string };
@@ -40,6 +48,12 @@ function mapStatus(ev: FifaMatch): LiveStatus | null {
     case 0:
       return { status: 'completed' }; // no live minute for finished games
     case 3: {
+      // A live knockout in its penalty shootout: surface "PEN" so the card
+      // shows it's gone to spot-kicks (Period 11 is the shootout, but FIFA can
+      // lag it, so the presence of a shootout score is the reliable signal).
+      if (ev.Period === 11 || hasPenalties(ev)) {
+        return { status: 'in_progress', time: 'PEN' };
+      }
       // FIFA's calendar feed leaves MatchTime empty at the interval, so the
       // authoritative half-time signal is the Period (4 = half-time, 7 = ET
       // half-time), fetched from the live endpoint.
@@ -179,12 +193,26 @@ function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   const homeGoals = swap ? rawAway : rawHome;
   const awayGoals = swap ? rawHome : rawAway;
 
+  const rawHomePen = ev.HomeTeamPenaltyScore;
+  const rawAwayPen = ev.AwayTeamPenaltyScore;
+  const homePen = swap ? rawAwayPen : rawHomePen;
+  const awayPen = swap ? rawHomePen : rawAwayPen;
+
+  // A knockout decided after 90': penalties if there's a shootout score,
+  // otherwise extra time (ResultType 2 = "not decided in regulation").
+  const decidedBy: Match['decidedBy'] = hasPenalties(ev)
+    ? 'penalties'
+    : ev.ResultType === 2
+      ? 'extra_time'
+      : undefined;
+
   return {
     ...base,
     status: mapped.status,
     time: mapped.time,
-    home_team: { ...base.home_team, goals: homeGoals ?? base.home_team.goals },
-    away_team: { ...base.away_team, goals: awayGoals ?? base.away_team.goals },
+    decidedBy,
+    home_team: { ...base.home_team, goals: homeGoals ?? base.home_team.goals, penalties: homePen ?? null },
+    away_team: { ...base.away_team, goals: awayGoals ?? base.away_team.goals, penalties: awayPen ?? null },
   };
 }
 

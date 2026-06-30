@@ -21,7 +21,7 @@ const ROUNDS: { key: string; tkey: string }[] = [
 // making it clear at a glance which teams could meet in the next round.
 const FEEDERS: Record<number, [number, number]> = {
   // Round of 16  <- Round of 32
-  89: [73, 75], 90: [74, 77], 91: [76, 78], 92: [79, 80],
+  89: [74, 77], 90: [73, 75], 91: [76, 78], 92: [79, 80],
   93: [83, 84], 94: [81, 82], 95: [86, 88], 96: [85, 87],
   // Quarter-finals <- Round of 16
   97: [89, 90], 98: [93, 94], 99: [91, 92], 100: [95, 96],
@@ -67,25 +67,48 @@ function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
 }
 
-const BracketTeam: React.FC<{ code: string; name: string; goals: number | null }> = ({ code, name, goals }) => {
+const BracketTeam: React.FC<{ code: string; name: string; goals: number | null; penalties?: number | null; won: boolean }> = ({ code, name, goals, penalties, won }) => {
   const { t } = useI18n();
   return (
-    <div className="bracket-team">
+    <div className={`bracket-team${won ? ' bracket-team-winner' : ''}`}>
       <Flag code={code} name={name} className="bracket-flag" />
       <span className="bracket-name">{teamLabel(code, name, t)}</span>
-      {goals !== null && <span className="bracket-score">{goals}</span>}
+      {goals !== null && (
+        <span className="bracket-score">
+          {goals}
+          {penalties != null && <span className="bracket-pen"> ({penalties})</span>}
+        </span>
+      )}
     </div>
   );
 };
 
-const BracketMatch: React.FC<{ match: Match }> = ({ match }) => (
-  <div className="bracket-match">
-    <div className="bracket-match-time">{formatKickoff(match.datetime)} <LocalTimeFlag size={16} /></div>
-    <BracketTeam code={match.home_team.code} name={match.home_team.name} goals={match.home_team.goals} />
-    <BracketTeam code={match.away_team.code} name={match.away_team.name} goals={match.away_team.goals} />
-    <div className="bracket-venue">{match.venue}</div>
-  </div>
-);
+const BracketMatch: React.FC<{ match: Match }> = ({ match }) => {
+  const { t } = useI18n();
+  const hg = match.home_team.goals;
+  const ag = match.away_team.goals;
+  const hp = match.home_team.penalties;
+  const ap = match.away_team.penalties;
+  const hasPens = hp != null && ap != null;
+  const finished = match.status === 'completed' && hg !== null && ag !== null;
+  const homeWon = finished && (hasPens ? (hp as number) > (ap as number) : (hg as number) > (ag as number));
+  const awayWon = finished && (hasPens ? (ap as number) > (hp as number) : (ag as number) > (hg as number));
+  const note = finished
+    ? match.decidedBy === 'penalties'
+      ? t('status.pens')
+      : match.decidedBy === 'extra_time'
+        ? t('status.aet')
+        : ''
+    : '';
+  return (
+    <div className="bracket-match">
+      <div className="bracket-match-time">{formatKickoff(match.datetime)} <LocalTimeFlag size={16} /></div>
+      <BracketTeam code={match.home_team.code} name={match.home_team.name} goals={hg} penalties={hp} won={homeWon} />
+      <BracketTeam code={match.away_team.code} name={match.away_team.name} goals={ag} penalties={ap} won={awayWon} />
+      <div className="bracket-venue">{match.venue}{note && <span className="bracket-decided"> • {note}</span>}</div>
+    </div>
+  );
+};
 
 export const Bracket: React.FC = () => {
   const { t } = useI18n();

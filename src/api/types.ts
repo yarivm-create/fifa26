@@ -19,6 +19,10 @@ export interface Match {
   group?: string;
   winner?: string;
   time?: string;
+  // For knockout games decided after 90 minutes: 'extra_time' (AET) or
+  // 'penalties' (shootout). Drives the "(AET)"/"(pens)" label and lets the UI
+  // highlight the real winner even when regulation goals are level (e.g. 1-1).
+  decidedBy?: 'extra_time' | 'penalties';
 }
 
 export interface TeamResult {

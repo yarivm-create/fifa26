@@ -63,6 +63,28 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
   const [goalEvent, setGoalEvent] = useState<GoalEvent | null>(null);
   const [endEvents, setEndEvents] = useState<MatchEndEvent[]>([]);
 
+  // When the tab returns from the background, useLiveData immediately refetches.
+  // Any goal/end that happened WHILE we were hidden would otherwise surface as a
+  // brand-new live event (a false "GOAL!" overlay on resume). So we suppress the
+  // first post-resume diff per stream and only re-baseline the refs — real
+  // events that happen after we're visible again still alert normally.
+  const suppressGoals = useRef(false);
+  const suppressEnds = useRef(false);
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        suppressGoals.current = true;
+        suppressEnds.current = true;
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onVisible);
+    };
+  }, []);
+
   useEffect(() => {
     if (!liveMatches) return;
     const cur = new Map<number, { home: number; away: number }>(
@@ -71,6 +93,12 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
         { home: m.home_team.goals ?? 0, away: m.away_team.goals ?? 0 },
       ])
     );
+    if (suppressGoals.current) {
+      // First update after resume: re-baseline without emitting a stale goal.
+      suppressGoals.current = false;
+      prevScores.current = cur;
+      return;
+    }
     if (prevScores.current) {
       for (const m of liveMatches) {
         const prev = prevScores.current.get(m.id);
@@ -105,6 +133,12 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
   useEffect(() => {
     if (!allMatches) return;
     const cur = new Map<number, string>(allMatches.map((m) => [m.id, m.status]));
+    if (suppressEnds.current) {
+      // First update after resume: re-baseline without firing a stale full-time.
+      suppressEnds.current = false;
+      prevStatus.current = cur;
+      return;
+    }
     if (prevStatus.current) {
       // Collect EVERY match that just finished this poll, not only the first.
       const newlyEnded: MatchEndEvent[] = [];

@@ -103,6 +103,7 @@ const TeamName: React.FC<{ name: string }> = ({ name }) => {
 function getStatusLabel(status: string, t: TFunc, time?: string): { label: string; isLive: boolean } {
   switch (status) {
     case 'in_progress':
+      if (time === 'PEN') return { label: t('status.penalties'), isLive: true };
       return { label: time || t('status.live'), isLive: true };
     case 'half_time':
       return { label: t('status.halfTime'), isLive: true };
@@ -119,10 +120,25 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
 
   const hg = match.home_team.goals;
   const ag = match.away_team.goals;
+  const hp = match.home_team.penalties;
+  const ap = match.away_team.penalties;
   const hasScore = hg !== null && ag !== null;
+  const hasPens = hp != null && ap != null;
   const finished = match.status === 'completed' && hasScore;
-  const homeWon = finished && (hg as number) > (ag as number);
-  const awayWon = finished && (ag as number) > (hg as number);
+  // On level regulation goals (e.g. 1-1) the winner is decided by the shootout,
+  // so fall back to the penalty score to pick the winning side.
+  const homeWon =
+    finished && (hasPens ? (hp as number) > (ap as number) : (hg as number) > (ag as number));
+  const awayWon =
+    finished && (hasPens ? (ap as number) > (hp as number) : (ag as number) > (hg as number));
+  // "(AET)" / "won x-y on penalties" note for knockouts decided after 90'.
+  const decidedNote = finished
+    ? match.decidedBy === 'penalties' && hasPens
+      ? t('status.wonOnPens', { h: homeWon ? hp : ap, a: homeWon ? ap : hp })
+      : match.decidedBy === 'extra_time'
+        ? t('status.aet')
+        : ''
+    : '';
 
   return (
     <div className="card" data-stage={match.stage_name}>
@@ -137,9 +153,15 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         <div className="score-box">
           {hasScore ? (
             <>
-              <span className={`score${homeWon ? ' score-winner' : ''}`}>{hg}</span>
+              <span className={`score${homeWon ? ' score-winner' : ''}`}>
+                {hg}
+                {hasPens && <span className="score-pen"> ({hp})</span>}
+              </span>
               <span className="score-divider">-</span>
-              <span className={`score${awayWon ? ' score-winner' : ''}`}>{ag}</span>
+              <span className={`score${awayWon ? ' score-winner' : ''}`}>
+                {ag}
+                {hasPens && <span className="score-pen"> ({ap})</span>}
+              </span>
             </>
           ) : (
             <span className="score" style={{ fontSize: '1rem' }}>
@@ -160,6 +182,8 @@ export const MatchCard: React.FC<Props> = ({ match }) => {
         {isLive && <span className="live-dot" />}
         {label}
       </div>
+
+      {decidedNote && <div className="match-decided">{decidedNote}</div>}
 
       <div className="match-meta">
         <div className="meta-line">{match.venue} • {match.stage_name}</div>
