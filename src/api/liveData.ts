@@ -378,13 +378,17 @@ export interface Scorer {
 }
 
 // Per-player tournament aggregate (goals + assists), used by the Stats
-// leaderboards and the Followed-players screen.
+// leaderboards and the Followed-players screen. goalGames / assistGames count
+// the number of DISTINCT matches in which the player scored / assisted, so the
+// leaderboards can break ties in favour of the player who needed fewer games.
 export interface PlayerAgg {
   id: string;
   name: string;
   code: string;
   goals: number;
   assists: number;
+  goalGames: number;
+  assistGames: number;
 }
 
 interface FifaTimelineEvent {
@@ -544,7 +548,7 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   const ensure = (rec: EventRec): PlayerAgg => {
     let p = byPlayer.get(rec.id);
     if (!p) {
-      p = { id: rec.id, name: rec.name, code: rec.code, goals: 0, assists: 0 };
+      p = { id: rec.id, name: rec.name, code: rec.code, goals: 0, assists: 0, goalGames: 0, assistGames: 0 };
       byPlayer.set(rec.id, p);
     }
     if (!p.code && rec.code) p.code = rec.code;
@@ -555,8 +559,20 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   for (const m of relevant) {
     const s = m.MatchStatus === 0 ? finishedStatsCache.get(m.IdMatch!) : liveStats.get(m.IdMatch!);
     if (!s) continue;
-    for (const g of s.goals) ensure(g).goals += 1;
-    for (const a of s.assists) ensure(a).assists += 1;
+    // Count each match once per player toward their goal/assist "games" so a
+    // multi-goal game still counts as a single appearance for the tiebreaker.
+    const scoredThisMatch = new Set<string>();
+    const assistedThisMatch = new Set<string>();
+    for (const g of s.goals) {
+      const p = ensure(g);
+      p.goals += 1;
+      if (!scoredThisMatch.has(p.id)) { scoredThisMatch.add(p.id); p.goalGames += 1; }
+    }
+    for (const a of s.assists) {
+      const p = ensure(a);
+      p.assists += 1;
+      if (!assistedThisMatch.has(p.id)) { assistedThisMatch.add(p.id); p.assistGames += 1; }
+    }
   }
 
   return [...byPlayer.values()];
@@ -590,7 +606,8 @@ export async function getTopScorers(limit = 10): Promise<Scorer[]> {
   const players = await getPlayerStats();
   return players
     .filter((p) => p.goals > 0)
-    .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+    // Equal goals → fewer games (matches scored in) ranks higher.
+    .sort((a, b) => b.goals - a.goals || a.goalGames - b.goalGames || a.name.localeCompare(b.name))
     .slice(0, limit)
     .map((p) => ({ id: p.id, name: p.name, code: p.code, goals: p.goals }));
 }
