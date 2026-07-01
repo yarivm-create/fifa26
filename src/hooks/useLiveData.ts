@@ -1,11 +1,29 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Process-wide "last good" snapshot per data key, so switching between tabs
+// reuses data already fetched by another tab (or warmed on idle) instead of
+// showing a loading spinner on every first visit. It's a plain in-memory cache
+// (cleared on reload); each mounted tab still refreshes in the background.
+const lastGood = new Map<string, unknown>();
+
+// Warm a cache key ahead of time (e.g. on idle after first paint) so the tab
+// that uses the same key renders instantly the first time it's opened.
+export async function primeLiveData<T>(key: string, fetcher: () => Promise<T>): Promise<void> {
+  try {
+    lastGood.set(key, await fetcher());
+  } catch {
+    /* best-effort warm-up; the tab will fetch on mount if this fails */
+  }
+}
+
 export function useLiveData<T>(
   fetcher: () => Promise<T>,
-  intervalMs: number = 30000
+  intervalMs: number = 30000,
+  cacheKey?: string
 ) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const seed = cacheKey && lastGood.has(cacheKey) ? (lastGood.get(cacheKey) as T) : null;
+  const [data, setData] = useState<T | null>(seed);
+  const [loading, setLoading] = useState(seed === null);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const lastRunRef = useRef(0);
@@ -15,6 +33,7 @@ export function useLiveData<T>(
     try {
       const result = await fetcher();
       setData(result);
+      if (cacheKey) lastGood.set(cacheKey, result);
       setError(null);
       setLastUpdated(new Date());
     } catch (err) {
@@ -22,7 +41,7 @@ export function useLiveData<T>(
     } finally {
       setLoading(false);
     }
-  }, [fetcher]);
+  }, [fetcher, cacheKey]);
 
   useEffect(() => {
     refresh();

@@ -14,9 +14,9 @@ export const Standings: React.FC = () => {
   const fetcher = useCallback(() => fetchGroups(), []);
   const formFetcher = useCallback(() => fetchForm(), []);
   const qualFetcher = useCallback(() => fetchQualification(), []);
-  const { data: groups, loading, error } = useLiveData<Group[]>(fetcher, 120000);
-  const { data: form } = useLiveData<Record<string, FormResult[]>>(formFetcher, 120000);
-  const { data: qual } = useLiveData<Record<string, QualChance>>(qualFetcher, 120000);
+  const { data: groups, loading, error } = useLiveData<Group[]>(fetcher, 120000, 'groups');
+  const { data: form } = useLiveData<Record<string, FormResult[]>>(formFetcher, 120000, 'form');
+  const { data: qual } = useLiveData<Record<string, QualChance>>(qualFetcher, 120000, 'qualification');
   const teamFollow = useFollowedTeams();
 
   if (loading) {

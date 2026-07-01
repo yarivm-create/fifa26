@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useDeferredValue, Suspense, lazy } from 'react';
 import { LiveMatches } from './components/LiveMatches';
 import { OnlineCounter } from './components/OnlineCounter';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -9,9 +9,10 @@ import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
 import { Trophy } from './components/Trophy';
 import { useI18n } from './i18n';
-import { useLiveData } from './hooks/useLiveData';
+import { useLiveData, primeLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
-import { fetchCurrentMatches, fetchAllMatches } from './api/worldcup';
+import { fetchCurrentMatches, fetchAllMatches, fetchGroups, fetchForm, fetchQualification } from './api/worldcup';
+import { fetchStats } from './api/stats';
 import { Match } from './api/types';
 
 // Secondary tabs are code-split so the initial load only ships the Live screen.
@@ -45,6 +46,12 @@ const TabFallback: React.FC = () => {
 const App: React.FC = () => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<Tab>('live');
+  // The nav highlight (activeTab) updates urgently for instant feedback, but the
+  // heavy code-split panel renders from a deferred copy. When the target tab's
+  // chunk isn't ready yet React keeps showing the previous panel instead of the
+  // Suspense "Loading…" fallback, so first visits don't flash a spinner.
+  const deferredTab = useDeferredValue(activeTab);
+  const selectTab = useCallback((key: Tab) => setActiveTab(key), []);
 
   // Reset scroll to the top whenever the user switches tabs so each panel
   // starts at the beginning rather than inheriting the previous scroll offset.
@@ -55,9 +62,35 @@ const App: React.FC = () => {
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
-  const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000);
-  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 15000);
+  const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000, 'currentMatches');
+  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 15000, 'matches');
   const { goalEvent, endEvents } = useMatchAlerts(liveMatches, allMatches);
+
+  // After first paint, use idle time to (a) download the code-split tab chunks
+  // and (b) warm each tab's data cache, so opening any tab for the first time
+  // shows content instantly instead of a "Loading…" spinner.
+  useEffect(() => {
+    const warm = () => {
+      import('./components/Standings');
+      import('./components/Stats');
+      import('./components/Bracket');
+      import('./components/Schedule');
+      import('./components/Favorites');
+      primeLiveData('groups', fetchGroups);
+      primeLiveData('form', fetchForm);
+      primeLiveData('qualification', fetchQualification);
+      primeLiveData('stats', fetchStats);
+    };
+    const ric = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }).requestIdleCallback;
+    if (ric) {
+      const id = ric(warm, { timeout: 3000 });
+      return () => (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    }
+    const timer = window.setTimeout(warm, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Keep a live list of full-time toasts so several games ending together each
   // get their own celebration; each toast removes itself when it finishes.
@@ -85,12 +118,12 @@ const App: React.FC = () => {
     else if (e.key === 'End') next = TABS.length - 1;
     else return;
     e.preventDefault();
-    setActiveTab(TABS[next].key);
+    selectTab(TABS[next].key);
     document.getElementById(`tab-${TABS[next].key}`)?.focus();
   };
 
   const renderTab = () => {
-    switch (activeTab) {
+    switch (deferredTab) {
       case 'live': return <LiveMatches />;
       case 'standings': return <Standings />;
       case 'stats': return <Stats />;
@@ -136,7 +169,7 @@ const App: React.FC = () => {
             aria-controls="tab-panel"
             tabIndex={activeTab === tab.key ? 0 : -1}
             className={activeTab === tab.key ? 'active' : ''}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => selectTab(tab.key)}
             onKeyDown={(e) => onTabKeyDown(e, i)}
           >
             {tab.key === 'standings' ? (

@@ -11,8 +11,8 @@ export const LiveMatches: React.FC = () => {
   const currentFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
 
-  const { data: liveMatches, loading: liveLoading } = useLiveData<Match[]>(currentFetcher, 15000);
-  const { data: allMatches, loading: allLoading, lastUpdated } = useLiveData<Match[]>(allFetcher, 15000);
+  const { data: liveMatches, loading: liveLoading } = useLiveData<Match[]>(currentFetcher, 15000, 'currentMatches');
+  const { data: allMatches, loading: allLoading, lastUpdated } = useLiveData<Match[]>(allFetcher, 15000, 'matches');
 
   if (liveLoading && allLoading) {
     return (

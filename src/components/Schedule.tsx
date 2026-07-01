@@ -38,7 +38,7 @@ interface DateGroup {
 export const Schedule: React.FC = () => {
   const { t, lang } = useI18n();
   const fetcher = useCallback(() => fetchAllMatches(), []);
-  const { data: matches, loading, error } = useLiveData<Match[]>(fetcher, 300000);
+  const { data: matches, loading, error } = useLiveData<Match[]>(fetcher, 300000, 'matches');
 
   const todayKey = useMemo(() => localDateKey(new Date().toISOString()), []);
 

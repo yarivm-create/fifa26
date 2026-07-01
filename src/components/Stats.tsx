@@ -125,7 +125,7 @@ function PlayerBoard({
 export const Stats: React.FC = () => {
   const { t } = useI18n();
   const fetcher = useCallback(() => fetchStats(), []);
-  const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000);
+  const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000, 'stats');
   const follow = useFollowedPlayers();
   const teamFollow = useFollowedTeams();
 

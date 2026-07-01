@@ -70,7 +70,7 @@ const BracketMatch: React.FC<{ match: Match }> = ({ match }) => {
 export const Bracket: React.FC = () => {
   const { t } = useI18n();
   const fetcher = useCallback(() => fetchAllMatches(), []);
-  const { data: matches, loading } = useLiveData<Match[]>(fetcher, 120000);
+  const { data: matches, loading } = useLiveData<Match[]>(fetcher, 120000, 'matches');
 
   if (loading) {
     return (

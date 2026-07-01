@@ -203,7 +203,24 @@ test('language toggle switches between English (LTR) and Hebrew (RTL)', async ({
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 });
 
-// Gap 1: knockout bracket renders with results, not just group fallback.
+// Regression: after the app has been open a moment (idle prefetch warms the
+// code-split chunks), switching tabs must NOT flash the generic "Loading…"
+// Suspense fallback. Tab switching runs inside a React transition, so the
+// previous panel stays on screen until the next tab's chunk is ready.
+test('switching tabs after warm-up shows no Suspense loading fallback', async ({ page }) => {
+  await page.goto('');
+  // Give the idle prefetch time to download the code-split tab chunks.
+  await page.waitForTimeout(6000);
+
+  const genericFallback = page.locator('#tab-panel .loading p', { hasText: /^Loading…$/ });
+  for (const key of ['standings', 'stats', 'bracket', 'schedule', 'favorites']) {
+    await page.locator(`#tab-${key}`).click({ force: true });
+    await expect(page.locator(`#tab-${key}`)).toHaveAttribute('aria-selected', 'true');
+    // The generic chunk-loading fallback must never be the visible state.
+    await expect(genericFallback).toHaveCount(0);
+    await expect(page.locator('#tab-panel')).toBeVisible();
+  }
+});
 test('bracket renders knockout matches with scores', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
