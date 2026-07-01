@@ -15,7 +15,7 @@ import { knockoutState, KnockoutState } from '../utils/knockoutState';
 import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
-  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
+  return `${formatLocalDate(datetime, { weekday: 'short', day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
 }
 
 const ORDINAL = ['1st', '2nd', '3rd', '4th'];

@@ -9,7 +9,7 @@ import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 import { useI18n } from '../i18n';
 
 function formatKickoff(datetime: string): string {
-  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
+  return `${formatLocalDate(datetime, { weekday: 'short', day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
 }
 
 interface Data {

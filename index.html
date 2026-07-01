@@ -132,7 +132,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.fifa.com" crossorigin />
     <link rel="dns-prefetch" href="https://flagcdn.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- The Inter webfont is loaded asynchronously from main.tsx so its
+         stylesheet never blocks first paint (with font-display:swap the system
+         fallback shows instantly, then swaps to Inter once it arrives). -->
   </head>
   <body>
     <div id="root"></div>

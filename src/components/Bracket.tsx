@@ -32,7 +32,7 @@ function teamLabel(code: string, name: string, t: TFunc): string {
 }
 
 function formatKickoff(datetime: string): string {
-  return `${formatLocalDate(datetime, { day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
+  return `${formatLocalDate(datetime, { weekday: 'short', day: 'numeric', month: 'numeric' })} • ${formatLocalTime(datetime)}`;
 }
 
 const BracketTeam: React.FC<{ code: string; name: string; goals: number | null; penalties?: number | null; won: boolean; hasPens: boolean }> = ({ code, name, goals, penalties, won, hasPens }) => {
