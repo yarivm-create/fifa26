@@ -12,11 +12,6 @@ function formatKickoff(datetime: string): string {
   return `${formatLocalDate(datetime, { weekday: 'short', day: 'numeric', month: 'numeric' })} ${formatLocalTime(datetime)}`;
 }
 
-interface Data {
-  players: PlayerAgg[];
-  matches: Match[];
-}
-
 function PlayerCard({
   player,
   matches,
@@ -101,24 +96,29 @@ function PlayerCard({
 export const Following: React.FC = () => {
   const { t } = useI18n();
   const { ids, toggle } = useFollowedPlayers();
-  const fetcher = useCallback(async (): Promise<Data> => {
-    const [players, matches] = await Promise.all([fetchPlayerStats(), fetchAllMatches()]);
-    return { players, matches };
-  }, []);
-  const { data, loading } = useLiveData<Data>(fetcher, 60000);
+  // Matches come from the warm 'matches' poller cache (instant); player
+  // aggregates share the 'playerAggs' key with the Favorite Teams / Stats tabs
+  // so the expensive timeline aggregation runs at most once and revisits are
+  // seeded instantly. The player list still needs the aggregation to resolve
+  // names/goals, so a spinner shows only while it is genuinely cold.
+  const matchesFetcher = useCallback(() => fetchAllMatches(), []);
+  const { data: matches } = useLiveData<Match[]>(matchesFetcher, 60000, 'matches');
+  const playersFetcher = useCallback(() => fetchPlayerStats(), []);
+  const { data: players, loading: playersLoading } = useLiveData<PlayerAgg[]>(playersFetcher, 60000, 'playerAggs');
 
   if (ids.size === 0) {
     return null;
   }
 
+  const allMatches = matches ?? [];
   const codeName: Record<string, string> = {};
   const byId = new Map<string, PlayerAgg>();
-  if (data) {
-    for (const m of data.matches) {
-      codeName[m.home_team.code] = m.home_team.name;
-      codeName[m.away_team.code] = m.away_team.name;
-    }
-    for (const p of data.players) byId.set(p.id, p);
+  for (const m of allMatches) {
+    codeName[m.home_team.code] = m.home_team.name;
+    codeName[m.away_team.code] = m.away_team.name;
+  }
+  if (players) {
+    for (const p of players) byId.set(p.id, p);
   }
   const followed = [...ids]
     .map((id) => byId.get(id))
@@ -128,7 +128,7 @@ export const Following: React.FC = () => {
   return (
     <section className="favorites-section">
       <h2 className="favorites-heading">{t('fav.players')} <span className="favorites-count">{ids.size}</span></h2>
-      {loading && !data ? (
+      {playersLoading && !players ? (
         <div className="favorites-loading"><div className="spinner" /><span>{t('loading.playerDetails')}</span></div>
       ) : followed.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
@@ -142,7 +142,7 @@ export const Following: React.FC = () => {
             <PlayerCard
               key={p.id}
               player={p}
-              matches={data!.matches}
+              matches={allMatches}
               teamName={codeName[p.code] || p.code}
               onUnfollow={() => toggle(p.id)}
             />

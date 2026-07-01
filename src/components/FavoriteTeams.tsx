@@ -34,12 +34,16 @@ interface TeamInfo {
   standing: GroupStanding;
 }
 
-interface Data {
+// Core data drives the whole team-card grid and comes entirely from cheap,
+// already-cached sources (groups/matches/qual/form). Player aggregates are
+// fetched separately so the (expensive) per-match timeline aggregation never
+// blocks the 30+ team cards from rendering — the "Top Players" sub-section just
+// fills in progressively once the aggregation resolves.
+interface CoreData {
   teams: Record<string, TeamInfo>;
   matches: Match[];
   qual: Record<string, QualChance>;
   form: Record<string, FormResult[]>;
-  players: PlayerAgg[];
 }
 
 function QualLine({ chance, ko }: { chance?: QualChance; ko?: KnockoutState | null }) {
@@ -76,24 +80,26 @@ function FormDots({ results }: { results?: FormResult[] }) {
 
 function TeamCard({
   info,
-  data,
+  core,
+  players,
   onRemove,
 }: {
   info: TeamInfo;
-  data: Data;
+  core: CoreData;
+  players: PlayerAgg[];
   onRemove: () => void;
 }) {
   const { t, lang } = useI18n();
   const playerFollow = useFollowedPlayers();
   const { code, name, group, position, standing } = info;
-  const teamMatches = data.matches.filter(
+  const teamMatches = core.matches.filter(
     (m) => m.home_team.code === code || m.away_team.code === code
   );
   const allFixtures = [...teamMatches].sort(
     (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
   );
 
-  const topPlayers = data.players
+  const topPlayers = players
     .filter((p) => p.code === code && (p.goals > 0 || p.assists > 0))
     .sort((a, b) => b.goals * 2 + b.assists - (a.goals * 2 + a.assists))
     .slice(0, 3);
@@ -116,7 +122,7 @@ function TeamCard({
       </div>
 
       <div className="team-card-qual">
-        <QualLine chance={data.qual[code]} ko={knockoutState(code, data.matches)} />
+        <QualLine chance={core.qual[code]} ko={knockoutState(code, core.matches)} />
       </div>
 
       <div className="team-stat-caption">{t('card.groupStageRecord')}</div>
@@ -126,7 +132,7 @@ function TeamCard({
         <div className="team-stat"><span className="team-stat-value">{standing.won}-{standing.drawn}-{standing.lost}</span><span className="team-stat-label">{t('card.wdl')}</span></div>
         <div className="team-stat"><span className="team-stat-value">{standing.goals_for}:{standing.goals_against}</span><span className="team-stat-label">{t('card.gfga')}</span></div>
         <div className="team-stat"><span className="team-stat-value">{standing.goal_difference > 0 ? '+' : ''}{standing.goal_difference}</span><span className="team-stat-label">{t('card.gd')}</span></div>
-        <div className="team-stat team-stat-form"><FormDots results={data.form[code]} /><span className="team-stat-label">{t('card.form')}</span></div>
+        <div className="team-stat team-stat-form"><FormDots results={core.form[code]} /><span className="team-stat-label">{t('card.form')}</span></div>
       </div>
 
       {topPlayers.length > 0 && (
@@ -164,7 +170,7 @@ function TeamCard({
             const us = m.home_team.code === code ? m.home_team : m.away_team;
             const isLive = m.status === 'in_progress' || m.status === 'half_time';
             const isCompleted = m.status === 'completed' && us.goals !== null && opp.goals !== null;
-            const isReal = !!data.teams[opp.code];
+            const isReal = !!core.teams[opp.code];
             const stage = m.stage_name ? m.stage_name.split(' - ')[0] : '';
             const header = stage && stage !== lastStage;
             lastStage = stage;
@@ -220,13 +226,12 @@ function TeamCard({
 export const FavoriteTeams: React.FC = () => {
   const { t } = useI18n();
   const { codes, toggle } = useFollowedTeams();
-  const fetcher = useCallback(async (): Promise<Data> => {
-    const [groups, matches, qual, form, players] = await Promise.all([
+  const coreFetcher = useCallback(async (): Promise<CoreData> => {
+    const [groups, matches, qual, form] = await Promise.all([
       fetchGroups(),
       fetchAllMatches(),
       fetchQualification(),
       fetchForm(),
-      fetchPlayerStats(),
     ]);
     const teams: Record<string, TeamInfo> = {};
     for (const g of groups as Group[]) {
@@ -240,15 +245,20 @@ export const FavoriteTeams: React.FC = () => {
         };
       });
     }
-    return { teams, matches, qual, form, players };
+    return { teams, matches, qual, form };
   }, []);
-  const { data, loading } = useLiveData<Data>(fetcher, 60000);
+  // Core (cheap/cached) renders the cards immediately; player aggregates load
+  // separately under the shared 'playerAggs' key so the (expensive) timeline
+  // aggregation fills the Top Players sub-section without blocking the grid.
+  const { data: core, loading } = useLiveData<CoreData>(coreFetcher, 60000, 'favTeamsCore');
+  const playersFetcher = useCallback(() => fetchPlayerStats(), []);
+  const { data: players } = useLiveData<PlayerAgg[]>(playersFetcher, 60000, 'playerAggs');
 
   if (codes.size === 0) return null;
 
-  const favTeams = data
+  const favTeams = core
     ? [...codes]
-        .map((c) => data.teams[c])
+        .map((c) => core.teams[c])
         .filter((t): t is TeamInfo => !!t)
         .sort((a, b) => a.group.localeCompare(b.group) || a.position - b.position)
     : [];
@@ -256,7 +266,7 @@ export const FavoriteTeams: React.FC = () => {
   return (
     <section className="favorites-section">
       <h2 className="favorites-heading">{t('fav.teams')} <span className="favorites-count">{codes.size}</span></h2>
-      {loading && !data ? (
+      {loading && !core ? (
         <div className="favorites-loading"><div className="spinner" /><span>{t('loading.teamDetails')}</span></div>
       ) : favTeams.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 30 }}>
@@ -264,8 +274,8 @@ export const FavoriteTeams: React.FC = () => {
         </div>
       ) : (
         <div className="follow-grid">
-          {favTeams.map((t) => (
-            <TeamCard key={t.code} info={t} data={data!} onRemove={() => toggle(t.code)} />
+          {favTeams.map((tm) => (
+            <TeamCard key={tm.code} info={tm} core={core!} players={players ?? []} onRemove={() => toggle(tm.code)} />
           ))}
         </div>
       )}

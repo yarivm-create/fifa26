@@ -277,6 +277,32 @@ test('standings highlight qualifiers + favorites label group-stage record', asyn
   await expect(page.locator('#tab-panel .team-stat-caption').first()).toContainText(/Group stage/i, { timeout: 15000 });
 });
 
+// Perf regression: with many favorite teams, the team-card grid must render
+// from cheap cached core data (groups/matches/qual/form) and NOT block behind
+// the expensive per-match player-stats aggregation. Previously the whole
+// Favorites section spun on fetchPlayerStats(); now cards appear immediately and
+// the Top Players sub-section fills in progressively.
+test('Favorite teams grid renders without blocking on player-stats aggregation', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'wc2026:followed-teams',
+      JSON.stringify(['BRA', 'ARG', 'FRA', 'ENG', 'ESP', 'GER', 'POR', 'NED', 'CRO', 'MEX'])
+    );
+  });
+  await page.goto('');
+  await page.locator('#tab-favorites').click({ force: true });
+  await expect(page.locator('#tab-favorites')).toHaveAttribute('aria-selected', 'true');
+
+  // Multiple team cards render, each with its group-stage stat grid — core data
+  // only, no dependency on the timeline aggregation.
+  const cards = page.locator('#tab-panel .team-card');
+  await expect(cards.first()).toBeVisible({ timeout: 15000 });
+  expect(await cards.count()).toBeGreaterThanOrEqual(3);
+  await expect(page.locator('#tab-panel .team-stat-caption').first()).toBeVisible();
+  // The full-section "loading team details" spinner must be gone once cards show.
+  await expect(page.locator('#tab-panel .favorites-loading')).toHaveCount(0);
+});
+
 // Regression: every Schedule match must sit under the correct stage header.
 // A single calendar day can span two stages (e.g. the final Round of 32 game
 // and the first Round of 16 game), so a Round of 16 fixture must never appear
