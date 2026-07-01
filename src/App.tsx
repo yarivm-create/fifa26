@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useDeferredValue, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useDeferredValue, Suspense, lazy } from 'react';
 import { LiveMatches } from './components/LiveMatches';
 import { OnlineCounter } from './components/OnlineCounter';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -55,9 +55,14 @@ const App: React.FC = () => {
 
   // Reset scroll to the top whenever the user switches tabs so each panel
   // starts at the beginning rather than inheriting the previous scroll offset.
-  useEffect(() => {
+  // This keys off deferredTab (the tab actually rendered in the panel), NOT
+  // activeTab: activeTab flips urgently while the old panel is still mounted, so
+  // resetting there races the deferred content swap and can leave the new tab at
+  // the previous scroll position. useLayoutEffect runs synchronously after the
+  // new content commits but before paint, so there is no visible jump.
+  useLayoutEffect(() => {
     window.scrollTo(0, 0);
-  }, [activeTab]);
+  }, [deferredTab]);
 
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
