@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
-import { fetchGroups, fetchAllMatches, fetchQualification, fetchForm, fetchPlayerStats } from '../api/worldcup';
-import { Group, GroupStanding, Match } from '../api/types';
+import { fetchPlayerStats, fetchFavTeamsCore } from '../api/worldcup';
+import { GroupStanding, Match } from '../api/types';
 import { QualChance } from '../api/qualification';
 import { FormResult } from '../api/mockData';
 import { PlayerAgg } from '../api/liveData';
@@ -226,27 +226,7 @@ function TeamCard({
 export const FavoriteTeams: React.FC = () => {
   const { t } = useI18n();
   const { codes, toggle } = useFollowedTeams();
-  const coreFetcher = useCallback(async (): Promise<CoreData> => {
-    const [groups, matches, qual, form] = await Promise.all([
-      fetchGroups(),
-      fetchAllMatches(),
-      fetchQualification(),
-      fetchForm(),
-    ]);
-    const teams: Record<string, TeamInfo> = {};
-    for (const g of groups as Group[]) {
-      g.teams.forEach((standing, position) => {
-        teams[standing.team.code] = {
-          code: standing.team.code,
-          name: standing.team.name,
-          group: g.letter,
-          position,
-          standing,
-        };
-      });
-    }
-    return { teams, matches, qual, form };
-  }, []);
+  const coreFetcher = useCallback((): Promise<CoreData> => fetchFavTeamsCore(), []);
   // Core (cheap/cached) renders the cards immediately; player aggregates load
   // separately under the shared 'playerAggs' key so the (expensive) timeline
   // aggregation fills the Top Players sub-section without blocking the grid.

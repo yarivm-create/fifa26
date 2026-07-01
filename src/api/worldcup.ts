@@ -1,4 +1,4 @@
-import { Match, Group } from './types';
+import { Match, Group, GroupStanding } from './types';
 import * as mock from './mockData';
 import * as live from './liveData';
 import { computeQualification, QualChance } from './qualification';
@@ -94,4 +94,46 @@ export async function fetchQualification(): Promise<Record<string, QualChance>> 
   } catch {
     return {};
   }
+}
+
+export interface FavTeamInfo {
+  code: string;
+  name: string;
+  group: string;
+  position: number; // 0-based
+  standing: GroupStanding;
+}
+
+export interface FavTeamsCore {
+  teams: Record<string, FavTeamInfo>;
+  matches: Match[];
+  qual: Record<string, QualChance>;
+  form: Record<string, mock.FormResult[]>;
+}
+
+// Composes everything the Favorites team grid needs to paint its cards from
+// data that's already warmed on idle (groups/matches/qualification/form), so
+// exposing it lets the app prime the 'favTeamsCore' cache key too — otherwise a
+// genuinely first-ever Favorites open flashes a "Loading team details…" spinner
+// even though all its inputs are cached. Shared with FavoriteTeams to avoid drift.
+export async function fetchFavTeamsCore(): Promise<FavTeamsCore> {
+  const [groups, matches, qual, form] = await Promise.all([
+    fetchGroups(),
+    fetchAllMatches(),
+    fetchQualification(),
+    fetchForm(),
+  ]);
+  const teams: Record<string, FavTeamInfo> = {};
+  for (const g of groups) {
+    g.teams.forEach((standing, position) => {
+      teams[standing.team.code] = {
+        code: standing.team.code,
+        name: standing.team.name,
+        group: g.letter,
+        position,
+        standing,
+      };
+    });
+  }
+  return { teams, matches, qual, form };
 }

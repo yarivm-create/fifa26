@@ -11,8 +11,8 @@ import { Trophy } from './components/Trophy';
 import { useI18n } from './i18n';
 import { useLiveData, primeLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
-import { fetchCurrentMatches, fetchAllMatches, fetchGroups, fetchForm, fetchQualification } from './api/worldcup';
-import { fetchStatsCore } from './api/stats';
+import { fetchCurrentMatches, fetchAllMatches, fetchGroups, fetchForm, fetchQualification, fetchPlayerStats, fetchFavTeamsCore } from './api/worldcup';
+import { fetchStatsCore, fetchTopPlayers } from './api/stats';
 import { Match } from './api/types';
 
 // Secondary tabs are code-split so the initial load only ships the Live screen.
@@ -90,16 +90,45 @@ const App: React.FC = () => {
       primeLiveData('form', fetchForm);
       primeLiveData('qualification', fetchQualification);
       primeLiveData('statsCore', fetchStatsCore);
+      // Favorites team grid composes the above already-warm feeds; priming its
+      // combined key too means a first-ever Favorites open paints cards with no
+      // "Loading team details…" spinner.
+      primeLiveData('favTeamsCore', fetchFavTeamsCore);
+    };
+    // The Stats scorer/assist boards and the Favorites player cards both depend
+    // on aggregating ~80 per-match timelines (~3MB) — far too heavy to run in the
+    // first warm pass, where it would fight the initial critical fetches on slow
+    // links. But it's the one thing that still blocks a *first-ever* visit (Stats
+    // leaderboards spin up to ~15s; Favorites "Loading player details…"). So warm
+    // it in a SECOND, later idle slot: on a first-ever visit this overlaps with
+    // the user browsing Live/Schedule, so Stats/Favorites are ready by the time
+    // they're opened; on return visits the timelines + aggregate are already in
+    // localStorage, making this pass nearly free. Both tabs funnel through the
+    // same memoized aggregation, so priming once fills both cache keys.
+    const warmHeavy = () => {
+      primeLiveData('playerAggs', fetchPlayerStats);
+      primeLiveData('playerStats', fetchTopPlayers);
     };
     const ric = (window as unknown as {
       requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
     }).requestIdleCallback;
     if (ric) {
       const id = ric(warm, { timeout: 3000 });
-      return () => (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+      // Defer the heavy player-stats aggregation to a later idle slot so it never
+      // competes with the initial critical fetches or the light warm pass.
+      const heavyId = ric(warmHeavy, { timeout: 8000 });
+      return () => {
+        const cancel = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+        cancel?.(id);
+        cancel?.(heavyId);
+      };
     }
     const timer = window.setTimeout(warm, 1500);
-    return () => window.clearTimeout(timer);
+    const heavyTimer = window.setTimeout(warmHeavy, 4000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(heavyTimer);
+    };
   }, []);
 
   // Keep a live list of full-time toasts so several games ending together each
