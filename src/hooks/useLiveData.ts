@@ -2,15 +2,51 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Process-wide "last good" snapshot per data key, so switching between tabs
 // reuses data already fetched by another tab (or warmed on idle) instead of
-// showing a loading spinner on every first visit. It's a plain in-memory cache
-// (cleared on reload); each mounted tab still refreshes in the background.
+// showing a loading spinner on every first visit.
+//
+// It is ALSO persisted to localStorage (stale-while-revalidate): on a page
+// reload the in-memory map is empty, so without persistence every tab would
+// re-fetch from the network and flash a "Loading…" spinner. Seeding from
+// localStorage lets a refresh render the previous session's data instantly
+// while a background refresh updates it. Genuinely first-ever visits (no stored
+// data) still fetch fresh.
 const lastGood = new Map<string, unknown>();
+const PERSIST_PREFIX = 'wc2026:swr:';
+// Don't seed from snapshots older than this — a live tournament changes, and we
+// refresh in the background anyway, so very stale data should never paint.
+const PERSIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function readCache<T>(key: string): T | null {
+  if (lastGood.has(key)) return lastGood.get(key) as T;
+  try {
+    const raw = localStorage.getItem(PERSIST_PREFIX + key);
+    if (raw) {
+      const parsed = JSON.parse(raw) as { at: number; v: T };
+      if (parsed && typeof parsed.at === 'number' && Date.now() - parsed.at < PERSIST_MAX_AGE_MS) {
+        lastGood.set(key, parsed.v);
+        return parsed.v;
+      }
+    }
+  } catch {
+    /* corrupt/unavailable storage — fall through to a network fetch */
+  }
+  return null;
+}
+
+function writeCache<T>(key: string, value: T): void {
+  lastGood.set(key, value);
+  try {
+    localStorage.setItem(PERSIST_PREFIX + key, JSON.stringify({ at: Date.now(), v: value }));
+  } catch {
+    /* quota exceeded / private mode — the in-memory cache still works */
+  }
+}
 
 // Warm a cache key ahead of time (e.g. on idle after first paint) so the tab
 // that uses the same key renders instantly the first time it's opened.
 export async function primeLiveData<T>(key: string, fetcher: () => Promise<T>): Promise<void> {
   try {
-    lastGood.set(key, await fetcher());
+    writeCache(key, await fetcher());
   } catch {
     /* best-effort warm-up; the tab will fetch on mount if this fails */
   }
@@ -21,7 +57,7 @@ export function useLiveData<T>(
   intervalMs: number = 30000,
   cacheKey?: string
 ) {
-  const seed = cacheKey && lastGood.has(cacheKey) ? (lastGood.get(cacheKey) as T) : null;
+  const seed = cacheKey ? readCache<T>(cacheKey) : null;
   const [data, setData] = useState<T | null>(seed);
   const [loading, setLoading] = useState(seed === null);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +69,7 @@ export function useLiveData<T>(
     try {
       const result = await fetcher();
       setData(result);
-      if (cacheKey) lastGood.set(cacheKey, result);
+      if (cacheKey) writeCache(cacheKey, result);
       setError(null);
       setLastUpdated(new Date());
     } catch (err) {
