@@ -135,9 +135,47 @@
     <!-- The Inter webfont is loaded asynchronously from main.tsx so its
          stylesheet never blocks first paint (with font-display:swap the system
          fallback shows instantly, then swaps to Inter once it arrives). -->
+
+    <!-- Critical inline boot styles: paint an on-brand loading screen on the
+         very first HTML paint, before the external stylesheet or the JS bundle
+         parse. This cuts cold-start FCP/LCP on an otherwise-empty SPA #root.
+         React's createRoot replaces this markup on mount, so it just vanishes. -->
+    <style>
+      html { background: #0f0f1a; }
+      #root .app-boot {
+        min-height: 100vh;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px;
+        padding: 24px; text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(160deg, #0f0f1a 0%, #111328 40%, #1a1a2e 100%);
+      }
+      #root .app-boot-trophy { font-size: 52px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(212,175,55,.4)); }
+      #root .app-boot-title {
+        font-size: 30px; font-weight: 800; letter-spacing: .5px; margin: 0;
+        background: linear-gradient(135deg, #D4AF37 0%, #f5d678 40%, #E4002B 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
+      }
+      #root .app-boot-sub { color: #8a97b0; font-size: 15px; }
+      #root .app-boot-spinner {
+        margin-top: 10px; width: 34px; height: 34px; border-radius: 50%;
+        border: 3px solid rgba(212,175,55,.2); border-top-color: #D4AF37;
+        animation: app-boot-spin .8s linear infinite;
+      }
+      @keyframes app-boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #root .app-boot-spinner { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-boot" aria-hidden="true">
+        <div class="app-boot-trophy">🏆</div>
+        <p class="app-boot-title">FIFA World Cup 2026</p>
+        <div class="app-boot-sub">United States · Mexico · Canada</div>
+        <div class="app-boot-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
