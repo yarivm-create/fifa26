@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
-import { fetchStats, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
+import { fetchStatsCore, fetchTopPlayers, TopPlayers, TournamentStats, MatchHighlight, TeamStat } from '../api/stats';
 import { Flag } from '../utils/flags';
 import { useFollowedPlayers } from '../hooks/useFollowedPlayers';
 import { useFollowedTeams } from '../hooks/useFollowedTeams';
@@ -85,14 +85,30 @@ function PlayerBoard({
   icon,
   rows,
   follow,
+  loading,
 }: {
   title: string;
   icon: string;
   rows: PlayerRow[];
   follow: FollowApi;
+  loading?: boolean;
 }) {
   const { t } = useI18n();
-  if (rows.length === 0) return null;
+  // While the (slow) per-match timeline aggregation is still running, keep the
+  // board visible with a small inline spinner instead of hiding it, so the tab
+  // doesn't reflow when the scorers arrive.
+  if (rows.length === 0) {
+    if (!loading) return null;
+    return (
+      <div className="stat-board stat-board-scorers">
+        <h3 className="stat-board-title">{title}</h3>
+        <div className="stat-board-loading">
+          <div className="spinner spinner-sm" />
+          <span>{t('loading.stats')}</span>
+        </div>
+      </div>
+    );
+  }
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <div className="stat-board stat-board-scorers">
@@ -124,8 +140,14 @@ function PlayerBoard({
 
 export const Stats: React.FC = () => {
   const { t } = useI18n();
-  const fetcher = useCallback(() => fetchStats(), []);
-  const { data: stats, loading, error } = useLiveData<TournamentStats>(fetcher, 60000, 'stats');
+  const coreFetcher = useCallback(() => fetchStatsCore(), []);
+  const playersFetcher = useCallback(() => fetchTopPlayers(), []);
+  // Core stats (totals, team boards, goals-by-stage) come from the cached
+  // calendar + groups and render immediately. The scorer/assist leaderboards
+  // are aggregated from ~80 per-match timelines, so they load separately and
+  // fill in progressively instead of blocking the whole tab behind a spinner.
+  const { data: stats, loading, error } = useLiveData<TournamentStats>(coreFetcher, 60000, 'statsCore');
+  const { data: players, loading: playersLoading } = useLiveData<TopPlayers>(playersFetcher, 60000, 'playerStats');
   const follow = useFollowedPlayers();
   const teamFollow = useFollowedTeams();
 
@@ -178,15 +200,17 @@ export const Stats: React.FC = () => {
       <PlayerBoard
         title={t('stats.goldenBoot')}
         icon="⚽"
-        rows={stats.topScorers.map((s) => ({ id: s.id, name: s.name, code: s.code, value: s.goals }))}
+        rows={(players?.topScorers ?? []).map((s) => ({ id: s.id, name: s.name, code: s.code, value: s.goals }))}
         follow={follow}
+        loading={playersLoading}
       />
 
       <PlayerBoard
         title={t('stats.playmakers')}
         icon="🅰️"
-        rows={stats.topAssists.map((a) => ({ id: a.id, name: a.name, code: a.code, value: a.assists }))}
+        rows={(players?.topAssists ?? []).map((a) => ({ id: a.id, name: a.name, code: a.code, value: a.assists }))}
         follow={follow}
+        loading={playersLoading}
       />
 
       <p className="follow-hint">{t('stats.followHint')}</p>

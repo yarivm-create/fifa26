@@ -153,11 +153,29 @@ export function computeStats(
 }
 
 export async function fetchStats(): Promise<TournamentStats> {
-  const [matches, groups, players] = await Promise.all([
-    fetchAllMatches(),
-    fetchGroups(),
-    fetchPlayerStats(),
-  ]);
+  const [core, players] = await Promise.all([fetchStatsCore(), fetchTopPlayers()]);
+  return { ...core, topScorers: players.topScorers, topAssists: players.topAssists };
+}
+
+export interface TopPlayers {
+  topScorers: Scorer[];
+  topAssists: PlayerAgg[];
+}
+
+// Fast half of the Stats tab: everything derivable from the calendar feed and
+// group standings (both already cached), so it costs ≈0 extra network and can
+// render instantly. The scorer/assist leaderboards are left empty here and
+// filled in separately by fetchTopPlayers, which is the slow part.
+export async function fetchStatsCore(): Promise<TournamentStats> {
+  const [matches, groups] = await Promise.all([fetchAllMatches(), fetchGroups()]);
+  return computeStats(matches, groups);
+}
+
+// Slow half of the Stats tab: goals + assists aggregated from per-match FIFA
+// timelines (no aggregate endpoint exists for this season). Finished-match
+// timelines persist to localStorage, so this is only expensive on first visit.
+export async function fetchTopPlayers(): Promise<TopPlayers> {
+  const players = await fetchPlayerStats();
   const topScorers: Scorer[] = players
     .filter((p) => p.goals > 0)
     .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
@@ -167,5 +185,5 @@ export async function fetchStats(): Promise<TournamentStats> {
     .filter((p) => p.assists > 0)
     .sort((a, b) => b.assists - a.assists || a.name.localeCompare(b.name))
     .slice(0, 10);
-  return computeStats(matches, groups, topScorers, topAssists);
+  return { topScorers, topAssists };
 }

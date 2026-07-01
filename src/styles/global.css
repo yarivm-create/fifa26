@@ -1459,6 +1459,27 @@ body {
   margin-bottom: 20px;
 }
 
+/* Inline spinner shown inside a scorer board while its per-match timeline
+   aggregation is still loading, so the tab doesn't reflow when data arrives. */
+.stat-board-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 4px;
+  color: var(--wc-text-muted);
+  font-weight: 500;
+}
+
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(31,52,96,.5);
+  border-top-color: var(--wc-gold);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+  margin: 0;
+}
+
 .stat-board-rank.gold {
   color: var(--wc-gold);
   font-size: 1rem;

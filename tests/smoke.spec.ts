@@ -221,6 +221,24 @@ test('switching tabs after warm-up shows no Suspense loading fallback', async ({
     await expect(page.locator('#tab-panel')).toBeVisible();
   }
 });
+// Regression: the Stats tab renders its calendar/group-derived core (totals,
+// team boards) immediately from cache — it must NOT block behind a full-screen
+// spinner while the ~80 per-match timelines that power the scorer/assist boards
+// load. Those boards fill in progressively.
+test('Stats tab renders core immediately, scorers fill in progressively', async ({ page }) => {
+  await page.goto('');
+  await page.waitForTimeout(6000); // idle warm-up primes statsCore (free)
+
+  await page.locator('#tab-stats').click({ force: true });
+  await expect(page.locator('#tab-stats')).toHaveAttribute('aria-selected', 'true');
+
+  // Core content is visible and there is no full-screen loading fallback.
+  await expect(page.locator('#tab-panel .stat-tile').first()).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('#tab-panel .loading')).toHaveCount(0);
+
+  // The scorer/assist leaderboards eventually populate from the timelines.
+  await expect(page.locator('.stat-board-scorers .stat-board-row').first()).toBeVisible({ timeout: 20000 });
+});
 test('bracket renders knockout matches with scores', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
