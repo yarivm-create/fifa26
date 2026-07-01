@@ -74,6 +74,11 @@ export function mapStatus(ev: FifaMatch): LiveStatus | null {
 }
 
 let fifaMatchesCache: { at: number; data: FifaMatch[] } | null = null;
+// Coalesces concurrent callers onto one network request. Without this the many
+// fetchers that fire on first load (App pollers, Live/Bracket/Schedule tabs, the
+// idle warm-up for groups/form/qualification/stats) each miss the still-empty
+// time cache and start their own 260KB calendar fetch — a thundering herd.
+let fifaMatchesInFlight: Promise<FifaMatch[]> | null = null;
 const FIFA_MATCHES_TTL_MS = 15000;
 
 async function fetchFifaMatches(): Promise<FifaMatch[]> {
@@ -81,20 +86,25 @@ async function fetchFifaMatches(): Promise<FifaMatch[]> {
   if (fifaMatchesCache && now - fifaMatchesCache.at < FIFA_MATCHES_TTL_MS) {
     return fifaMatchesCache.data;
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
-  try {
-    const res = await fetch(FIFA_URL, { signal: controller.signal });
-    if (!res.ok) return fifaMatchesCache?.data ?? [];
-    const json = await res.json();
-    const data = (json?.Results as FifaMatch[]) || [];
-    if (data.length) fifaMatchesCache = { at: now, data };
-    return data.length ? data : fifaMatchesCache?.data ?? [];
-  } catch {
-    return fifaMatchesCache?.data ?? [];
-  } finally {
-    clearTimeout(timeout);
-  }
+  if (fifaMatchesInFlight) return fifaMatchesInFlight;
+  fifaMatchesInFlight = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    try {
+      const res = await fetch(FIFA_URL, { signal: controller.signal });
+      if (!res.ok) return fifaMatchesCache?.data ?? [];
+      const json = await res.json();
+      const data = (json?.Results as FifaMatch[]) || [];
+      if (data.length) fifaMatchesCache = { at: Date.now(), data };
+      return data.length ? data : fifaMatchesCache?.data ?? [];
+    } catch {
+      return fifaMatchesCache?.data ?? [];
+    } finally {
+      clearTimeout(timeout);
+      fifaMatchesInFlight = null;
+    }
+  })();
+  return fifaMatchesInFlight;
 }
 
 // A knockout slot that has been filled with a real qualified team.
@@ -140,18 +150,27 @@ async function fetchLiveMap(): Promise<LiveMaps> {
 }
 
 let cache: { at: number; maps: LiveMaps } | null = null;
+let liveMapInFlight: Promise<LiveMaps> | null = null;
 const CACHE_TTL_MS = 12000;
 
 async function getLiveMap(): Promise<LiveMaps> {
   const now = Date.now();
   if (cache && now - cache.at < CACHE_TTL_MS) return cache.maps;
-  const maps = await fetchLiveMap();
-  // Only replace cache if we actually got data; otherwise keep prior cache.
-  if (Object.keys(maps.map).length > 0 || !cache) {
-    await enrichLivePeriods(maps.map);
-    cache = { at: now, maps };
-  }
-  return cache.maps;
+  if (liveMapInFlight) return liveMapInFlight;
+  liveMapInFlight = (async () => {
+    try {
+      const maps = await fetchLiveMap();
+      // Only replace cache if we actually got data; otherwise keep prior cache.
+      if (Object.keys(maps.map).length > 0 || !cache) {
+        await enrichLivePeriods(maps.map);
+        cache = { at: Date.now(), maps };
+      }
+      return cache!.maps;
+    } finally {
+      liveMapInFlight = null;
+    }
+  })();
+  return liveMapInFlight;
 }
 
 // The calendar feed omits Period/MatchTime for in-play games, so enrich each

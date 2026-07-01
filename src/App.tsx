@@ -12,7 +12,6 @@ import { useI18n } from './i18n';
 import { useLiveData, primeLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
 import { fetchCurrentMatches, fetchAllMatches, fetchGroups, fetchForm, fetchQualification } from './api/worldcup';
-import { fetchStats } from './api/stats';
 import { Match } from './api/types';
 
 // Secondary tabs are code-split so the initial load only ships the Live screen.
@@ -76,10 +75,14 @@ const App: React.FC = () => {
       import('./components/Bracket');
       import('./components/Schedule');
       import('./components/Favorites');
+      // Warm the lightweight tabs whose data is derived from the calendar feed
+      // we already fetch (≈0 extra network), so they open instantly. Stats is
+      // deliberately excluded: it pulls ~80 per-match timelines (~3MB), so we
+      // let it load on demand when the tab is opened (timelines then persist to
+      // localStorage) instead of paying that cost on every page load.
       primeLiveData('groups', fetchGroups);
       primeLiveData('form', fetchForm);
       primeLiveData('qualification', fetchQualification);
-      primeLiveData('stats', fetchStats);
     };
     const ric = (window as unknown as {
       requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
