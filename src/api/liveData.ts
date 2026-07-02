@@ -378,9 +378,10 @@ export interface Scorer {
 }
 
 // Per-player tournament aggregate (goals + assists), used by the Stats
-// leaderboards and the Followed-players screen. goalGames / assistGames count
-// the number of DISTINCT matches in which the player scored / assisted, so the
-// leaderboards can break ties in favour of the player who needed fewer games.
+// leaderboards and the Followed-players screen. teamGames counts how many
+// matches the player's team has played, and goalGames / assistGames count the
+// DISTINCT matches in which the player scored / assisted, so the leaderboards
+// can break ties in favour of the player who needed fewer games.
 export interface PlayerAgg {
   id: string;
   name: string;
@@ -389,6 +390,7 @@ export interface PlayerAgg {
   assists: number;
   goalGames: number;
   assistGames: number;
+  teamGames: number;
 }
 
 interface FifaTimelineEvent {
@@ -545,14 +547,26 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   });
 
   const byPlayer = new Map<string, PlayerAgg>();
+  // How many matches each team has played (kicked off or finished), keyed by the
+  // same country code stored on each player. Used to break scorer/assist ties in
+  // favour of the more efficient player — the one whose team played fewer games
+  // for the same tally (e.g. Messi ahead of Mbappé on equal goals when Argentina
+  // has played fewer matches than France).
+  const teamGamesByCode = new Map<string, number>();
+  for (const m of relevant) {
+    for (const code of [m.Home?.IdCountry, m.Away?.IdCountry]) {
+      if (code) teamGamesByCode.set(code, (teamGamesByCode.get(code) || 0) + 1);
+    }
+  }
   const ensure = (rec: EventRec): PlayerAgg => {
     let p = byPlayer.get(rec.id);
     if (!p) {
-      p = { id: rec.id, name: rec.name, code: rec.code, goals: 0, assists: 0, goalGames: 0, assistGames: 0 };
+      p = { id: rec.id, name: rec.name, code: rec.code, goals: 0, assists: 0, goalGames: 0, assistGames: 0, teamGames: teamGamesByCode.get(rec.code) || 0 };
       byPlayer.set(rec.id, p);
     }
     if (!p.code && rec.code) p.code = rec.code;
     if (!p.name && rec.name) p.name = rec.name;
+    if (!p.teamGames && rec.code) p.teamGames = teamGamesByCode.get(rec.code) || 0;
     return p;
   };
 
@@ -606,8 +620,8 @@ export async function getTopScorers(limit = 10): Promise<Scorer[]> {
   const players = await getPlayerStats();
   return players
     .filter((p) => p.goals > 0)
-    // Equal goals → fewer games (matches scored in) ranks higher.
-    .sort((a, b) => b.goals - a.goals || a.goalGames - b.goalGames || a.name.localeCompare(b.name))
+    // Equal goals → fewer team games (more efficient scorer) ranks higher.
+    .sort((a, b) => b.goals - a.goals || a.teamGames - b.teamGames || a.goalGames - b.goalGames || a.name.localeCompare(b.name))
     .slice(0, limit)
     .map((p) => ({ id: p.id, name: p.name, code: p.code, goals: p.goals }));
 }

@@ -172,18 +172,18 @@ export async function fetchStatsCore(): Promise<TournamentStats> {
 }
 
 // Pure ranking used by both the Stats leaderboards and its tests. Ordering:
-// primary metric desc, then FEWER games (matches the player scored/assisted in)
-// so a more efficient player outranks one who needed more appearances for the
-// same tally, then name for a stable final tiebreak.
+// primary metric desc, then FEWER team games (so the more efficient player — who
+// needed fewer matches for the same tally — outranks one whose team played more),
+// then fewer games scored/assisted in, then name for a stable final tiebreak.
 export function buildTopPlayers(players: PlayerAgg[]): TopPlayers {
   const topScorers: Scorer[] = players
     .filter((p) => p.goals > 0)
-    .sort((a, b) => b.goals - a.goals || a.goalGames - b.goalGames || a.name.localeCompare(b.name))
+    .sort((a, b) => b.goals - a.goals || a.teamGames - b.teamGames || a.goalGames - b.goalGames || a.name.localeCompare(b.name))
     .slice(0, 10)
     .map((p) => ({ id: p.id, name: p.name, code: p.code, goals: p.goals }));
   const topAssists: PlayerAgg[] = players
     .filter((p) => p.assists > 0)
-    .sort((a, b) => b.assists - a.assists || a.assistGames - b.assistGames || a.name.localeCompare(b.name))
+    .sort((a, b) => b.assists - a.assists || a.teamGames - b.teamGames || a.assistGames - b.assistGames || a.name.localeCompare(b.name))
     .slice(0, 10);
   return { topScorers, topAssists };
 }
