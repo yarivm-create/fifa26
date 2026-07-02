@@ -28,7 +28,7 @@ export interface FifaMatch {
   AwayTeamScore: number | null;
   HomeTeamPenaltyScore?: number | null; // shootout score for Home (knockouts)
   AwayTeamPenaltyScore?: number | null; // shootout score for Away (knockouts)
-  ResultType?: number | null; // 1 = decided in 90', 2 = decided in ET/penalties
+  ResultType?: number | null; // 1 = decided in regulation, 2 = penalty shootout, 3 = extra time
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
   MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
   Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET half-time, 11 = penalty shootout
@@ -217,11 +217,13 @@ export function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   const homePen = swap ? rawAwayPen : rawHomePen;
   const awayPen = swap ? rawHomePen : rawAwayPen;
 
-  // A knockout decided after 90': penalties if there's a shootout score,
-  // otherwise extra time (ResultType 2 = "not decided in regulation").
-  const decidedBy: Match['decidedBy'] = hasPenalties(ev)
+  // How a knockout was decided, per FIFA's ResultType (verified against live 2026
+  // data): 1 = regulation, 2 = penalty shootout, 3 = extra time. Penalties always
+  // follow extra time, so a shootout is labelled 'penalties'; a shootout score is
+  // the most reliable signal and can arrive before ResultType flips to 2.
+  const decidedBy: Match['decidedBy'] = hasPenalties(ev) || ev.ResultType === 2
     ? 'penalties'
-    : ev.ResultType === 2
+    : ev.ResultType === 3
       ? 'extra_time'
       : undefined;
 

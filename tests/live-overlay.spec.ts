@@ -84,16 +84,27 @@ test('a reversed key also swaps an uneven goal score correctly', () => {
   expect(getMatchResult(m).homeWon).toBe(true);
 });
 
-test('extra-time win (no shootout) is labelled extra_time, not penalties', () => {
+test('extra-time win (ResultType 3, no shootout) is labelled extra_time', () => {
+  // Real 2026 case: Belgium 3-2 Senegal, Round of 32, decided in extra time —
+  // FIFA reports ResultType 3 (not 2) and no penalty score.
   const m = applyOverlay(
-    baseKO('ESP', 'CRO'),
-    fifa({ HomeTeamScore: 2, AwayTeamScore: 1, ResultType: 2, MatchStatus: 0 }),
+    baseKO('BEL', 'SEN'),
+    fifa({ HomeTeamScore: 3, AwayTeamScore: 2, ResultType: 3, MatchStatus: 0 }),
     false,
   );
   expect(m.decidedBy).toBe('extra_time');
   expect(m.home_team.penalties).toBeNull();
   expect(m.away_team.penalties).toBeNull();
   expect(getMatchResult(m).homeWon).toBe(true);
+});
+
+test('a shootout is penalties via ResultType 2 even before the score arrives', () => {
+  const m = applyOverlay(
+    baseKO('ESP', 'CRO'),
+    fifa({ HomeTeamScore: 1, AwayTeamScore: 1, ResultType: 2, MatchStatus: 0 }),
+    false,
+  );
+  expect(m.decidedBy).toBe('penalties');
 });
 
 test('a regulation result (ResultType 1) is decided by neither ET nor penalties', () => {
