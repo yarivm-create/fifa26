@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useLiveData } from '../hooks/useLiveData';
-import { fetchCurrentMatches, fetchAllMatches } from '../api/worldcup';
+import { fetchCurrentMatches, fetchAllMatches, getBaseSchedule } from '../api/worldcup';
 import { MatchCard } from './MatchCard';
 import { Match } from '../api/types';
 import { localDateKey, formatLocalTime, LOCAL_TZ_LABEL } from '../utils/localTime';
@@ -10,9 +10,13 @@ export const LiveMatches: React.FC = () => {
   const { t } = useI18n();
   const currentFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
+  // On a first-ever visit (no cached snapshot) seed the full-schedule stream from
+  // the bundled, feeder-resolved base so the screen paints fixtures immediately
+  // instead of a blocking spinner; live scores overlay when the first fetch lands.
+  const baseSchedule = useMemo(() => getBaseSchedule(), []);
 
   const { data: liveMatches, loading: liveLoading } = useLiveData<Match[]>(currentFetcher, 15000, 'currentMatches');
-  const { data: allMatches, loading: allLoading, lastUpdated } = useLiveData<Match[]>(allFetcher, 15000, 'matches');
+  const { data: allMatches, loading: allLoading, lastUpdated } = useLiveData<Match[]>(allFetcher, 15000, 'matches', baseSchedule);
 
   if (liveLoading && allLoading) {
     return (

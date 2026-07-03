@@ -300,8 +300,12 @@ export async function fetchYesterdayMatches(): Promise<Match[]> {
   });
 }
 
-export async function fetchAllMatches(): Promise<Match[]> {
+export function getBaseMatches(): Match[] {
   return [...MATCHES].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+}
+
+export async function fetchAllMatches(): Promise<Match[]> {
+  return getBaseMatches();
 }
 
 export async function fetchGroups(): Promise<Group[]> {

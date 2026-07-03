@@ -55,9 +55,16 @@ export async function primeLiveData<T>(key: string, fetcher: () => Promise<T>): 
 export function useLiveData<T>(
   fetcher: () => Promise<T>,
   intervalMs: number = 30000,
-  cacheKey?: string
+  cacheKey?: string,
+  // A network-free, bundled fallback (e.g. the curated base schedule) shown ONLY
+  // when there's no cached snapshot yet — i.e. a genuinely first-ever visit — so
+  // the screen paints instantly instead of a spinner while the first fetch runs.
+  // It is NOT written to the SWR cache (it's build-time data, not fresh), and the
+  // first real fetch replaces it; lastUpdated stays null until then.
+  fallbackSeed?: T
 ) {
-  const seed = cacheKey ? readCache<T>(cacheKey) : null;
+  const cached = cacheKey ? readCache<T>(cacheKey) : null;
+  const seed = cached ?? fallbackSeed ?? null;
   const [data, setData] = useState<T | null>(seed);
   const [loading, setLoading] = useState(seed === null);
   const [error, setError] = useState<string | null>(null);

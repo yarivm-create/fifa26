@@ -22,6 +22,15 @@ export async function fetchAllMatches(): Promise<Match[]> {
   }
 }
 
+// Synchronous, network-free view of the curated schedule (feeder slots resolved
+// from bundled results), shaped exactly like fetchAllMatches' output. Used to
+// seed the Live screen on a genuinely first-ever visit so it paints the fixture
+// list instantly instead of a blocking spinner while the ~260KB FIFA calendar
+// loads; live scores/status overlay a moment later when that fetch resolves.
+export function getBaseSchedule(): Match[] {
+  return resolveFeederWinners(mock.getBaseMatches());
+}
+
 export async function fetchCurrentMatches(): Promise<Match[]> {
   try {
     const merged = await live.getMergedMatches();

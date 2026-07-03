@@ -65,6 +65,24 @@ export function buildEndEvent(m: Match, key: number): MatchEndEvent {
   };
 }
 
+// Poll cadence is 15s (see App.tsx). If appreciably more than a couple of polls
+// elapse between two updates of the same stream, the tab was almost certainly
+// backgrounded and its timers frozen/throttled (mobile browsers suspend or
+// heavily throttle hidden tabs). The next update is then a RESYNC that can jump
+// a goal or full-time that really happened minutes ago — so we re-baseline
+// instead of replaying it. This wall-clock check is the reliable backstop for
+// the visibilitychange/pageshow flags below, which can lose the race when a
+// fetch that was in-flight at freeze time resolves *before* the resume event
+// fires (surfacing the stale goal before suppression is armed).
+const RESYNC_GAP_MS = 45000;
+
+// A stream update is a "resume resync" (re-baseline, don't replay events) when
+// either a resume was explicitly flagged, or the wall-clock gap since the last
+// update is long enough that the tab was frozen/throttled while hidden.
+export function isBackgroundResync(gapSinceLastUpdateMs: number, resumeFlagged: boolean): boolean {
+  return resumeFlagged || gapSinceLastUpdateMs > RESYNC_GAP_MS;
+}
+
 export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] | null) {
   // Track each live match's per-team goals so we can tell WHICH side scored,
   // not just that the total changed.
@@ -74,6 +92,11 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
   const endCounter = useRef(0);
   const [goalEvent, setGoalEvent] = useState<GoalEvent | null>(null);
   const [endEvents, setEndEvents] = useState<MatchEndEvent[]>([]);
+
+  // Wall-clock of the last processed update per stream, to detect the long gap
+  // that betrays a return from a frozen/throttled background tab.
+  const lastGoalUpdateAt = useRef(0);
+  const lastEndUpdateAt = useRef(0);
 
   // When the tab returns from the background, useLiveData immediately refetches.
   // Any goal/end that happened WHILE we were hidden would otherwise surface as a
@@ -99,14 +122,18 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
 
   useEffect(() => {
     if (!liveMatches) return;
+    const now = Date.now();
+    const gap = now - lastGoalUpdateAt.current;
+    lastGoalUpdateAt.current = now;
     const cur = new Map<number, { home: number; away: number }>(
       liveMatches.map((m) => [
         m.id,
         { home: m.home_team.goals ?? 0, away: m.away_team.goals ?? 0 },
       ])
     );
-    if (suppressGoals.current) {
-      // First update after resume: re-baseline without emitting a stale goal.
+    if (isBackgroundResync(gap, suppressGoals.current)) {
+      // First update after resume (flagged, or betrayed by a long poll gap):
+      // re-baseline without emitting a goal that actually happened while hidden.
       suppressGoals.current = false;
       prevScores.current = cur;
       return;
@@ -144,9 +171,13 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
 
   useEffect(() => {
     if (!allMatches) return;
+    const now = Date.now();
+    const gap = now - lastEndUpdateAt.current;
+    lastEndUpdateAt.current = now;
     const cur = new Map<number, string>(allMatches.map((m) => [m.id, m.status]));
-    if (suppressEnds.current) {
-      // First update after resume: re-baseline without firing a stale full-time.
+    if (isBackgroundResync(gap, suppressEnds.current)) {
+      // First update after resume (flagged, or betrayed by a long poll gap):
+      // re-baseline without firing a full-time that happened while hidden.
       suppressEnds.current = false;
       prevStatus.current = cur;
       return;

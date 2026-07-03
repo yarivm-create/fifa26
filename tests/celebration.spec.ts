@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { buildEndEvent } from '../src/hooks/useMatchAlerts';
+import { buildEndEvent, isBackgroundResync } from '../src/hooks/useMatchAlerts';
 import { Match } from '../src/api/types';
 
 // Pins the full-time celebration toast, the reported bug where a knockout
@@ -41,4 +41,25 @@ test('a real group-stage draw is still announced as a draw', () => {
   const e = buildEndEvent(ended(1, 1), 4);
   expect(e.winner).toBe('draw');
   expect(e.decidedBy).toBeUndefined();
+});
+
+// Pins the fix for the reported bug: returning to the foreground replayed a
+// "GOAL!" for a goal scored minutes earlier while the tab was backgrounded. A
+// resume must RE-BASELINE (isBackgroundResync -> true) instead of diffing the
+// pre-background scores against fresh ones, whether the resume was flagged by a
+// visibility/pageshow event OR only betrayed by a long gap between polls (the
+// case the old flag-only logic lost to an in-flight fetch resolving on resume).
+test('a normal 15s poll gap is NOT treated as a resume resync', () => {
+  expect(isBackgroundResync(15000, false)).toBe(false);
+  expect(isBackgroundResync(30000, false)).toBe(false);
+});
+
+test('a long gap (frozen background) forces a resync even with no flag', () => {
+  expect(isBackgroundResync(60000, false)).toBe(true);
+  expect(isBackgroundResync(10 * 60 * 1000, false)).toBe(true);
+});
+
+test('an explicit resume flag forces a resync even on a short gap', () => {
+  // Covers the race where the resume event fires before the next poll gap grows.
+  expect(isBackgroundResync(2000, true)).toBe(true);
 });
