@@ -31,7 +31,7 @@ export interface FifaMatch {
   ResultType?: number | null; // 1 = decided in regulation, 2 = penalty shootout, 3 = extra time
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
   MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
-  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET half-time, 11 = penalty shootout
+  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET 1st half, 8 = ET half-time, 9 = ET 2nd half, 11 = penalty shootout
 }
 
 // True when FIFA has recorded a penalty-shootout score for the match.
@@ -55,15 +55,33 @@ export function mapStatus(ev: FifaMatch): LiveStatus | null {
         return { status: 'in_progress', time: 'PEN' };
       }
       // FIFA's calendar feed leaves MatchTime empty at the interval, so the
-      // authoritative half-time signal is the Period (4 = half-time, 7 = ET
-      // half-time), fetched from the live endpoint.
-      if (ev.Period === 4 || ev.Period === 7) {
+      // authoritative half-time signal is the Period. Period 4 is the
+      // regulation half-time break.
+      if (ev.Period === 4) {
         return { status: 'half_time', time: 'HT' };
       }
+      // Period 8 is the half-time break BETWEEN the two extra-time periods —
+      // it is a pause, but it happens during extra time, so it must read as
+      // extra time, not a plain half-time.
+      if (ev.Period === 8) {
+        return { status: 'half_time', time: 'ET HT' };
+      }
       const mt = (ev.MatchTime || '').trim();
+      // Extra time in play: Period 7 (first ET half) or 9 (second ET half).
+      // The match is being played past 90', so surface the running minute
+      // flagged as extra time (e.g. "ET 95'") rather than a half-time break.
+      if (ev.Period === 7 || ev.Period === 9) {
+        return { status: 'in_progress', time: mt ? `ET ${mt}` : 'ET' };
+      }
       const upper = mt.toUpperCase();
       if (upper === 'HT' || upper.includes('HALF')) {
         return { status: 'half_time', time: 'HT' };
+      }
+      // Safety net: a clean minute past 90' (no stoppage "+") only happens in
+      // extra time, so flag it as ET even when the live Period lookup lagged.
+      const etMinute = /^(\d+)'?$/.exec(mt);
+      if (etMinute && Number(etMinute[1]) > 90) {
+        return { status: 'in_progress', time: `ET ${mt}` };
       }
       // FIFA already formats the minute (e.g. "72'"); show it verbatim.
       return { status: 'in_progress', time: mt || undefined };

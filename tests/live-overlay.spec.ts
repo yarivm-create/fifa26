@@ -132,6 +132,32 @@ test('live regulation and half-time minutes are surfaced as-is', () => {
   expect(mapStatus(fifa({ MatchStatus: 3, Period: 4, MatchTime: null }))).toEqual({ status: 'half_time', time: 'HT' });
 });
 
+test('extra-time first half (Period 7) shows the running ET minute, not half-time', () => {
+  // Real 2026 case: Australia 1-1 Egypt, Round of 32 — the FIFA live endpoint
+  // returned Period 7 + MatchTime "95'" while extra time was being PLAYED.
+  // The card must read "ET 95'", never "HALF TIME".
+  const s = mapStatus(fifa({ MatchStatus: 3, Period: 7, MatchTime: "95'" }));
+  expect(s).toEqual({ status: 'in_progress', time: "ET 95'" });
+});
+
+test('extra-time second half (Period 9) also surfaces the ET minute in play', () => {
+  const s = mapStatus(fifa({ MatchStatus: 3, Period: 9, MatchTime: "112'" }));
+  expect(s).toEqual({ status: 'in_progress', time: "ET 112'" });
+});
+
+test('extra-time half-time break (Period 8) reads as extra time, not a plain half-time', () => {
+  const s = mapStatus(fifa({ MatchStatus: 3, Period: 8, MatchTime: null }));
+  expect(s).toEqual({ status: 'half_time', time: 'ET HT' });
+});
+
+test('a clean minute past 90 is flagged as extra time even when the Period lookup lags', () => {
+  // The calendar feed can report "94'" with an empty Period before the live
+  // endpoint enrichment lands; a clean minute > 90 only occurs in extra time.
+  expect(mapStatus(fifa({ MatchStatus: 3, MatchTime: "94'" }))).toEqual({ status: 'in_progress', time: "ET 94'" });
+  // Regulation stoppage time ("90'+3") must NOT be mistaken for extra time.
+  expect(mapStatus(fifa({ MatchStatus: 3, MatchTime: "90'+3" }))).toEqual({ status: 'in_progress', time: "90'+3" });
+});
+
 test('an upcoming match leaves the verified mock schedule untouched', () => {
   expect(mapStatus(fifa({ MatchStatus: 1 }))).toBeNull();
   const base = baseKO('W73', 'W75');

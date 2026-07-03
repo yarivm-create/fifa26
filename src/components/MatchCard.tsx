@@ -105,8 +105,13 @@ function getStatusLabel(status: string, t: TFunc, time?: string): { label: strin
   switch (status) {
     case 'in_progress':
       if (time === 'PEN') return { label: t('status.penalties'), isLive: true };
+      if (time && time.startsWith('ET')) {
+        const min = time.slice(2).trim();
+        return { label: min ? t('status.etLive', { min }) : t('status.extraTime'), isLive: true };
+      }
       return { label: time || t('status.live'), isLive: true };
     case 'half_time':
+      if (time === 'ET HT') return { label: t('status.etHalfTime'), isLive: true };
       return { label: t('status.halfTime'), isLive: true };
     case 'completed':
       return { label: t('status.fullTime'), isLive: false };
