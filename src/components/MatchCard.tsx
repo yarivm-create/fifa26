@@ -3,7 +3,8 @@ import { Match } from '../api/types';
 import { Flag } from '../utils/flags';
 import { formatLocalTime, formatLocalDate, LocalTimeFlag } from '../utils/localTime';
 import { getMatchResult, getResultSummary } from '../utils/matchResult';
-import { useI18n, TFunc } from '../i18n';
+import { getStatusLabel } from '../utils/statusLabel';
+import { useI18n } from '../i18n';
 
 interface Props {
   match: Match;
@@ -101,33 +102,14 @@ const TeamName: React.FC<{ name: string }> = ({ name }) => {
   );
 };
 
-function getStatusLabel(status: string, t: TFunc, time?: string): { label: string; isLive: boolean } {
-  switch (status) {
-    case 'in_progress':
-      if (time === 'PEN') return { label: t('status.penalties'), isLive: true };
-      if (time && time.startsWith('ET')) {
-        const min = time.slice(2).trim();
-        return { label: min ? t('status.etLive', { min }) : t('status.extraTime'), isLive: true };
-      }
-      return { label: time || t('status.live'), isLive: true };
-    case 'half_time':
-      if (time === 'ET HT') return { label: t('status.etHalfTime'), isLive: true };
-      return { label: t('status.halfTime'), isLive: true };
-    case 'completed':
-      return { label: t('status.fullTime'), isLive: false };
-    default:
-      return { label: t('status.upcoming'), isLive: false };
-  }
-}
-
 export const MatchCard: React.FC<Props> = ({ match }) => {
   const { t } = useI18n();
-  const { label, isLive } = getStatusLabel(match.status, t, match.time);
 
   const hg = match.home_team.goals;
   const ag = match.away_team.goals;
   const hp = match.home_team.penalties;
   const ap = match.away_team.penalties;
+  const { label, isLive } = getStatusLabel(match.status, t, match.time, { h: hp, a: ap });
   const { hasScore, hasPens, homeWon, awayWon } = getMatchResult(match);
   // Every finished match shows a consistent "who won" line — a plain regulation
   // win ("Spain won 2-1") just like an extra-time or penalty result, and a draw

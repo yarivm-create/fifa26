@@ -201,7 +201,7 @@ function TeamCard({
                   </span>
                   {isLive ? (
                     <span className="follow-fixture-time">
-                      {us.goals}-{opp.goals}{hasPens ? ` (${usPen}-${oppPen})` : ''} {m.time || t('status.live')}
+                      {us.goals}-{opp.goals}{hasPens ? ` (${usPen}-${oppPen})` : ''} {m.time === 'PRE_PEN' ? t('status.penalties') : (m.time || t('status.live'))}
                     </span>
                   ) : isCompleted ? (
                     <span className={`follow-fixture-time team-result fx-${usWon ? 'w' : usLost ? 'l' : 'd'}`}>

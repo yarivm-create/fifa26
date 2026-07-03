@@ -54,6 +54,12 @@ export function mapStatus(ev: FifaMatch): LiveStatus | null {
       if (ev.Period === 11 || hasPenalties(ev)) {
         return { status: 'in_progress', time: 'PEN' };
       }
+      // FIFA Period 16 = extra time has ENDED with the score level, so a penalty
+      // shootout is imminent. During this gap before the first kick, tell the
+      // user penalties are next instead of a bare "LIVE".
+      if (ev.Period === 16) {
+        return { status: 'half_time', time: 'PRE_PEN' };
+      }
       // FIFA's calendar feed leaves MatchTime empty at the interval, so the
       // authoritative half-time signal is the Period. Period 4 is the
       // regulation half-time break.
@@ -77,9 +83,11 @@ export function mapStatus(ev: FifaMatch): LiveStatus | null {
       if (upper === 'HT' || upper.includes('HALF')) {
         return { status: 'half_time', time: 'HT' };
       }
-      // Safety net: a clean minute past 90' (no stoppage "+") only happens in
-      // extra time, so flag it as ET even when the live Period lookup lagged.
-      const etMinute = /^(\d+)'?$/.exec(mt);
+      // Safety net: a minute whose leading number is past 90' only happens in
+      // extra time, so flag it as ET even when the live Period lookup lags or
+      // reports a transitional value (this also covers ET stoppage like
+      // "120'+2'", which carries a "+").
+      const etMinute = /^(\d+)/.exec(mt);
       if (etMinute && Number(etMinute[1]) > 90) {
         return { status: 'in_progress', time: `ET ${mt}` };
       }
