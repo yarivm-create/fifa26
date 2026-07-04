@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { buildEndEvent, isBackgroundResync } from '../src/hooks/useMatchAlerts';
+import { buildEndEvent, isBackgroundResync, shouldRebaseline } from '../src/hooks/useMatchAlerts';
 import { Match } from '../src/api/types';
 
 // Pins the full-time celebration toast, the reported bug where a knockout
@@ -62,4 +62,25 @@ test('a long gap (frozen background) forces a resync even with no flag', () => {
 test('an explicit resume flag forces a resync even on a short gap', () => {
   // Covers the race where the resume event fires before the next poll gap grows.
   expect(isBackgroundResync(2000, true)).toBe(true);
+});
+
+// Pins the SECOND report of the same class of bug: a goal that arrives while the
+// tab is HIDDEN (a mobile background tab that keeps polling at a throttled rate)
+// must be re-baselined, never emitted — otherwise the overlay it queues fires
+// stale when the user returns to the foreground. A hidden tab forces a rebaseline
+// regardless of the gap or the resume flag.
+test('a hidden tab always re-baselines, even on a fresh short-gap poll', () => {
+  expect(shouldRebaseline(true, 15000, false)).toBe(true);
+  expect(shouldRebaseline(true, 0, false)).toBe(true);
+});
+
+test('a visible tab replays events normally on a healthy poll gap', () => {
+  // Visible + normal cadence + no resume flag = diff & emit (do NOT re-baseline).
+  expect(shouldRebaseline(false, 15000, false)).toBe(false);
+  expect(shouldRebaseline(false, 30000, false)).toBe(false);
+});
+
+test('a visible tab still re-baselines on a resume flag or a long frozen gap', () => {
+  expect(shouldRebaseline(false, 2000, true)).toBe(true);
+  expect(shouldRebaseline(false, 60000, false)).toBe(true);
 });

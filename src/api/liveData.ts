@@ -91,6 +91,19 @@ export function mapStatus(ev: FifaMatch): LiveStatus | null {
       if (etMinute && Number(etMinute[1]) > 90) {
         return { status: 'in_progress', time: `ET ${mt}` };
       }
+      // End of regulation (or an ET boundary) with the score level and no
+      // running minute: a live match only stays level past the second half in a
+      // knockout headed to extra time. Regulation half-time (Period 4) and the
+      // ET breaks (8 / 16) are already handled above, and FIFA drops MatchTime
+      // at these boundaries while the live Period can lag before ET kicks off,
+      // so surface EXTRA TIME instead of a bare LIVE. Requiring the live-endpoint
+      // Period >= 5 (at/after the second half) rules out a 0-0 at kickoff, and a
+      // failed live fetch leaves Period null so this never fires on stale data.
+      const scoreLevel =
+        ev.HomeTeamScore != null && ev.HomeTeamScore === ev.AwayTeamScore;
+      if (!mt && scoreLevel && ev.Period != null && ev.Period >= 5) {
+        return { status: 'in_progress', time: 'ET' };
+      }
       // FIFA already formats the minute (e.g. "72'"); show it verbatim.
       return { status: 'in_progress', time: mt || undefined };
     }

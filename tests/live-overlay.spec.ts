@@ -180,6 +180,32 @@ test('a clean minute past 90 is flagged as extra time even when the Period looku
   expect(mapStatus(fifa({ MatchStatus: 3, MatchTime: "45'+2" }))).toEqual({ status: 'in_progress', time: "45'+2" });
 });
 
+test('a level knockout past regulation reads as EXTRA TIME before the ET clock starts', () => {
+  // Real 2026 case: Argentina 1-1 Cabo Verde sat level at full time of
+  // regulation. FIFA marks the match live (MatchStatus 3) with the live-endpoint
+  // Period at/after the second half but drops MatchTime in the gap before extra
+  // time kicks off — the card must say EXTRA TIME, not a bare "LIVE".
+  expect(mapStatus(fifa({ MatchStatus: 3, Period: 5, MatchTime: null, HomeTeamScore: 1, AwayTeamScore: 1 })))
+    .toEqual({ status: 'in_progress', time: 'ET' });
+  // A dedicated full-time-of-regulation marker (Period 6) reads the same.
+  expect(mapStatus(fifa({ MatchStatus: 3, Period: 6, MatchTime: null, HomeTeamScore: 0, AwayTeamScore: 0 })))
+    .toEqual({ status: 'in_progress', time: 'ET' });
+});
+
+test('the pre-extra-time signal never misfires at kickoff or on a lost live fetch', () => {
+  // A 0-0 at kickoff is still the first half (Period 3): it must stay a bare
+  // live state, NOT be mislabelled as heading to extra time.
+  expect(mapStatus(fifa({ MatchStatus: 3, Period: 3, MatchTime: null, HomeTeamScore: 0, AwayTeamScore: 0 })))
+    .toEqual({ status: 'in_progress', time: undefined });
+  // A failed live-endpoint enrichment leaves Period null, so a level score with
+  // no minute must not be assumed to be extra time.
+  expect(mapStatus(fifa({ MatchStatus: 3, Period: null, MatchTime: null, HomeTeamScore: 0, AwayTeamScore: 0 })))
+    .toEqual({ status: 'in_progress', time: undefined });
+  // A non-level live score with no minute (transient data) is not extra time.
+  expect(mapStatus(fifa({ MatchStatus: 3, Period: 5, MatchTime: null, HomeTeamScore: 2, AwayTeamScore: 1 })))
+    .toEqual({ status: 'in_progress', time: undefined });
+});
+
 test('an upcoming match leaves the verified mock schedule untouched', () => {
   expect(mapStatus(fifa({ MatchStatus: 1 }))).toBeNull();
   const base = baseKO('W73', 'W75');

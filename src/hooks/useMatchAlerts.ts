@@ -83,6 +83,27 @@ export function isBackgroundResync(gapSinceLastUpdateMs: number, resumeFlagged: 
   return resumeFlagged || gapSinceLastUpdateMs > RESYNC_GAP_MS;
 }
 
+// A goal/end update must only re-baseline the refs (never replay an overlay)
+// when the tab is HIDDEN, or on a resume resync. The hidden case is the crucial
+// one: a goal detected while the page is in the background would otherwise queue
+// and fire a STALE overlay the moment the user returns to the foreground (the
+// bug reported when a 59' goal flashed on resume at 66'). It also closes the gap
+// the wall-clock backstop misses when a hidden tab keeps polling at a reduced
+// rate, so its updates stay recent enough to fall under the resync window.
+export function shouldRebaseline(
+  hidden: boolean,
+  gapSinceLastUpdateMs: number,
+  resumeFlagged: boolean,
+): boolean {
+  return hidden || isBackgroundResync(gapSinceLastUpdateMs, resumeFlagged);
+}
+
+// Whether the document is currently hidden (backgrounded tab), guarded for the
+// non-DOM test environment where `document` may be undefined.
+function docHidden(): boolean {
+  return typeof document !== 'undefined' && document.hidden;
+}
+
 export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] | null) {
   // Track each live match's per-team goals so we can tell WHICH side scored,
   // not just that the total changed.
@@ -131,9 +152,11 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
         { home: m.home_team.goals ?? 0, away: m.away_team.goals ?? 0 },
       ])
     );
-    if (isBackgroundResync(gap, suppressGoals.current)) {
-      // First update after resume (flagged, or betrayed by a long poll gap):
-      // re-baseline without emitting a goal that actually happened while hidden.
+    // A goal detected while the tab is hidden can't be shown live; letting it
+    // through would queue an overlay that fires (stale) the moment the user
+    // returns. Re-baseline silently on a hidden tab or a resume resync so only
+    // goals that happen while the page is visible ever alert.
+    if (shouldRebaseline(docHidden(), gap, suppressGoals.current)) {
       suppressGoals.current = false;
       prevScores.current = cur;
       return;
@@ -175,9 +198,10 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
     const gap = now - lastEndUpdateAt.current;
     lastEndUpdateAt.current = now;
     const cur = new Map<number, string>(allMatches.map((m) => [m.id, m.status]));
-    if (isBackgroundResync(gap, suppressEnds.current)) {
-      // First update after resume (flagged, or betrayed by a long poll gap):
-      // re-baseline without firing a full-time that happened while hidden.
+    // Same as goals: a full-time that lands while the tab is hidden would
+    // otherwise surface a stale celebration on resume, so re-baseline silently
+    // on a hidden tab or a resume resync.
+    if (shouldRebaseline(docHidden(), gap, suppressEnds.current)) {
       suppressEnds.current = false;
       prevStatus.current = cur;
       return;
