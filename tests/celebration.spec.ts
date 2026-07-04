@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { buildEndEvent, isBackgroundResync, shouldRebaseline } from '../src/hooks/useMatchAlerts';
+import { buildEndEvent, isBackgroundResync, canEmitAlert, nextArmed } from '../src/hooks/useMatchAlerts';
 import { Match } from '../src/api/types';
 
 // Pins the full-time celebration toast, the reported bug where a knockout
@@ -67,20 +67,56 @@ test('an explicit resume flag forces a resync even on a short gap', () => {
 // Pins the SECOND report of the same class of bug: a goal that arrives while the
 // tab is HIDDEN (a mobile background tab that keeps polling at a throttled rate)
 // must be re-baselined, never emitted — otherwise the overlay it queues fires
-// stale when the user returns to the foreground. A hidden tab forces a rebaseline
-// regardless of the gap or the resume flag.
-test('a hidden tab always re-baselines, even on a fresh short-gap poll', () => {
-  expect(shouldRebaseline(true, 15000, false)).toBe(true);
-  expect(shouldRebaseline(true, 0, false)).toBe(true);
+// stale when the user returns to the foreground.
+test('an alert may fire only when visible, armed, baselined and on a healthy gap', () => {
+  expect(canEmitAlert({ hidden: false, gapMs: 15000, armed: true, hasBaseline: true })).toBe(true);
+  // Hidden tab: a goal detected here would fire stale on resume.
+  expect(canEmitAlert({ hidden: true, gapMs: 15000, armed: true, hasBaseline: true })).toBe(false);
+  // No baseline yet: nothing to diff against.
+  expect(canEmitAlert({ hidden: false, gapMs: 15000, armed: true, hasBaseline: false })).toBe(false);
+  // Long gap betrays a frozen background tab catching up.
+  expect(canEmitAlert({ hidden: false, gapMs: 60000, armed: true, hasBaseline: true })).toBe(false);
 });
 
-test('a visible tab replays events normally on a healthy poll gap', () => {
-  // Visible + normal cadence + no resume flag = diff & emit (do NOT re-baseline).
-  expect(shouldRebaseline(false, 15000, false)).toBe(false);
-  expect(shouldRebaseline(false, 30000, false)).toBe(false);
+test('a disarmed stream never emits, however healthy the update looks', () => {
+  // The crux of the resume fix: immediately after a resume/mount the stream is
+  // disarmed, so even a visible, baselined, normal-cadence update is absorbed.
+  expect(canEmitAlert({ hidden: false, gapMs: 15000, armed: false, hasBaseline: true })).toBe(false);
 });
 
-test('a visible tab still re-baselines on a resume flag or a long frozen gap', () => {
-  expect(shouldRebaseline(false, 2000, true)).toBe(true);
-  expect(shouldRebaseline(false, 60000, false)).toBe(true);
+// Pins the ARMING transition that defeats the stale-while-revalidate resume race.
+test('only a network-fresh snapshot seen while visible arms a stream', () => {
+  // A cached seed render (data present, no fresh network fetch) must NOT arm.
+  expect(nextArmed(false, /*fresh*/ false, /*hidden*/ false)).toBe(false);
+  // A fresh snapshot that lands while hidden must NOT arm (its goal would then
+  // fire on the next visible poll).
+  expect(nextArmed(false, /*fresh*/ true, /*hidden*/ true)).toBe(false);
+  // A fresh snapshot while visible arms the stream.
+  expect(nextArmed(false, /*fresh*/ true, /*hidden*/ false)).toBe(true);
+  // Once armed, it stays armed across ordinary cached re-renders.
+  expect(nextArmed(true, /*fresh*/ false, /*hidden*/ false)).toBe(true);
+});
+
+// The exact recurring regression, at the unit level: on resume/reload the SWR
+// cache serves the pre-background score FIRST, then the network delivers the
+// score that changed while we were away. Neither may replay a "GOAL!".
+test('the cache→network resume burst never replays an off-screen goal', () => {
+  let armed = false; // disarmed by the resume/mount signal
+  // 1) Cached seed render — same old score, NOT a network refresh.
+  expect(
+    canEmitAlert({ hidden: false, gapMs: 999999, armed, hasBaseline: false })
+  ).toBe(false);
+  armed = nextArmed(armed, /*fresh*/ false, /*hidden*/ false);
+  expect(armed).toBe(false);
+  // 2) First network-fresh snapshot carries the off-screen goal (0-0 → 0-1).
+  //    Still disarmed, so it is absorbed, not celebrated.
+  expect(
+    canEmitAlert({ hidden: false, gapMs: 1500, armed, hasBaseline: true })
+  ).toBe(false);
+  armed = nextArmed(armed, /*fresh*/ true, /*hidden*/ false);
+  expect(armed).toBe(true);
+  // 3) A later, genuinely live goal on a normal poll DOES celebrate.
+  expect(
+    canEmitAlert({ hidden: false, gapMs: 15000, armed, hasBaseline: true })
+  ).toBe(true);
 });

@@ -67,9 +67,14 @@ const App: React.FC = () => {
   // Tournament-wide live detection for goal / match-end celebrations (any tab).
   const liveFetcher = useCallback(() => fetchCurrentMatches(), []);
   const allFetcher = useCallback(() => fetchAllMatches(), []);
-  const { data: liveMatches } = useLiveData<Match[]>(liveFetcher, 15000, 'currentMatches');
-  const { data: allMatches } = useLiveData<Match[]>(allFetcher, 15000, 'matches');
-  const { goalEvent, endEvents } = useMatchAlerts(liveMatches, allMatches);
+  const { data: liveMatches, lastUpdated: liveUpdated } = useLiveData<Match[]>(liveFetcher, 15000, 'currentMatches');
+  const { data: allMatches, lastUpdated: allUpdated } = useLiveData<Match[]>(allFetcher, 15000, 'matches');
+  const { goalEvent, endEvents } = useMatchAlerts(
+    liveMatches,
+    allMatches,
+    liveUpdated?.getTime() ?? null,
+    allUpdated?.getTime() ?? null,
+  );
 
   // After first paint, use idle time to (a) download the code-split tab chunks
   // and (b) warm each tab's data cache, so opening any tab for the first time

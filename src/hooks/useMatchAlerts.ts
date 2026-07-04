@@ -65,15 +65,11 @@ export function buildEndEvent(m: Match, key: number): MatchEndEvent {
   };
 }
 
-// Poll cadence is 15s (see App.tsx). If appreciably more than a couple of polls
-// elapse between two updates of the same stream, the tab was almost certainly
-// backgrounded and its timers frozen/throttled (mobile browsers suspend or
-// heavily throttle hidden tabs). The next update is then a RESYNC that can jump
-// a goal or full-time that really happened minutes ago — so we re-baseline
-// instead of replaying it. This wall-clock check is the reliable backstop for
-// the visibilitychange/pageshow flags below, which can lose the race when a
-// fetch that was in-flight at freeze time resolves *before* the resume event
-// fires (surfacing the stale goal before suppression is armed).
+// Poll cadence is 15s (see App.tsx). A gap appreciably longer than a couple of
+// polls means the tab was backgrounded and its timers frozen/throttled (mobile
+// browsers suspend or heavily throttle hidden tabs); the next update is then a
+// RESYNC that can jump a goal or full-time that really happened minutes ago. It
+// is an extra backstop to the armed gate below.
 const RESYNC_GAP_MS = 45000;
 
 // A stream update is a "resume resync" (re-baseline, don't replay events) when
@@ -83,19 +79,43 @@ export function isBackgroundResync(gapSinceLastUpdateMs: number, resumeFlagged: 
   return resumeFlagged || gapSinceLastUpdateMs > RESYNC_GAP_MS;
 }
 
-// A goal/end update must only re-baseline the refs (never replay an overlay)
-// when the tab is HIDDEN, or on a resume resync. The hidden case is the crucial
-// one: a goal detected while the page is in the background would otherwise queue
-// and fire a STALE overlay the moment the user returns to the foreground (the
-// bug reported when a 59' goal flashed on resume at 66'). It also closes the gap
-// the wall-clock backstop misses when a hidden tab keeps polling at a reduced
-// rate, so its updates stay recent enough to fall under the resync window.
-export function shouldRebaseline(
-  hidden: boolean,
-  gapSinceLastUpdateMs: number,
-  resumeFlagged: boolean,
-): boolean {
-  return hidden || isBackgroundResync(gapSinceLastUpdateMs, resumeFlagged);
+// The single authoritative rule for whether a live stream update may EMIT an
+// event (goal / full-time) or must instead silently re-baseline. It may emit
+// ONLY when:
+//  - the tab is visible — a goal detected while hidden would fire STALE the
+//    moment the user returns to the foreground;
+//  - we already hold a baseline to diff against;
+//  - the poll cadence is normal — not a long gap betraying a frozen background
+//    tab catching up; and
+//  - the stream is ARMED — we've already absorbed the first network-fresh
+//    snapshot since the last resume/mount.
+// The armed gate is what finally kills the recurring "stale GOAL! on resume"
+// bug: both live streams are stale-while-revalidate cached, so on a resume or
+// reload the effect sees the CACHED pre-background score first and the fresh
+// network score (which changed while we were away) second. Diffing those two
+// replays the off-screen goal. Staying disarmed until a genuine network refresh
+// has re-set the baseline makes that impossible — no matter how slow the refresh
+// is, or how many cached renders precede it.
+export function canEmitAlert(opts: {
+  hidden: boolean;
+  gapMs: number;
+  armed: boolean;
+  hasBaseline: boolean;
+}): boolean {
+  return (
+    opts.armed &&
+    opts.hasBaseline &&
+    !opts.hidden &&
+    !isBackgroundResync(opts.gapMs, false)
+  );
+}
+
+// The arming transition: a stream becomes armed only after it has absorbed a
+// genuine network-fresh snapshot while visible. A cached seed render (not fresh)
+// or a fresh snapshot that lands while hidden does NOT arm it — so the first real
+// network result after any resume/mount is always re-baselined, never replayed.
+export function nextArmed(prevArmed: boolean, fresh: boolean, hidden: boolean): boolean {
+  return prevArmed || (fresh && !hidden);
 }
 
 // Whether the document is currently hidden (backgrounded tab), guarded for the
@@ -104,7 +124,18 @@ function docHidden(): boolean {
   return typeof document !== 'undefined' && document.hidden;
 }
 
-export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] | null) {
+export function useMatchAlerts(
+  liveMatches: Match[] | null,
+  allMatches: Match[] | null,
+  // The wall-clock (ms) of each stream's last SUCCESSFUL network fetch, from
+  // useLiveData's `lastUpdated`. It is what lets us tell a genuine network
+  // refresh apart from a stale-while-revalidate CACHE seed render — the exact
+  // distinction the "armed" gate needs to avoid replaying a goal scored while we
+  // were away. Optional so non-App callers/tests still type-check; when omitted a
+  // stream never arms (fails safe: no false celebrations).
+  liveUpdatedAt?: number | null,
+  allUpdatedAt?: number | null,
+) {
   // Track each live match's per-team goals so we can tell WHICH side scored,
   // not just that the total changed.
   const prevScores = useRef<Map<number, { home: number; away: number }> | null>(null);
@@ -119,25 +150,44 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
   const lastGoalUpdateAt = useRef(0);
   const lastEndUpdateAt = useRef(0);
 
-  // When the tab returns from the background, useLiveData immediately refetches.
-  // Any goal/end that happened WHILE we were hidden would otherwise surface as a
-  // brand-new live event (a false "GOAL!" overlay on resume). So we suppress the
-  // first post-resume diff per stream and only re-baseline the refs — real
-  // events that happen after we're visible again still alert normally.
-  const suppressGoals = useRef(false);
-  const suppressEnds = useRef(false);
+  // Per-stream "armed" gate. A stream is armed only once it has absorbed the
+  // first network-fresh snapshot since the last resume/mount; until then every
+  // update just re-baselines. This is what kills the "stale GOAL! on resume" bug:
+  // both live streams are stale-while-revalidate cached, so on a resume/reload
+  // the effect sees the CACHED pre-background score first and only then the fresh
+  // network score that changed while we were away — and diffing those two replays
+  // the off-screen goal. We disarm on every resume signal and only re-arm after a
+  // real network refresh has re-set the baseline.
+  const armedGoals = useRef(false);
+  const armedEnds = useRef(false);
+  // The last fetch timestamp already folded into each stream's baseline, so a
+  // repeated render of the same cached data isn't mistaken for a fresh fetch.
+  const lastGoalFetchAt = useRef<number | null>(null);
+  const lastEndFetchAt = useRef<number | null>(null);
+
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        suppressGoals.current = true;
-        suppressEnds.current = true;
-      }
+    // Any return-to-foreground / restore disarms both streams so the cache→network
+    // catch-up that follows is re-baselined, never replayed. Mirrors useLiveData's
+    // own refetch triggers (visibility, focus, online, pageshow) so no refetch can
+    // deliver a jumped score without first disarming.
+    const disarmOnResume = () => {
+      if (document.visibilityState === 'hidden') return;
+      armedGoals.current = false;
+      armedEnds.current = false;
     };
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('pageshow', onVisible);
+    const disarmOnPageShow = () => {
+      armedGoals.current = false;
+      armedEnds.current = false;
+    };
+    document.addEventListener('visibilitychange', disarmOnResume);
+    window.addEventListener('focus', disarmOnResume);
+    window.addEventListener('online', disarmOnResume);
+    window.addEventListener('pageshow', disarmOnPageShow);
     return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('pageshow', onVisible);
+      document.removeEventListener('visibilitychange', disarmOnResume);
+      window.removeEventListener('focus', disarmOnResume);
+      window.removeEventListener('online', disarmOnResume);
+      window.removeEventListener('pageshow', disarmOnPageShow);
     };
   }, []);
 
@@ -146,18 +196,24 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
     const now = Date.now();
     const gap = now - lastGoalUpdateAt.current;
     lastGoalUpdateAt.current = now;
+    // A genuine network refresh advances useLiveData's lastUpdated; a cached seed
+    // render carries the old (or null) timestamp.
+    const fresh = liveUpdatedAt != null && liveUpdatedAt !== lastGoalFetchAt.current;
+    if (liveUpdatedAt != null) lastGoalFetchAt.current = liveUpdatedAt;
+    const hidden = docHidden();
     const cur = new Map<number, { home: number; away: number }>(
       liveMatches.map((m) => [
         m.id,
         { home: m.home_team.goals ?? 0, away: m.away_team.goals ?? 0 },
       ])
     );
-    // A goal detected while the tab is hidden can't be shown live; letting it
-    // through would queue an overlay that fires (stale) the moment the user
-    // returns. Re-baseline silently on a hidden tab or a resume resync so only
-    // goals that happen while the page is visible ever alert.
-    if (shouldRebaseline(docHidden(), gap, suppressGoals.current)) {
-      suppressGoals.current = false;
+    // Silently re-baseline unless we're truly clear to alert (visible, armed,
+    // normal cadence, baseline in hand). Arm only after a network-fresh snapshot
+    // that lands while visible, so the NEXT real change alerts — the first fresh
+    // result after any resume/mount (which may carry an off-screen goal) is thus
+    // always absorbed, never replayed.
+    if (!canEmitAlert({ hidden, gapMs: gap, armed: armedGoals.current, hasBaseline: prevScores.current !== null })) {
+      armedGoals.current = nextArmed(armedGoals.current, fresh, hidden);
       prevScores.current = cur;
       return;
     }
@@ -190,19 +246,21 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
       }
     }
     prevScores.current = cur;
-  }, [liveMatches]);
+  }, [liveMatches, liveUpdatedAt]);
 
   useEffect(() => {
     if (!allMatches) return;
     const now = Date.now();
     const gap = now - lastEndUpdateAt.current;
     lastEndUpdateAt.current = now;
+    const fresh = allUpdatedAt != null && allUpdatedAt !== lastEndFetchAt.current;
+    if (allUpdatedAt != null) lastEndFetchAt.current = allUpdatedAt;
+    const hidden = docHidden();
     const cur = new Map<number, string>(allMatches.map((m) => [m.id, m.status]));
-    // Same as goals: a full-time that lands while the tab is hidden would
-    // otherwise surface a stale celebration on resume, so re-baseline silently
-    // on a hidden tab or a resume resync.
-    if (shouldRebaseline(docHidden(), gap, suppressEnds.current)) {
-      suppressEnds.current = false;
+    // Same gate as goals: a full-time that lands while hidden or during the
+    // cache→network resume catch-up would otherwise surface a stale celebration.
+    if (!canEmitAlert({ hidden, gapMs: gap, armed: armedEnds.current, hasBaseline: prevStatus.current !== null })) {
+      armedEnds.current = nextArmed(armedEnds.current, fresh, hidden);
       prevStatus.current = cur;
       return;
     }
@@ -218,7 +276,7 @@ export function useMatchAlerts(liveMatches: Match[] | null, allMatches: Match[] 
       if (newlyEnded.length > 0) setEndEvents(newlyEnded);
     }
     prevStatus.current = cur;
-  }, [allMatches]);
+  }, [allMatches, allUpdatedAt]);
 
   return { goalEvent, endEvents };
 }
