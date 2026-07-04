@@ -6,3 +6,5 @@ rayfin/.env
 playwright-report/
 test-results/
 /.playwright/
+
+_*
