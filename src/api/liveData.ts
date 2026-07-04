@@ -31,7 +31,7 @@ export interface FifaMatch {
   ResultType?: number | null; // 1 = decided in regulation, 2 = penalty shootout, 3 = extra time
   MatchStatus: number; // 0 = finished, 1 = upcoming, 3 = live
   MatchTime: string | null; // e.g. "72'", "45'+2", "HT"
-  Period?: number | null; // FIFA period: 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET 1st half, 8 = ET half-time, 9 = ET 2nd half, 11 = penalty shootout
+  Period?: number | null; // FIFA period (reverse-engineered from live 2026 data): 3 = 1st half, 4 = half-time, 5 = 2nd half, 7 = ET 1st half, 8 = ET half-time, 9 = ET 2nd half, 10 = ended after ET, 11 = penalty shootout, 16 = ET ended (penalties next). The end-of-regulation gap before ET is still unconfirmed — see recordLivePhaseDiagnostic.
 }
 
 // True when FIFA has recorded a penalty-shootout score for the match.
@@ -242,9 +242,79 @@ async function enrichLivePeriods(map: Record<string, FifaMatch>): Promise<void> 
   );
 }
 
+// ---------------------------------------------------------------------------
+// Live-phase diagnostics
+//
+// FIFA's `Period` enum is undocumented; we reverse-engineered it from live
+// matches (see FifaMatch.Period). One value is still unconfirmed: the brief gap
+// after regulation ends in a level knockout, before the extra-time clock starts.
+// To finally capture it — and to surface any other Period we have not yet named —
+// record NOTABLE live states (an unknown Period, or a live match that fell
+// through to a bare LIVE / heuristic EXTRA TIME with no authoritative minute) to
+// the console and a small localStorage ring buffer. Inspect the buffer later by
+// running `wcPhaseLog()` in the browser devtools console.
+// ---------------------------------------------------------------------------
+const KNOWN_LIVE_PERIODS = new Set([3, 4, 5, 7, 8, 9, 10, 11, 16]);
+const PHASE_LOG_KEY = 'wc2026:phaselog';
+const PHASE_LOG_MAX = 40;
+const lastPhaseSig = new Map<string, string>();
+
+export function recordLivePhaseDiagnostic(ev: FifaMatch, mapped: LiveStatus): void {
+  const period = ev.Period ?? null;
+  const minute = (ev.MatchTime || '').trim();
+  const unknownPeriod = period != null && !KNOWN_LIVE_PERIODS.has(period);
+  // A live match with no authoritative minute is a break/transition — this is
+  // exactly the ET gap we still cannot name from Period alone, plus any future
+  // boundary FIFA emits without a clock.
+  const bareLive = mapped.status === 'in_progress' && !minute;
+  if (!unknownPeriod && !bareLive) return;
+
+  // De-dupe per match on (period, minute, status, label): a multi-minute gap
+  // then logs once per distinct reading instead of on every poll (~every 12s).
+  const id = ev.IdMatch ?? '';
+  const sig = `${period}|${minute}|${ev.MatchStatus}|${mapped.time ?? ''}`;
+  if (lastPhaseSig.get(id) === sig) return;
+  lastPhaseSig.set(id, sig);
+
+  const entry = {
+    at: new Date().toISOString(),
+    match: id,
+    period,
+    matchTime: ev.MatchTime ?? null,
+    matchStatus: ev.MatchStatus,
+    resultType: ev.ResultType ?? null,
+    score: `${ev.HomeTeamScore ?? '?'}-${ev.AwayTeamScore ?? '?'}`,
+    mapped: mapped.time ?? mapped.status,
+    reason: unknownPeriod ? 'unknown-period' : 'no-minute',
+  };
+  console.warn('[fifa-phase] notable live state — capture this Period:', entry);
+  try {
+    const raw = localStorage.getItem(PHASE_LOG_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown[]) : [];
+    arr.push(entry);
+    while (arr.length > PHASE_LOG_MAX) arr.shift();
+    localStorage.setItem(PHASE_LOG_KEY, JSON.stringify(arr));
+  } catch {
+    /* storage unavailable / quota / private mode — the console.warn still fired */
+  }
+}
+
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).wcPhaseLog = () => {
+    try {
+      return JSON.parse(localStorage.getItem(PHASE_LOG_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  };
+}
+
 export function applyOverlay(base: Match, ev: FifaMatch, swap: boolean): Match {
   const mapped = mapStatus(ev);
   if (!mapped) return base;
+
+  // Live matches only: capture any Period/label we can't yet name (see above).
+  if (ev.MatchStatus === 3) recordLivePhaseDiagnostic(ev, mapped);
 
   const rawHome = ev.HomeTeamScore;
   const rawAway = ev.AwayTeamScore;

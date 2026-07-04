@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { applyOverlay, mapStatus, FifaMatch } from '../src/api/liveData';
+import { applyOverlay, mapStatus, recordLivePhaseDiagnostic, FifaMatch } from '../src/api/liveData';
 import { getMatchResult } from '../src/utils/matchResult';
 import { Match } from '../src/api/types';
 
@@ -212,4 +212,45 @@ test('an upcoming match leaves the verified mock schedule untouched', () => {
   const m = applyOverlay(base, fifa({ MatchStatus: 1 }), false);
   // Unmapped status -> the base match is returned unchanged (still placeholders).
   expect(m).toBe(base);
+});
+
+test('the phase diagnostic fires only for notable live states, and de-dupes', () => {
+  // The diagnostic exists to capture the still-unconfirmed end-of-regulation ET
+  // gap Period (and any future unnamed Period) without spamming the console on
+  // every ordinary poll. Pin exactly when it fires.
+  const warned: unknown[][] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => { warned.push(args); };
+  try {
+    // An ordinary live minute is NOT notable — no diagnostic noise per poll.
+    recordLivePhaseDiagnostic(
+      fifa({ IdMatch: 'diag-normal', MatchStatus: 3, Period: 5, MatchTime: "67'" }),
+      { status: 'in_progress', time: "67'" },
+    );
+    expect(warned.length).toBe(0);
+
+    // The end-of-regulation ET gap (live, no authoritative minute) IS notable —
+    // this is exactly the Period we want captured next time it happens live.
+    recordLivePhaseDiagnostic(
+      fifa({ IdMatch: 'diag-gap', MatchStatus: 3, Period: 6, MatchTime: null, HomeTeamScore: 1, AwayTeamScore: 1 }),
+      { status: 'in_progress', time: 'ET' },
+    );
+    expect(warned.length).toBe(1);
+
+    // The identical reading again is de-duped (no spam while the gap persists).
+    recordLivePhaseDiagnostic(
+      fifa({ IdMatch: 'diag-gap', MatchStatus: 3, Period: 6, MatchTime: null, HomeTeamScore: 1, AwayTeamScore: 1 }),
+      { status: 'in_progress', time: 'ET' },
+    );
+    expect(warned.length).toBe(1);
+
+    // A Period we have never catalogued is always captured, even with a minute.
+    recordLivePhaseDiagnostic(
+      fifa({ IdMatch: 'diag-unknown', MatchStatus: 3, Period: 99, MatchTime: "30'" }),
+      { status: 'in_progress', time: "30'" },
+    );
+    expect(warned.length).toBe(2);
+  } finally {
+    console.warn = original;
+  }
 });
