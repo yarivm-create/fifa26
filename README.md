@@ -73,15 +73,23 @@ ESLint (flat config: TypeScript + React Hooks rules) also runs in CI on every pu
 ## Data Source
 
 All 104 matches of the FIFA World Cup 2026™ with real scores and schedules.
-Live data is pulled from the FIFA API and automatically falls back to a bundled 104-match dataset when the API is unavailable.
-Times are stored in UTC and every time shown on the site is displayed in each visitor's local timezone (auto-detected from the browser).
+Live data is pulled from the public FIFA API, with the bundled 104-match dataset as an automatic fallback when the API is unavailable. Three FIFA endpoints are used:
+
+- **`calendar/matches`** — every match's score, status and schedule (the primary source for all tabs).
+- **`live/football/<match>`** — per-match live detail, used to enrich an in-progress match with its real period and clock (so the status reads half-time / extra-time / penalties correctly), and as a scorer fallback when a just-finished match's timeline hasn't published its goals yet.
+- **`timelines/<match>`** — per-match goal & assist events that build the scorer/assist leaderboards and per-player tallies.
+
+Finished-match scorer stats are cached in the browser (localStorage) so repeat visits load instantly; the cache is version-stamped, so a match that was cached before its goals were published is automatically re-fetched. Times are stored in UTC and every time shown on the site is displayed in each visitor's local timezone (auto-detected from the browser).
 
 | Section | Data | Refresh Rate |
 |---------|------|-------------|
-| Live Now | Matches in progress | 15s |
+| Live Now | Matches in progress (score + live period/clock) | 15s |
 | Today/Tomorrow/Day After | Scheduled + completed | 15s |
-| Full Schedule | All 104 matches | 5min |
+| Stats | Scorers, assists, team & defense boards | 1min |
+| Favorites | Followed teams & players | 1min |
 | Standings | Group tables | 2min |
+| Bracket | Knockout rounds | 2min |
+| Full Schedule | All 104 matches | 5min |
 
 ## Project Structure
 

@@ -143,9 +143,9 @@ export const Stats: React.FC = () => {
   const coreFetcher = useCallback(() => fetchStatsCore(), []);
   const playersFetcher = useCallback(() => fetchTopPlayers(), []);
   // Core stats (totals, team boards, goals-by-stage) come from the cached
-  // calendar + groups and render immediately. The scorer/assist leaderboards
-  // are aggregated from ~80 per-match timelines, so they load separately and
-  // fill in progressively instead of blocking the whole tab behind a spinner.
+  // calendar (all matches) and render immediately. The scorer/assist
+  // leaderboards are aggregated from ~80 per-match timelines, so they load
+  // separately and fill in progressively instead of blocking the tab.
   const { data: stats, loading, error } = useLiveData<TournamentStats>(coreFetcher, 60000, 'statsCore');
   const { data: players, loading: playersLoading } = useLiveData<TopPlayers>(playersFetcher, 60000, 'playerStats');
   const follow = useFollowedPlayers();
