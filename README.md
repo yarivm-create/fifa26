@@ -21,7 +21,7 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 🏆 **Group Standings** — Real-time group tables with all stats. During the group stage each team shows a live "✓ qualified / % chance / ✕ out" prediction; once a group is mathematically decided the predictions drop and qualifiers (top 2 + best thirds) are simply highlighted
 - 🌳 **Knockout Bracket** — Round-by-round columns where each round's cards are listed in kick-off order (the earliest Round-of-32 tie shows first). Match ids are aligned to the official FIFA MatchNumbers so every `W##` winner placeholder resolves to the right team, date and venue per the real draw
 - ⭐ **Favorites** — Follow players and teams (star toggle on standings, stats leaderboards, and each team card's Top Players list); favorite team cards show live knockout state (Round of 16 → Final / Eliminated / 🏆) — a penalty loss correctly reads as eliminated — and every fixture listed in play order grouped under one stage header (Group / Round of 32 / Round of 16…) with ✓ win / ✕ loss results and the shootout score for tied knockouts; followed players appear first with their next fixture labelled by stage
-- 📈 **Player Stats** — Top scorers, assists, and goals broken down by every round (group through final, with upcoming counts)
+- 📈 **Player & Team Stats** — Top scorers and assists, plus top-scoring-teams and best-defenses leaderboards aggregated across **all** stages (group through knockouts, not just the group stage), and goals broken down by every round (with upcoming counts)
 - 📅 **Full Schedule** — All 104 matches from FIFA.com across 16 venues, split into accurate stage sections (each match sits under its true stage header even when a single day spans two stages)
 - ⏰ **Everything in Your Local Timezone** — Every time on the site (header clock, match kickoffs, dates, schedule, live ticks) auto-converts to the visitor's own browser timezone, with their country flag shown next to the clock — no manual setting needed
 - 📱 **Mobile-Friendly Responsive Design** — Single column, large touch targets, big scores
@@ -93,13 +93,13 @@ worldcup2026-app/
 │   │   ├── mockData.ts         # 104-match fallback dataset (UTC)
 │   │   ├── worldcup.ts         # fetchGroups/Matches/Qualification/Form/Stats
 │   │   ├── qualification.ts    # Top-2 + best-third advance %/decided logic
-│   │   ├── stats.ts            # Top scorers / assists
+│   │   ├── stats.ts            # Scorers/assists + all-stages team leaderboards
 │   │   └── types.ts            # Shared types
 │   ├── components/             # React UI components
 │   │   ├── LiveMatches.tsx     # Live & Today tab (Next Up + day sections)
 │   │   ├── Schedule.tsx        # Full 104-match schedule
 │   │   ├── Standings.tsx       # Group standings (+ GroupTable.tsx)
-│   │   ├── Stats.tsx           # Top scorers / assists
+│   │   ├── Stats.tsx           # Scorers, assists, team/defense boards, goals by stage
 │   │   ├── Bracket.tsx         # Knockout bracket (rounds in kick-off order)
 │   │   ├── Favorites.tsx       # Favorites tab (Following + FavoriteTeams)
 │   │   ├── Following.tsx       # Followed players
