@@ -522,6 +522,20 @@ interface MatchStats {
   assists: EventRec[];
 }
 
+// Parsed per-match scorers/assists plus `goalCount`: how many actual goal
+// events the source carries (own goals included). The caller compares this
+// against the final score to tell a COMPLETE source from one that is still
+// missing goals — e.g. a freshly finished match whose timeline has published
+// everything (kickoff, cards, subs) EXCEPT the goal events (see fetchMatchStats).
+type ParsedStats = MatchStats & { goalCount: number };
+
+// A per-match stats result plus where it came from. `provisional` is true when
+// the goals came from a source that may still be incomplete (the live/match
+// detail fallback, or a timeline shorter than the final score); such results
+// are used for the current aggregation but NOT cached, so they refresh on the
+// next pass until the authoritative timeline publishes every goal.
+type StatsResult = MatchStats & { provisional: boolean };
+
 const FIFA_GOAL_EVENT_TYPE = 0;
 const FIFA_ASSIST_EVENT_TYPE = 1;
 const finishedStatsCache = new Map<string, MatchStats>();
@@ -581,11 +595,13 @@ function teamCodeFor(ev: FifaTimelineEvent, m: FifaMatch): string {
     : m.Away?.IdCountry || '';
 }
 
-// Returns null when the timeline fetch fails or times out, so the caller can
-// avoid permanently caching an empty result (which would silently drop a
-// player's goals/assists for that match). A genuine 0-event match still
-// returns an (empty) object, which is safe to cache.
-async function fetchMatchStats(m: FifaMatch): Promise<MatchStats | null> {
+// Reads scorers/assists from the authoritative per-match timeline. Returns null
+// when the fetch fails, times out, or the timeline is still empty, so the caller
+// can retry (and fall back to the live endpoint) rather than caching a goal-less
+// result. `goalCount` reports how many goal events the timeline actually carries
+// (own goals included), which the caller compares against the final score to
+// detect a timeline that has published everything EXCEPT the goals.
+async function fetchTimelineStats(m: FifaMatch): Promise<ParsedStats | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 9000);
   try {
@@ -599,22 +615,150 @@ async function fetchMatchStats(m: FifaMatch): Promise<MatchStats | null> {
     if (events.length === 0) return null;
     const goals: EventRec[] = [];
     const assists: EventRec[] = [];
+    let goalCount = 0;
     for (const e of events) {
-      if (!e.IdPlayer) continue;
       const desc = e.EventDescription?.[0]?.Description || '';
       if (e.Type === FIFA_GOAL_EVENT_TYPE) {
+        goalCount += 1; // counts own goals too — they change the scoreline
+        if (!e.IdPlayer) continue;
         if (/own goal/i.test(desc)) continue; // own goals aren't credited to a scorer
         goals.push({ id: e.IdPlayer, name: parseScorerName(desc), code: teamCodeFor(e, m) });
       } else if (e.Type === FIFA_ASSIST_EVENT_TYPE) {
+        if (!e.IdPlayer) continue;
         assists.push({ id: e.IdPlayer, name: parseAssistName(desc), code: teamCodeFor(e, m) });
       }
     }
-    return { goals, assists };
+    return { goals, assists, goalCount };
   } catch {
     return null;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+// Minimal shape of FIFA's live/match-detail payload we rely on for the scorer
+// fallback. Each team carries its match goals and its squad (used to resolve
+// player names and to tell a real scorer from an own-goal by roster membership).
+export interface FifaLiveGoal {
+  IdPlayer?: string | null;
+  IdAssistPlayer?: string | null;
+  Period?: number | null;
+}
+export interface FifaLivePlayer {
+  IdPlayer?: string | null;
+  PlayerName?: { Description: string }[];
+  ShortName?: { Description: string }[];
+}
+export interface FifaLiveTeam {
+  Goals?: FifaLiveGoal[] | null;
+  Players?: FifaLivePlayer[] | null;
+}
+
+function liveDetailUrl(m: FifaMatch): string {
+  return `https://api.fifa.com/api/v3/live/football/${m.IdCompetition}/${m.IdSeason}/${m.IdStage}/${m.IdMatch}?language=en`;
+}
+
+function rosterName(p: FifaLivePlayer): string {
+  return (p.PlayerName?.[0]?.Description || p.ShortName?.[0]?.Description || '').trim();
+}
+
+// Pure extraction of scorers/assists from a live/match-detail payload, split out
+// from the fetch so it can be unit-tested without the network. Own goals (the
+// scorer is in the OPPONENT roster) are skipped and penalty-shootout kicks
+// (Period 11) are ignored, mirroring the timeline path; player names are
+// resolved from the two squad rosters.
+export function parseLiveGoals(
+  home: FifaLiveTeam | null,
+  away: FifaLiveTeam | null,
+  homeCode: string,
+  awayCode: string
+): ParsedStats {
+  const nameById = new Map<string, string>();
+  const rosterIds = (t: FifaLiveTeam | null): Set<string> => {
+    const ids = new Set<string>();
+    for (const p of t?.Players || []) {
+      if (!p.IdPlayer) continue;
+      ids.add(p.IdPlayer);
+      const nm = rosterName(p);
+      if (nm) nameById.set(p.IdPlayer, nm);
+    }
+    return ids;
+  };
+  const homeIds = rosterIds(home);
+  const awayIds = rosterIds(away);
+
+  const goals: EventRec[] = [];
+  const assists: EventRec[] = [];
+  let goalCount = 0;
+  const collect = (team: FifaLiveTeam | null, code: string, ownIds: Set<string>, oppIds: Set<string>) => {
+    for (const g of team?.Goals || []) {
+      if (!g.IdPlayer) continue;
+      if (g.Period === 11) continue; // penalty-shootout kick, not a match goal
+      goalCount += 1; // counts own goals too — they change the scoreline
+      // Own goal: credited to this team but scored by an opponent — skip the
+      // scorer credit, just like the timeline path does.
+      if (oppIds.has(g.IdPlayer) && !ownIds.has(g.IdPlayer)) continue;
+      goals.push({ id: g.IdPlayer, name: nameById.get(g.IdPlayer) || '', code });
+      if (g.IdAssistPlayer && ownIds.has(g.IdAssistPlayer)) {
+        assists.push({ id: g.IdAssistPlayer, name: nameById.get(g.IdAssistPlayer) || '', code });
+      }
+    }
+  };
+  collect(home, homeCode, homeIds, awayIds);
+  collect(away, awayCode, awayIds, homeIds);
+  return { goals, assists, goalCount };
+}
+
+// Scorer source used when the per-match timeline is missing goals. FIFA
+// publishes the final score to the calendar and the goals to this
+// live/match-detail endpoint immediately, but the detailed timeline can lag by
+// hours for a freshly finished match (the timeline is present but carries no
+// goal events yet) — so a player's just-scored goal (e.g. a knockout winner)
+// would otherwise be dropped from Stats until the timeline catches up.
+async function fetchLiveStats(m: FifaMatch): Promise<ParsedStats | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+  try {
+    const res = await fetch(liveDetailUrl(m), { signal: controller.signal });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const home = (json?.HomeTeam as FifaLiveTeam) || null;
+    const away = (json?.AwayTeam as FifaLiveTeam) || null;
+    if (!home && !away) return null;
+    return parseLiveGoals(home, away, m.Home?.IdCountry || '', m.Away?.IdCountry || '');
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Per-match scorers/assists. The authoritative source is the timeline, but a
+// freshly finished match often has a timeline that lists everything EXCEPT its
+// goal events, which would silently drop a just-scored goal. So we compare the
+// timeline's goal count against the match's final score and, when the timeline
+// is short (or missing), fall back to the live/match-detail endpoint, which
+// carries the goals immediately. Anything not backed by a complete timeline is
+// flagged `provisional` so the caller refreshes it (instead of caching it) until
+// the timeline publishes every goal.
+async function fetchMatchStats(m: FifaMatch): Promise<StatsResult | null> {
+  const expectedGoals = (m.HomeTeamScore ?? 0) + (m.AwayTeamScore ?? 0);
+  const timeline = await fetchTimelineStats(m);
+  if (timeline && timeline.goalCount >= expectedGoals) {
+    return { goals: timeline.goals, assists: timeline.assists, provisional: false };
+  }
+  // Timeline is missing or has fewer goals than the final score — fill the
+  // scorers from the live endpoint if it is at least as complete.
+  const live = await fetchLiveStats(m);
+  if (live && live.goalCount >= (timeline?.goalCount ?? 0)) {
+    return { goals: live.goals, assists: live.assists, provisional: true };
+  }
+  // Live didn't help; use the (still incomplete) timeline if we have one, kept
+  // provisional so it is retried rather than cached until it fills in.
+  if (timeline) {
+    return { goals: timeline.goals, assists: timeline.assists, provisional: true };
+  }
+  return null;
 }
 
 async function inBatches<T>(items: T[], size: number, fn: (t: T) => Promise<void>): Promise<void> {
@@ -642,11 +786,19 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   const needFinished = relevant.filter(
     (m) => m.MatchStatus === 0 && !finishedStatsCache.has(m.IdMatch!)
   );
+  // Live-endpoint fallbacks are provisional (the timeline has not published
+  // yet), so they are aggregated for this pass but NOT cached — the match stays
+  // in needFinished and is retried until its authoritative timeline appears.
+  const provisionalFinished = new Map<string, MatchStats>();
   await inBatches(needFinished, 12, async (m) => {
     const s = await fetchMatchStats(m);
-    if (s) {
-      finishedStatsCache.set(m.IdMatch!, s);
-      persistFinished(m.IdMatch!, s);
+    if (!s) return;
+    const stats: MatchStats = { goals: s.goals, assists: s.assists };
+    if (s.provisional) {
+      provisionalFinished.set(m.IdMatch!, stats);
+    } else {
+      finishedStatsCache.set(m.IdMatch!, stats);
+      persistFinished(m.IdMatch!, stats);
     }
   });
 
@@ -654,7 +806,7 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   const liveMatches = relevant.filter((m) => m.MatchStatus === 3);
   await inBatches(liveMatches, 12, async (m) => {
     const s = await fetchMatchStats(m);
-    if (s) liveStats.set(m.IdMatch!, s);
+    if (s) liveStats.set(m.IdMatch!, { goals: s.goals, assists: s.assists });
   });
 
   const byPlayer = new Map<string, PlayerAgg>();
@@ -682,7 +834,9 @@ async function computePlayerStats(): Promise<PlayerAgg[]> {
   };
 
   for (const m of relevant) {
-    const s = m.MatchStatus === 0 ? finishedStatsCache.get(m.IdMatch!) : liveStats.get(m.IdMatch!);
+    const s = m.MatchStatus === 0
+      ? finishedStatsCache.get(m.IdMatch!) ?? provisionalFinished.get(m.IdMatch!)
+      : liveStats.get(m.IdMatch!);
     if (!s) continue;
     // Count each match once per player toward their goal/assist "games" so a
     // multi-goal game still counts as a single appearance for the tiebreaker.

@@ -1,5 +1,5 @@
-import { Match, Group } from './types';
-import { fetchAllMatches, fetchGroups, fetchPlayerStats } from './worldcup';
+import { Match } from './types';
+import { fetchAllMatches, fetchPlayerStats } from './worldcup';
 import { Scorer, PlayerAgg } from './liveData';
 
 export interface MatchHighlight {
@@ -59,7 +59,6 @@ const STAGE_ORDER = [
 
 export function computeStats(
   matches: Match[],
-  groups: Group[],
   topScorers: Scorer[] = [],
   topAssists: PlayerAgg[] = []
 ): TournamentStats {
@@ -102,21 +101,27 @@ export function computeStats(
     stageMap.set(stage, entry);
   }
 
-  // Team leaderboards from group standings (already aggregated GF/GA).
-  const teams: { code: string; name: string; gf: number; ga: number; played: number }[] = [];
-  for (const g of groups) {
-    for (const s of g.teams) {
-      if (s.played > 0) {
-        teams.push({
-          code: s.team.code,
-          name: s.team.name,
-          gf: s.goals_for,
-          ga: s.goals_against,
-          played: s.played,
-        });
-      }
-    }
+  // Team leaderboards aggregated across ALL played matches — every stage, not
+  // just the group phase — so knockout goals and clean sheets count too. Uses
+  // regulation+extra-time goals (home_team.goals / away_team.goals); penalty
+  // shootouts live in a separate field and are correctly excluded.
+  const teamAgg = new Map<string, { code: string; name: string; gf: number; ga: number; played: number }>();
+  const bumpTeam = (code: string, name: string, gf: number, ga: number) => {
+    if (!code) return;
+    const e = teamAgg.get(code) || { code, name, gf: 0, ga: 0, played: 0 };
+    e.gf += gf;
+    e.ga += ga;
+    e.played += 1;
+    if (!e.name && name) e.name = name;
+    teamAgg.set(code, e);
+  };
+  for (const m of played) {
+    const hg = m.home_team.goals ?? 0;
+    const ag = m.away_team.goals ?? 0;
+    bumpTeam(m.home_team.code, m.home_team.name, hg, ag);
+    bumpTeam(m.away_team.code, m.away_team.name, ag, hg);
   }
+  const teams = [...teamAgg.values()];
 
   const topScoringTeams: TeamStat[] = [...teams]
     .sort((a, b) => b.gf - a.gf || a.ga - b.ga)
@@ -162,13 +167,13 @@ export interface TopPlayers {
   topAssists: PlayerAgg[];
 }
 
-// Fast half of the Stats tab: everything derivable from the calendar feed and
-// group standings (both already cached), so it costs ≈0 extra network and can
-// render instantly. The scorer/assist leaderboards are left empty here and
-// filled in separately by fetchTopPlayers, which is the slow part.
+// Fast half of the Stats tab: everything derivable from the calendar feed
+// (already cached), so it costs ≈0 extra network and can render instantly. The
+// scorer/assist leaderboards are left empty here and filled in separately by
+// fetchTopPlayers, which is the slow part.
 export async function fetchStatsCore(): Promise<TournamentStats> {
-  const [matches, groups] = await Promise.all([fetchAllMatches(), fetchGroups()]);
-  return computeStats(matches, groups);
+  const matches = await fetchAllMatches();
+  return computeStats(matches);
 }
 
 // Pure ranking used by both the Stats leaderboards and its tests. Ordering:
