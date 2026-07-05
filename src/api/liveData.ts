@@ -540,26 +540,44 @@ const FIFA_GOAL_EVENT_TYPE = 0;
 const FIFA_ASSIST_EVENT_TYPE = 1;
 const finishedStatsCache = new Map<string, MatchStats>();
 
-// Finished-match timelines never change, so persist them to localStorage. This
-// makes repeat visits load Stats/Favorites almost instantly instead of
-// re-fetching 70+ timelines, and survives a page reload.
-const MSTATS_LS_PREFIX = 'wc2026:mstats:';
+// Finished-match timelines never change once complete, so persist them to
+// localStorage. This makes repeat visits load Stats/Favorites almost instantly
+// instead of re-fetching 70+ timelines, and survives a page reload.
+//
+// The key is VERSION-STAMPED. Older builds could persist an incomplete result:
+// a match that had just finished sometimes had a timeline with no goal events
+// yet, which was cached as goalless and then trusted forever — permanently
+// under-counting that scorer (e.g. Mbappe's R16 winner stuck at 6 instead of 7).
+// Bumping the version invalidates every pre-fix entry so it is re-fetched with
+// the goal-count cross-check + live fallback; legacy entries are removed on the
+// first load. Results written now are complete by construction, because only
+// non-provisional (timeline goalCount >= final score) stats are ever persisted.
+const MSTATS_LS_PREFIX = 'wc2026:mstats:v2:';
+const MSTATS_LS_LEGACY_PREFIX = 'wc2026:mstats:';
 let finishedCacheHydrated = false;
 
 function hydrateFinishedCache(): void {
   if (finishedCacheHydrated || typeof localStorage === 'undefined') return;
   finishedCacheHydrated = true;
   try {
+    const legacyKeys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (!k || !k.startsWith(MSTATS_LS_PREFIX)) continue;
-      const id = k.slice(MSTATS_LS_PREFIX.length);
-      if (finishedStatsCache.has(id)) continue;
-      const v = JSON.parse(localStorage.getItem(k) || 'null');
-      if (v && Array.isArray(v.goals) && Array.isArray(v.assists)) {
-        finishedStatsCache.set(id, v);
+      if (!k) continue;
+      if (k.startsWith(MSTATS_LS_PREFIX)) {
+        const id = k.slice(MSTATS_LS_PREFIX.length);
+        if (finishedStatsCache.has(id)) continue;
+        const v = JSON.parse(localStorage.getItem(k) || 'null');
+        if (v && Array.isArray(v.goals) && Array.isArray(v.assists)) {
+          finishedStatsCache.set(id, v);
+        }
+      } else if (k.startsWith(MSTATS_LS_LEGACY_PREFIX)) {
+        // Pre-version entry (may be an incomplete goalless cache) — drop it so
+        // the match is re-fetched under the fixed logic.
+        legacyKeys.push(k);
       }
     }
+    for (const k of legacyKeys) localStorage.removeItem(k);
   } catch {
     /* ignore corrupt/unavailable storage */
   }

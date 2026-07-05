@@ -94,3 +94,38 @@ test('a scorer missing from a populated-but-goalless timeline is recovered from 
 
   await expectMbappeScorer(page);
 });
+
+test('a stale goalless cache entry from before the fix is invalidated so the scorer is recovered', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'engine-independent; runs on chromium only');
+
+  // Simulate a browser that cached the R16 match as goalless under the OLD
+  // (unversioned) key while its timeline still lacked goal events. The versioned
+  // cache must ignore + remove that legacy entry and re-fetch, so the live
+  // fallback restores Mbappe's goal instead of the app trusting the stale 0.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('wc2026:mstats:400021533', JSON.stringify({ goals: [], assists: [] }));
+    } catch {
+      /* ignore */
+    }
+  });
+
+  await page.route(/api\.fifa\.com/, (route) => {
+    const url = route.request().url();
+    if (url.includes('/calendar/matches')) {
+      route.fulfill({ json: { Results: [finishedFranceMatch] } });
+    } else if (url.includes('/timelines/')) {
+      route.fulfill({ json: { Event: [] } });
+    } else if (url.includes('/live/football/')) {
+      route.fulfill({ json: liveDetail });
+    } else {
+      route.fulfill({ json: {} });
+    }
+  });
+
+  await expectMbappeScorer(page);
+
+  // The legacy (unversioned) key must have been cleaned up on hydrate.
+  const legacy = await page.evaluate(() => localStorage.getItem('wc2026:mstats:400021533'));
+  expect(legacy).toBeNull();
+});
