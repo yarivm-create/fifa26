@@ -61,3 +61,34 @@ test('penalty shootouts are excluded — only regulation+ET goals count', () => 
   const stats = computeStats(matches);
   expect(stats.topScoringTeams.find((t) => t.code === 'ARG')?.value).toBe(1);
 });
+
+test('a goal in a live match counts toward the team leaderboards immediately', () => {
+  const matches: Match[] = [
+    // ESP finished a group game 0-0, then scores in a game happening right now.
+    match({ stage_name: 'Group H', home_team: team('ESP', 0), away_team: team('CPV', 0) }),
+    match({ stage_name: 'Group H', status: 'in_progress', home_team: team('ESP', 1), away_team: team('KSA', 0) }),
+  ];
+  const stats = computeStats(matches);
+  // Group-only (finished) would leave ESP on 0; the live goal must push them to 1.
+  expect(stats.topScoringTeams.find((t) => t.code === 'ESP')?.value).toBe(1);
+  // The opponent's live goal-against shows on the "goals conceded" board too.
+  expect(stats.bestDefenses.find((t) => t.code === 'KSA')?.value).toBe(1);
+});
+
+test('live matches do NOT distort completion-defined stats', () => {
+  const matches: Match[] = [
+    match({ stage_name: 'Group A', home_team: team('FRA', 2), away_team: team('SEN', 1) }),
+    // In-progress 4-0: a big live scoreline must not be counted as a played
+    // match, a clean sheet, the biggest win, or fold into the goal totals.
+    match({ stage_name: 'Group A', status: 'in_progress', home_team: team('ESP', 4), away_team: team('CPV', 0) }),
+  ];
+  const stats = computeStats(matches);
+  expect(stats.playedMatches).toBe(1);
+  expect(stats.liveMatches).toBe(1);
+  expect(stats.totalGoals).toBe(3); // only the finished 2-1, not the live 4-0
+  expect(stats.avgGoalsPerMatch).toBeCloseTo(3);
+  expect(stats.cleanSheets).toBe(0); // the live 4-0 is not a finished clean sheet
+  expect(stats.biggestWin?.value).toBe(1); // FRA's 2-1 margin, not the live 4-0
+  // But the live goals still reach the team leaderboard.
+  expect(stats.topScoringTeams.find((t) => t.code === 'ESP')?.value).toBe(4);
+});

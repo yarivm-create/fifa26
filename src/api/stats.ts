@@ -101,10 +101,11 @@ export function computeStats(
     stageMap.set(stage, entry);
   }
 
-  // Team leaderboards aggregated across ALL played matches — every stage, not
-  // just the group phase — so knockout goals and clean sheets count too. Uses
-  // regulation+extra-time goals (home_team.goals / away_team.goals); penalty
-  // shootouts live in a separate field and are correctly excluded.
+  // Team leaderboards aggregated across every played match AND every in-progress
+  // one — all stages, not just the group phase — so knockout goals and goals from
+  // games happening right now both count. Uses regulation+extra-time goals
+  // (home_team.goals / away_team.goals); penalty shootouts live in a separate
+  // field and are correctly excluded.
   const teamAgg = new Map<string, { code: string; name: string; gf: number; ga: number; played: number }>();
   const bumpTeam = (code: string, name: string, gf: number, ga: number) => {
     if (!code) return;
@@ -116,6 +117,19 @@ export function computeStats(
     teamAgg.set(code, e);
   };
   for (const m of played) {
+    const hg = m.home_team.goals ?? 0;
+    const ag = m.away_team.goals ?? 0;
+    bumpTeam(m.home_team.code, m.home_team.name, hg, ag);
+    bumpTeam(m.away_team.code, m.away_team.name, ag, hg);
+  }
+  // Goals scored in matches happening RIGHT NOW count toward the team goal
+  // leaderboards too, so a live goal immediately moves the scoring team up "top
+  // scoring teams" and its opponent up "goals conceded" — matching the player
+  // leaderboards, which already fold in live-match scorers. Only these
+  // cumulative goal tallies use in-progress games; the completion-defined stats
+  // (clean sheets, both-teams-scored %, average goals, biggest win) deliberately
+  // stay on finished matches, where a partial scoreline would be meaningless.
+  for (const m of live) {
     const hg = m.home_team.goals ?? 0;
     const ag = m.away_team.goals ?? 0;
     bumpTeam(m.home_team.code, m.home_team.name, hg, ag);
