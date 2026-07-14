@@ -31,6 +31,12 @@ test('every finished card on the Schedule tab shows a who-won/result line', asyn
   await page.goto('');
   await page.locator('#tab-schedule').click({ force: true });
   await expect(page.locator('#tab-panel .card').first()).toBeVisible({ timeout: 15000 });
+  // Completed statuses arrive from the live overlay a moment after the first
+  // cards render. Wait for them to settle so the finished count doesn't race to
+  // 0 (the schedule genuinely contains finished ties once the overlay applies).
+  await expect(
+    page.locator('#tab-panel .card .match-status', { hasText: /FULL TIME/i }).first(),
+  ).toBeVisible({ timeout: 15000 });
   const finished = await assertEveryFinishedCardHasNote(page);
   // The schedule lists the whole tournament, so at least one finished tie exists
   // — proving the note actually renders (not a vacuous pass).
