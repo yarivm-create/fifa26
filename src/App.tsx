@@ -21,7 +21,6 @@ const Stats = lazy(() => import('./components/Stats').then(m => ({ default: m.St
 const Bracket = lazy(() => import('./components/Bracket').then(m => ({ default: m.Bracket })));
 const Schedule = lazy(() => import('./components/Schedule').then(m => ({ default: m.Schedule })));
 const Favorites = lazy(() => import('./components/Favorites').then(m => ({ default: m.Favorites })));
-const LiveMatchBar = lazy(() => import('./components/LiveMatchBar'));
 
 type Tab = 'live' | 'standings' | 'stats' | 'bracket' | 'schedule' | 'favorites';
 
@@ -241,14 +240,6 @@ const App: React.FC = () => {
       {goalEvent && <Fireworks key={`goal-${goalEvent.key}`} goal={goalEvent} />}
       {endBurstKey > 0 && <Fireworks key={`end-${endBurstKey}`} label={t('fx.fullTime')} />}
       <WhistleStack events={endToasts} onDone={dismissToast} />
-
-      <Suspense fallback={null}>
-        <LiveMatchBar
-          liveMatches={liveMatches}
-          lastUpdated={liveUpdated}
-          onOpenMatch={() => selectTab('live')}
-        />
-      </Suspense>
     </div>
   );
 };

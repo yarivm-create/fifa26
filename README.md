@@ -13,7 +13,6 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 
 - 🕐 **Live Local Time Clock** — Real-time clock updating every second in the visitor's own timezone, shown with their country flag
 - 🔴 **Live Scores** — Auto-refreshing every 15 seconds during live matches with pulsing indicators, plus an instant refresh when you return to the tab (bfcache `pageshow`) so scores are never stale. Returning from the background never replays a stale goal/full-time alert — the first post-resume refresh re-baselines silently
-- 📻 **Live Match Bar** — A persistent real-time bar that follows you across every tab: a compact top bar on mobile (Dynamic-Island feel, safe-area aware) and a floating top-right panel on desktop. Collapsed shows logos, score, minute, a LIVE dot and red-card indicator; tap to expand for the full clock, event feed, a switcher between simultaneous live matches, **Follow match** + opt-in notifications, and a jump to the Live tab. Reuses the existing 15s poll (zero extra requests), the same stale-goal armed gate as the celebrations, and is fully keyboard/screen-reader/RTL/`prefers-reduced-motion` friendly. See [`docs/live-match-bar.md`](docs/live-match-bar.md)
 - 📺 **Kan 11 Broadcast Links** — Live and completed match cards link out to Kan's World Cup hub ("Live Match Center" while live, "Match Recap & Highlights" once finished)
 - ⏭️ **Next Up** — The two soonest upcoming fixtures highlighted above Today (they also stay listed in their normal day sections)
 - 📋 **Yesterday / Today / Tomorrow / Day After** — All matches organized by the visitor's local date
@@ -32,7 +31,6 @@ A stunning real-time World Cup 2026 dashboard with all 104 matches, live scores,
 - 📤 **Share** — On mobile, a Share button opens the native share sheet with the site link
 - 📴 **Offline Aware** — A banner appears when the device goes offline so users know why live data paused
 - 👀 **Live Viewer Count** — "Watching now" counter via the whos.amung.us JSONP presence ping (no third-party tracker, CSP-safe)
-- 📲 **Installable (PWA)** — Web app manifest, icons and a conservative service worker (network-first for navigations, offline fallback) so the site is installable and offline-aware; opt-in client-side match notifications with per-event settings. A documented native bridge is ready for real iOS Live Activities / Android Live Updates in a native wrapper — see [`docs/native-live-activities.md`](docs/native-live-activities.md)
 
 ## Quick Start
 
@@ -122,15 +120,10 @@ worldcup2026-app/
 │   │   ├── OfflineBanner.tsx   # Offline indicator
 │   │   └── ErrorBoundary.tsx   # Per-tab error boundary
 │   ├── hooks/                  # useLiveData, useMatchAlerts, useFollowedTeams/Players
-│   ├── live/                   # Live Match Bar: useLiveMatchBar, matchTimeline (pure
-│   │                           #   diff engine), notifications, useFollowedMatches,
-│   │                           #   nativeBridge, analytics, registerSW
 │   ├── i18n/                   # English + Hebrew strings (RTL)
 │   ├── utils/                  # localTime (visitor TZ + flag), flags, sound
 │   ├── styles/                 # CSS with WC2026 dark theme
 │   └── App.tsx                 # Tabs, header clock, full-time toast stack
-├── public/                     # manifest.webmanifest, icons, sw.js (service worker)
-├── docs/                       # live-match-bar.md, native-live-activities.md
 ├── tests/                      # Playwright E2E smoke tests
 ├── index.html
 ├── vite.config.ts
@@ -139,7 +132,7 @@ worldcup2026-app/
 
 ## Testing
 
-End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects, including an automated accessibility gate (`tests/a11y.spec.ts`, axe-core WCAG 2.0/2.1 A & AA scan on every tab), a knockout-bracket draw gate (`tests/bracket-data.spec.ts`, which pins each card's two feeder matches to the official FIFA draw and asserts each round renders in kick-off order so a wrong bracket order can't regress), a result-interpretation gate (`tests/match-result.spec.ts`, which pins the shared penalty/extra-time winner logic so a tied knockout is never shown as a draw), and a live-overlay gate (`tests/live-overlay.spec.ts`, which pins how a FIFA score is mapped to extra-time / penalty results — including a reversed FIFA key that must swap each team's goals **and** penalties together), and the Live Match Bar gates (`tests/live-match-bar.spec.ts` for the pure event/gate/notification logic across all projects, and `tests/live-match-bar-ui.spec.ts` for the rendered bar — expand, match switching, RTL, reduced-motion, desktop-vs-mobile layout and settings persistence):
+End-to-end smoke tests run with Playwright across desktop (Chromium, Firefox, WebKit) and mobile (Pixel 7, iPhone 14) projects, including an automated accessibility gate (`tests/a11y.spec.ts`, axe-core WCAG 2.0/2.1 A & AA scan on every tab), a knockout-bracket draw gate (`tests/bracket-data.spec.ts`, which pins each card's two feeder matches to the official FIFA draw and asserts each round renders in kick-off order so a wrong bracket order can't regress), a result-interpretation gate (`tests/match-result.spec.ts`, which pins the shared penalty/extra-time winner logic so a tied knockout is never shown as a draw), and a live-overlay gate (`tests/live-overlay.spec.ts`, which pins how a FIFA score is mapped to extra-time / penalty results — including a reversed FIFA key that must swap each team's goals **and** penalties together):
 
 ```bash
 npm run test:e2e
