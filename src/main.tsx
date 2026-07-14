@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { I18nProvider } from './i18n';
+import { registerServiceWorker } from './live/registerSW';
 import './styles/global.css';
 
 // Load the Inter webfont without blocking first paint. The document renders
@@ -27,3 +28,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </I18nProvider>
   </React.StrictMode>
 );
+
+// Progressive enhancement: PWA offline shell + notification plumbing (prod only).
+registerServiceWorker();
