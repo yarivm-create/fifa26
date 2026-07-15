@@ -1,24 +1,35 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // The reported inconsistency: ET/penalty cards had a "who won" line but plain
 // wins did not. This guards that EVERY finished match card (any result kind)
 // carries the result note, so no card is left with a different design.
-async function assertEveryFinishedCardHasNote(page) {
-  const cards = page.locator('#tab-panel .card');
-  const n = await cards.count();
-  let finished = 0;
-  for (let i = 0; i < n; i++) {
-    const card = cards.nth(i);
-    const status = (await card.locator('.match-status').innerText().catch(() => '')).trim();
-    // A completed match shows the FULL TIME label (live cards never do).
-    if (/FULL TIME/i.test(status)) {
-      finished++;
-      await expect(card.locator('.match-decided'), `finished card #${i} has a result note`).toHaveCount(1);
-      const note = (await card.locator('.match-decided').innerText()).trim();
-      expect(note.length, `finished card #${i} note is non-empty`).toBeGreaterThan(0);
+async function assertEveryFinishedCardHasNote(page: Page, opts: { requireFinished?: boolean } = {}) {
+  const { requireFinished = false } = opts;
+  // Read every card's status + result-note in ONE atomic DOM pass and retry the
+  // whole invariant until it holds. This avoids two flake sources the earlier
+  // per-card loop had: (a) dozens of sequential locator round-trips (plus 5s
+  // toHaveCount retries) that could blow the 60s test timeout on CI when many
+  // cards are finished, and (b) racing the live overlay, which flips a card to
+  // FULL TIME and fills its result note together, but a moment after the first
+  // cards paint. A completed match with no note is a real bug, so it still fails.
+  await expect(async () => {
+    const rows = await page.locator('#tab-panel .card').evaluateAll((els) =>
+      els.map((el) => ({
+        // A completed match shows the FULL TIME label (live cards never do).
+        finished: /FULL TIME/i.test(el.querySelector('.match-status')?.textContent || ''),
+        note: (el.querySelector('.match-decided')?.textContent || '').trim(),
+      })),
+    );
+    const finished = rows.filter((r) => r.finished);
+    if (requireFinished) {
+      // The schedule lists the whole tournament, so at least one finished tie
+      // exists once the overlay applies — proving the note actually renders.
+      expect(finished.length, 'shows at least one finished match').toBeGreaterThan(0);
     }
-  }
-  return finished;
+    finished.forEach((r, i) => {
+      expect(r.note.length, `finished card #${i} carries a non-empty result note`).toBeGreaterThan(0);
+    });
+  }).toPass({ timeout: 20000 });
 }
 
 test('every finished card on the Today/Live tab shows a who-won/result line', async ({ page }) => {
@@ -31,8 +42,5 @@ test('every finished card on the Schedule tab shows a who-won/result line', asyn
   await page.goto('');
   await page.locator('#tab-schedule').click({ force: true });
   await expect(page.locator('#tab-panel .card').first()).toBeVisible({ timeout: 15000 });
-  const finished = await assertEveryFinishedCardHasNote(page);
-  // The schedule lists the whole tournament, so at least one finished tie exists
-  // — proving the note actually renders (not a vacuous pass).
-  expect(finished, 'schedule shows at least one finished match').toBeGreaterThan(0);
+  await assertEveryFinishedCardHasNote(page, { requireFinished: true });
 });
