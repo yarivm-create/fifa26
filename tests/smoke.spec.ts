@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { selectTab } from './tab-helpers';
 
 // Force a known timezone so the local-time flag assertion is deterministic.
 // `reducedMotion: reduce` disables the app's pulse/celebration animations
@@ -47,10 +48,8 @@ test('all tabs open and render without crashing', async ({ page }) => {
   for (const key of TABS) {
     const tab = page.locator(`#tab-${key}`);
     await expect(tab).toBeVisible();
-    // force bypasses WebKit's actionability stall from the 1s clock re-render;
-    // the aria-selected assertion below still proves the tab really activated.
-    await tab.click({ force: true });
-    await expect(tab).toHaveAttribute('aria-selected', 'true');
+    // Activating a tab is racy on WebKit (see selectTab); retry until selected.
+    await selectTab(page, key);
     // The tab panel must render and must NOT fall back to the error boundary.
     await expect(page.locator('#tab-panel')).toBeVisible();
     await expect(page.locator('.error-boundary')).toHaveCount(0);
@@ -162,8 +161,7 @@ test('Favorites lists followed players before favorite teams', async ({ page }) 
     localStorage.setItem('wc2026:followed-teams', JSON.stringify(['BRA']));
   });
   await page.goto('');
-  await page.locator('#tab-favorites').click({ force: true });
-  await expect(page.locator('#tab-favorites')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'favorites');
 
   // Both blocks render their heading; players must come first.
   const headings = page.locator('#tab-panel .favorites-heading');
@@ -185,7 +183,7 @@ test('branding uses the World Cup trophy SVG (favicon + standings title)', async
   expect(headerBg).toContain('trophy.svg');
 
   // Standings title renders the inline trophy SVG (no 🏆 emoji fallback).
-  await page.locator('#tab-standings').click({ force: true });
+  await selectTab(page, 'standings');
   await expect(
     page.locator('#tab-panel h2 svg[aria-label="Champion trophy"]').first()
   ).toBeVisible();
@@ -232,8 +230,7 @@ test('switching tabs after warm-up shows no Suspense loading fallback', async ({
 
   const genericFallback = page.locator('#tab-panel .loading p', { hasText: /^Loading…$/ });
   for (const key of ['standings', 'stats', 'bracket', 'schedule', 'favorites']) {
-    await page.locator(`#tab-${key}`).click({ force: true });
-    await expect(page.locator(`#tab-${key}`)).toHaveAttribute('aria-selected', 'true');
+    await selectTab(page, key);
     // The generic chunk-loading fallback must never be the visible state.
     await expect(genericFallback).toHaveCount(0);
     await expect(page.locator('#tab-panel')).toBeVisible();
@@ -247,8 +244,7 @@ test('Stats tab renders core immediately, scorers fill in progressively', async 
   await page.goto('');
   await page.waitForTimeout(6000); // idle warm-up primes statsCore (free)
 
-  await page.locator('#tab-stats').click({ force: true });
-  await expect(page.locator('#tab-stats')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'stats');
 
   // Core content is visible and there is no full-screen loading fallback.
   await expect(page.locator('#tab-panel .stat-tile').first()).toBeVisible({ timeout: 5000 });
@@ -260,8 +256,7 @@ test('Stats tab renders core immediately, scorers fill in progressively', async 
 test('bracket renders knockout matches with scores', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
-  await page.locator('#tab-bracket').click({ force: true });
-  await expect(page.locator('#tab-bracket')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'bracket');
   const matches = page.locator('#tab-panel .bracket-match');
   await expect(matches.first()).toBeVisible({ timeout: 15000 });
   expect(await matches.count()).toBeGreaterThan(8); // R32+R16+QF+SF+F feeders
@@ -274,8 +269,7 @@ test('bracket renders knockout matches with scores', async ({ page }) => {
 test('stats leaderboards render player rows', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
-  await page.locator('#tab-stats').click({ force: true });
-  await expect(page.locator('#tab-stats')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'stats');
   await expect(page.locator('#tab-panel .stat-board-row').first()).toBeVisible({ timeout: 15000 });
   expect(await page.locator('#tab-panel .stat-board-row').count()).toBeGreaterThan(0);
   expect(errors, errors.join('\n')).toEqual([]);
@@ -288,10 +282,10 @@ test('standings highlight qualifiers + favorites label group-stage record', asyn
     localStorage.setItem('wc2026:followed-teams', JSON.stringify(['CAN']));
   });
   await page.goto('');
-  await page.locator('#tab-standings').click({ force: true });
+  await selectTab(page, 'standings');
   await expect(page.locator('#tab-panel tr.qualified').first()).toBeVisible({ timeout: 15000 });
   expect(await page.locator('#tab-panel tr.qualified').count()).toBeGreaterThanOrEqual(2);
-  await page.locator('#tab-favorites').click({ force: true });
+  await selectTab(page, 'favorites');
   await expect(page.locator('#tab-panel .team-stat-caption').first()).toContainText(/Group stage/i, { timeout: 15000 });
 });
 
@@ -308,8 +302,7 @@ test('Favorite teams grid renders without blocking on player-stats aggregation',
     );
   });
   await page.goto('');
-  await page.locator('#tab-favorites').click({ force: true });
-  await expect(page.locator('#tab-favorites')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'favorites');
 
   // Multiple team cards render, each with its group-stage stat grid — core data
   // only, no dependency on the timeline aggregation.
@@ -328,8 +321,7 @@ test('Favorite teams grid renders without blocking on player-stats aggregation',
 test('schedule groups every match under its correct stage section', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
-  await page.locator('#tab-schedule').click({ force: true });
-  await expect(page.locator('#tab-schedule')).toHaveAttribute('aria-selected', 'true');
+  await selectTab(page, 'schedule');
 
   const bucket = (s: string): string => {
     if (s.startsWith('Group')) return 'group';

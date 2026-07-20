@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { selectTab } from './tab-helpers';
 
 // GEOMETRIC regression for the two bracket bugs that the data/DOM tests could
 // not catch because they never measured rendered pixels:
@@ -26,7 +27,7 @@ async function readColumns(page: import('@playwright/test').Page): Promise<Box[]
 
 test.beforeEach(async ({ page }) => {
   await page.goto('');
-  await page.locator('#tab-bracket').click({ force: true });
+  await selectTab(page, 'bracket');
   await expect(page.locator('.bracket-column').first()).toBeVisible({ timeout: 15000 });
   // Let the live bracket data load and lay out.
   await page.waitForTimeout(1200);

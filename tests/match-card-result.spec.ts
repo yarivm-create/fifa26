@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { selectTab } from './tab-helpers';
 
 // The reported inconsistency: ET/penalty cards had a "who won" line but plain
 // wins did not. This guards that EVERY finished match card (any result kind)
@@ -40,7 +41,7 @@ test('every finished card on the Today/Live tab shows a who-won/result line', as
 
 test('every finished card on the Schedule tab shows a who-won/result line', async ({ page }) => {
   await page.goto('');
-  await page.locator('#tab-schedule').click({ force: true });
+  await selectTab(page, 'schedule');
   await expect(page.locator('#tab-panel .card').first()).toBeVisible({ timeout: 15000 });
   await assertEveryFinishedCardHasNote(page, { requireFinished: true });
 });

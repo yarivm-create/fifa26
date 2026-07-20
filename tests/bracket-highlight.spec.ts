@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { selectTab } from './tab-helpers';
 
 // Regression for the reported "yellow on 1:1" bug: on a shootout-decided tie the
 // regulation goals are level, so NEITHER goal may be gold-highlighted — only the
 // deciding penalty score is. This guards every rendered bracket card at once.
 test('bracket never golds a level goal on a shootout tie (only the penalty)', async ({ page }) => {
   await page.goto('');
-  await page.locator('#tab-bracket').click({ force: true });
+  await selectTab(page, 'bracket');
   await expect(page.locator('.bracket-column').first()).toBeVisible({ timeout: 15000 });
 
   // Any score cell that shows a penalty "(n)" is a shootout tie.
