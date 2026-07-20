@@ -106,7 +106,25 @@ test('share button is mobile-only and fires the native share sheet', async ({ pa
 test('Live tab shows a Next Up section (max 2 fixtures) before Today', async ({ page }) => {
   const errors = trackAppErrors(page);
   await page.goto('');
-  // Live is the default tab.
+  // Wait out the initial data fetch so the Live tab has settled.
+  await expect(page.locator('#tab-panel .loading')).toHaveCount(0, { timeout: 15000 });
+
+  // Once the tournament is over there are no future fixtures, so the "Next Up"
+  // section is legitimately absent. The champion banner is the definitive
+  // end-of-tournament signal from the live feed (it renders only when the Final
+  // is complete), so key off it rather than a transient upcoming-section count
+  // that can briefly show the seeded schedule before the live feed overwrites it.
+  const tournamentOver = await page
+    .locator('.champion-banner')
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .then(() => true)
+    .catch(() => false);
+  if (tournamentOver) {
+    await expect(page.locator('#tab-panel')).toBeVisible();
+    expect(errors, errors.join('\n')).toEqual([]);
+    return;
+  }
+
   const nextUp = page.locator('.upcoming-section');
   await expect(nextUp).toBeVisible();
   await expect(nextUp.locator('.section-title')).toContainText('Next Up');

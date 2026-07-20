@@ -187,6 +187,14 @@ const en: Dict = {
   'share.label': 'Share',
   'share.copied': 'Link copied!',
   'share.aria': 'Share this World Cup dashboard',
+  // Champion banner (shown once the Final is decided)
+  'champion.title': 'WORLD CHAMPIONS',
+  'champion.subtitle': 'FIFA World Cup 2026 winners',
+  'champion.beat': 'Beat {loser} {w}–{l} in the final',
+  'champion.beatAet': 'Beat {loser} {w}–{l} after extra time',
+  'champion.beatPens': 'Beat {loser} {pw}–{pl} on penalties',
+  'champion.aria': '{team} are the World Cup 2026 champions',
+  'champion.dismiss': 'Dismiss',
 };
 
 const he: Dict = {
@@ -352,6 +360,14 @@ const he: Dict = {
   'share.label': 'שיתוף',
   'share.copied': 'הקישור הועתק!',
   'share.aria': 'שתפו את לוח המונדיאל',
+  // Champion banner (shown once the Final is decided)
+  'champion.title': 'אלופת העולם',
+  'champion.subtitle': 'זוכת גביע העולם 2026',
+  'champion.beat': 'ניצחה את {loser} {w}–{l} בגמר',
+  'champion.beatAet': 'ניצחה את {loser} {w}–{l} לאחר הארכה',
+  'champion.beatPens': 'ניצחה את {loser} {pw}–{pl} בפנדלים',
+  'champion.aria': '{team} היא אלופת העולם 2026',
+  'champion.dismiss': 'סגירה',
 };
 
 const DICTS: Record<Lang, Dict> = { en, he };

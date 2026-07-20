@@ -8,6 +8,8 @@ import { LocalClock } from './utils/localTime';
 import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
 import { Trophy } from './components/Trophy';
+import { ChampionBanner } from './components/ChampionBanner';
+import { getChampion } from './utils/champion';
 import { useI18n } from './i18n';
 import { useLiveData, primeLiveData } from './hooks/useLiveData';
 import { useMatchAlerts, MatchEndEvent } from './hooks/useMatchAlerts';
@@ -75,6 +77,10 @@ const App: React.FC = () => {
     liveUpdated?.getTime() ?? null,
     allUpdated?.getTime() ?? null,
   );
+
+  // Once the Final is decided this resolves to the world champion, driving the
+  // celebration banner on the main page (null while the tournament is ongoing).
+  const champion = getChampion(allMatches);
 
   // After first paint, use idle time to (a) download the code-split tab chunks
   // and (b) warm each tab's data cache, so opening any tab for the first time
@@ -201,6 +207,8 @@ const App: React.FC = () => {
           <LanguageToggle />
         </div>
       </header>
+
+      {champion && <ChampionBanner key={champion.team.code} champion={champion} />}
 
       <nav className="nav" role="tablist" aria-label={t('nav.aria')}>
         {TABS.map((tab, i) => (
