@@ -37,6 +37,7 @@ const en: Dict = {
   'tab.bracket': '🗺️ Bracket',
   'tab.schedule': '📅 Schedule',
   'tab.favorites': '⭐ My Favorites',
+  'tab.summary': '🏆 Summary',
   'nav.aria': 'Dashboard sections',
   // Language toggle
   'lang.toggle': 'HE',
@@ -195,6 +196,25 @@ const en: Dict = {
   'champion.beatPens': 'Beat {loser} {pw}–{pl} on penalties',
   'champion.aria': '{team} are the World Cup 2026 champions',
   'champion.dismiss': 'Dismiss',
+  // Tournament summary (replaces the Live tab once the Final is decided)
+  'summary.aria': 'FIFA World Cup 2026 final recap',
+  'summary.title': '🏆 Tournament Complete',
+  'summary.subtitle': 'FIFA World Cup 2026 — how it finished',
+  'summary.podium': '🏅 Podium',
+  'summary.champions': 'Champions',
+  'summary.runnersUp': 'Runners-up',
+  'summary.thirdPlace': 'Third place',
+  'summary.final': '🏟️ The Final',
+  'summary.numbers': '📊 By the Numbers',
+  'summary.matchesPlayed': 'Matches played',
+  'summary.goalsScored': 'Goals scored',
+  'summary.goalsPerMatch': 'Goals per match',
+  'summary.teams': 'Teams',
+  'summary.road': '🛣️ {team}’s Road to Glory',
+  'summary.wonPens': 'won {pw}–{pl} on pens',
+  'summary.wonAet': 'won after extra time',
+  'summary.aetShort': 'AET',
+  'summary.pensShort': 'pens {pw}–{pl}',
 };
 
 const he: Dict = {
@@ -210,6 +230,7 @@ const he: Dict = {
   'tab.bracket': '🗺️ עץ הנוקאאוט',
   'tab.schedule': '📅 לוח משחקים',
   'tab.favorites': '⭐ המועדפים שלי',
+  'tab.summary': '🏆 סיכום',
   'nav.aria': 'מדורי הלוח',
   // Language toggle
   'lang.toggle': 'EN',
@@ -368,6 +389,25 @@ const he: Dict = {
   'champion.beatPens': 'ניצחה את {loser} {pw}–{pl} בפנדלים',
   'champion.aria': '{team} היא אלופת העולם 2026',
   'champion.dismiss': 'סגירה',
+  // Tournament summary (replaces the Live tab once the Final is decided)
+  'summary.aria': 'סיכום גמר גביע העולם 2026',
+  'summary.title': '🏆 המונדיאל הסתיים',
+  'summary.subtitle': 'גביע העולם 2026 — איך זה נגמר',
+  'summary.podium': '🏅 פודיום',
+  'summary.champions': 'אלופה',
+  'summary.runnersUp': 'סגנית',
+  'summary.thirdPlace': 'מקום שלישי',
+  'summary.final': '🏟️ הגמר',
+  'summary.numbers': '📊 במספרים',
+  'summary.matchesPlayed': 'משחקים ששוחקו',
+  'summary.goalsScored': 'שערים',
+  'summary.goalsPerMatch': 'שערים למשחק',
+  'summary.teams': 'נבחרות',
+  'summary.road': '🛣️ הדרך של {team} לתהילה',
+  'summary.wonPens': 'ניצחה {pw}–{pl} בפנדלים',
+  'summary.wonAet': 'ניצחה לאחר הארכה',
+  'summary.aetShort': 'הארכה',
+  'summary.pensShort': 'פנדלים {pw}–{pl}',
 };
 
 const DICTS: Record<Lang, Dict> = { en, he };

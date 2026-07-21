@@ -9,6 +9,7 @@ import { ShareButton } from './components/ShareButton';
 import { LanguageToggle } from './components/LanguageToggle';
 import { Trophy } from './components/Trophy';
 import { ChampionBanner } from './components/ChampionBanner';
+import { TournamentSummary } from './components/TournamentSummary';
 import { getChampion } from './utils/champion';
 import { useI18n } from './i18n';
 import { useLiveData, primeLiveData } from './hooks/useLiveData';
@@ -81,6 +82,9 @@ const App: React.FC = () => {
   // Once the Final is decided this resolves to the world champion, driving the
   // celebration banner on the main page (null while the tournament is ongoing).
   const champion = getChampion(allMatches);
+  // With the trophy lifted there are no live/upcoming fixtures left, so the main
+  // "Live & Today" tab is retired in favour of an end-of-tournament recap.
+  const tournamentOver = champion != null;
 
   // After first paint, use idle time to (a) download the code-split tab chunks
   // and (b) warm each tab's data cache, so opening any tab for the first time
@@ -174,7 +178,7 @@ const App: React.FC = () => {
 
   const renderTab = () => {
     switch (deferredTab) {
-      case 'live': return <LiveMatches />;
+      case 'live': return tournamentOver ? <TournamentSummary matches={allMatches} /> : <LiveMatches />;
       case 'standings': return <Standings />;
       case 'stats': return <Stats />;
       case 'bracket': return <Bracket />;
@@ -211,33 +215,39 @@ const App: React.FC = () => {
       {champion && <ChampionBanner key={champion.team.code} champion={champion} />}
 
       <nav className="nav" role="tablist" aria-label={t('nav.aria')}>
-        {TABS.map((tab, i) => (
-          <button
-            key={tab.key}
-            id={`tab-${tab.key}`}
-            role="tab"
-            type="button"
-            aria-selected={activeTab === tab.key}
-            aria-controls="tab-panel"
-            tabIndex={activeTab === tab.key ? 0 : -1}
-            className={activeTab === tab.key ? 'active' : ''}
-            onClick={() => selectTab(tab.key)}
-            onKeyDown={(e) => onTabKeyDown(e, i)}
-          >
-            {tab.key === 'standings' ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <Trophy size={15} /> {t(tab.tkey)}
-              </span>
-            ) : (
-              t(tab.tkey)
-            )}
-          </button>
-        ))}
+        {TABS.map((tab, i) => {
+          // The Live tab becomes "Summary" once the tournament is over; its id
+          // (tab-live) stays put so navigation, keyboard order and tests are
+          // unaffected — only the label and its panel content change.
+          const label = tab.key === 'live' && tournamentOver ? t('tab.summary') : t(tab.tkey);
+          return (
+            <button
+              key={tab.key}
+              id={`tab-${tab.key}`}
+              role="tab"
+              type="button"
+              aria-selected={activeTab === tab.key}
+              aria-controls="tab-panel"
+              tabIndex={activeTab === tab.key ? 0 : -1}
+              className={activeTab === tab.key ? 'active' : ''}
+              onClick={() => selectTab(tab.key)}
+              onKeyDown={(e) => onTabKeyDown(e, i)}
+            >
+              {tab.key === 'standings' ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <Trophy size={15} /> {label}
+                </span>
+              ) : (
+                label
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       <main>
         <div id="tab-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={-1}>
-          <ErrorBoundary label={t(TABS.find(tab => tab.key === activeTab)?.tkey ?? 'tab.live').replace(/^\S+\s/, '')}>
+          <ErrorBoundary label={(activeTab === 'live' && tournamentOver ? t('tab.summary') : t(TABS.find(tab => tab.key === activeTab)?.tkey ?? 'tab.live')).replace(/^\S+\s/, '')}>
             <Suspense fallback={<TabFallback />}>
               {renderTab()}
             </Suspense>
