@@ -35,6 +35,20 @@ async function assertEveryFinishedCardHasNote(page: Page, opts: { requireFinishe
 
 test('every finished card on the Today/Live tab shows a who-won/result line', async ({ page }) => {
   await page.goto('');
+  // Once the tournament is over the Live/Today tab is retired in favour of the
+  // end-of-tournament recap, which has no match cards — the who-won invariant is
+  // still enforced on the Schedule tab below. The champion banner is the
+  // definitive end-of-tournament signal from the live feed (it renders only when
+  // the Final is complete), so key off it rather than a transient card count.
+  const tournamentOver = await page
+    .locator('.champion-banner')
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .then(() => true)
+    .catch(() => false);
+  if (tournamentOver) {
+    await expect(page.locator('.tournament-summary')).toBeVisible();
+    return;
+  }
   await expect(page.locator('#tab-panel .card').first()).toBeVisible({ timeout: 15000 });
   await assertEveryFinishedCardHasNote(page);
 });
